@@ -1,0 +1,79 @@
+#pragma once
+
+#include "../ipopt/ipopt_backend.h"
+#include "../../manager.h"
+#include "index_map.h"
+#include "cbc_pre_map.h"
+
+#include <cppad/ipopt/solve.hpp>
+
+namespace sea {
+namespace backend {
+
+struct DetCutPlaneBackendConfig {
+    ConstInputManagerPtr inputManager;
+    ConstLinksManagerPtr linksManager;
+
+    // These values must be equal!
+    ui32 cbcLogLevel = 3;
+    ui32 cbcFileLogLevel = 3;
+
+    ui32 seed = 124124;
+    ui32 iterations = 100;
+    ui32 initialPlanes = 30;
+
+    double needError = 0.01;
+
+    // Shall algo stop when infeasible?
+    bool stopOnInfeasible = false;
+
+    // Tolerance.
+    double integerTolerance = 1e-2;
+
+    // Shall algo tolerate constraints?
+    bool tolerateConstraints = true;
+
+    bool needMemory = false;
+
+    double defaultUtilizationRatio = 1.0;
+};
+
+class DetCutPlaneBackend {
+public:
+    DetCutPlaneBackend(const DetCutPlaneBackendConfig& config);
+
+    DecisionManagerPtr provideAllotments(double* objectiveValue = nullptr);
+
+    void setUtilizationRatio(double value) {
+        utilizationRatio = value;
+    }
+
+private:
+    void initConstraintsLR(
+            vector<double>* glowerPtr, vector<double>* gupperPtr);
+    void initBoundsLR(
+            vector<double>* vlowerPtr, vector<double>* vupperPtr);
+
+    void setupMainProblem();
+    double runCbc();
+    void addConstraints();
+    void genRandomSolution();
+    double calcError();
+    void fillDecision(Decision* decision);
+
+    double checkConstraintsAndBounds();
+
+
+private:
+    CbcPreMap cbcLastProblem;
+
+    DetCutPlaneBackendConfig config;
+    DcpIndexManagerPtr indexManager;
+
+    vector<double> lastSolution;
+    double preparedSolutionObjective;
+    double utilizationRatio;
+};
+
+} // namespace backend
+} // namespace sea

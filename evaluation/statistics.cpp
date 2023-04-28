@@ -1,0 +1,34 @@
+#include "statistics.h"
+
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+
+namespace sea {
+
+using std::ostream;
+using std::endl;
+
+void printEvaluatorStatistics(
+        const Statistics& stats,
+        ostream& os) {
+    os << std::fixed;
+    os << stats.estimation;
+    os << "complete_profit = " << std::fixed <<  stats.fullProfit << std::endl;
+    os << std::fixed;
+    os << "full_profit = " << stats.fullProfit
+        << " spot_market_profit = " << stats.spotProfit
+        << " allotment_profit = " << stats.allotmentProfit
+        << " container_profit (should be negative) = " << stats.containerProfit
+        << " empty_container_profit (should be negative) = " << stats.emptyContainerProfit
+        << " empty_containers_sum = " << stats.emptyContainerCount
+        << " spot_market_containers = " << stats.spotContainerCount
+        << " allotment_market_containers = " << stats.allotmentContainerCount
+        << " bookings_spot = " << stats.sumSpotBookingAmount
+        << " bookings_allotment = " << stats.sumAllotmentBookingAmount
+        << std::endl;
+    assert(stats.fullProfit == stats.spotProfit + stats.allotmentProfit +
+            stats.containerProfit + stats.emptyContainerProfit);
+}
+
+} // namespace sea

@@ -1,0 +1,129 @@
+{
+    "do_validation": false,
+    "write_eval_story" : false,
+    "backends_config" : {
+        "ipopt_backend_config": {
+            "solver_type" : "mumps",
+            "derivative_strategy": "forward",
+            "scale" : 1.0,
+            "memory_management" : "exact",
+            "file_print_level": 5,
+            "print_level": 5,
+            "path_prefix": "ipopt",
+            "use_enhanced": true,
+            "write_descriptions": false,
+            "default_utilization": 1.0
+        },
+        "lr_backend_config": {
+            "max_subgradient_iterations": 1000,
+            "min_subgradient_iterations": 200,
+            "deque_size": 1000,
+            "reset_period": 10000,
+            "use_reset": false,
+            "global_precision" : 1e-3,
+            "subgradient_precision": 1e-3,
+            "zero_ignore_precision": 1e-3,
+            "init_strategy" : "both",
+            "init_point_count" : 10,
+            "clp_solution": "primal",
+            "cutoff_decision": "itinerary",
+            "normal_mean" : 0.0,
+            "normal_std" : 2.0,
+            "uniform_left" : 0.0,
+            "uniform_right" : 2.0,
+            "bernoully_proba": 0.01,
+            "max_capacity_cost": 2e5,
+            "init_capacity_cost": 1e2,
+            "seed": 7,
+            "clp_log_level": 3,
+            "single_restart" : true,
+            "immortal_limit" : 600,
+            "immortal_shuffle_count" : 10,
+            "stop_criterion": "both",
+            "optimization_algo": "cutting_plane",
+            "reg_coeff" : 1e-3,
+            "write_iter_story" : false,
+            "gm_params" : {
+                "L0" : 0.0001,
+                "gm_prox_type" : "l2squared",
+                "algo_inside" : "upgm",
+                "gm_reg_type"  : "l2squared"
+            }
+        },
+        "benders_backend_config": {
+            "file_log_level" : 3
+        },
+        "det_cut_plane_backend_config": {
+            "file_log_level" : 3,
+            "initial_planes_count": 30,
+            "integer_tolerance": 0.01,
+            "max_iterations": 1000,
+            "need_error": 1e-2,
+            "seed": 12345,
+            "stop_on_infeasible": false,
+            "tolerate_constraints": false,
+            "default_utilization": 1.0
+        }
+    },
+    "launch_config" : {
+        "launch_mode" : "debug",
+        "spot_strategies" : [
+            "ipopt", "lr"
+        ],
+        "allotment_strategies" : [
+            "det_cut_plane"
+        ],
+        "turn_off_spot" : [
+        ],
+        "turn_off_allotment" : [
+        ],
+        "ignore_pairs": [ 
+        ],
+        "long_output_file" : "long_output_file.txt",
+        "short_output_file" : "short_output_file.txt",
+        "dataset_path": "datasets/data_simple_ports_3_vessels_1_period_short_demand_exponential_fast",
+        "need_memory": false,
+        "market_dataset_limit": 500,
+        "dump_folder": "dumpfolder"
+    },
+    "strategy_config" : {
+        "spot_strategy_config" : {
+            "update_interval" : 35,
+            "keep_story" : false,
+            "lr_strategy_config" : {
+                "do_hard_update": true,
+                "ask_ipopt_duals": true,
+                "soft_update_interval" : 21,
+                "hard_utilization_ratio": 1.0
+            },
+            "ipopt_strategy_config" : {
+                "hard_utilization_ratio": 1.0
+            },
+            "hybrid_strategy_config": {
+                "hard_utilization_ratio": 1.0
+            },
+            "warm_backends": true,
+            "move_update_interval": true
+        }, 
+        "allotment_strategy_config" : { 
+            "det_cut_plane_strategy_config" : {
+                "default_utilization_ratio": 1.0
+            },
+            "ipopt_strategy_config" : {
+                "default_utilization_ratio": 1.0
+            },
+            "benders_strategy_config" : {
+                "default_utilization_ratio": 1.0,
+                "initialization" : "ipopt_allotments",
+                "objective_blending" : 1.0,
+                "stop_criterion": "both",
+                "max_iteration_count" : 30,
+                "precision" : 1e-3
+            },
+            "store_initial_decision" : true
+        }
+    },
+    "logging_config": {
+        "path_to_config" : "log4cpp.properties.debug"
+    }
+}

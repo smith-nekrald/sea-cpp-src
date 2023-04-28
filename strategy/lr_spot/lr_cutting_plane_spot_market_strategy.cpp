@@ -1,0 +1,84 @@
+#include "lr_cutting_plane_spot_market_strategy.h"
+
+namespace sea {
+namespace strategy {
+
+using Event=InputData::Event;
+
+void LRCuttingPlaneSpotMarketStrategy::updateParams(const Event& event) {
+    bool needUpdate = (event.realTime - lastUpdate) > config.updateInterval;
+    bool needSoftUpdate = (event.realTime - lastSoftUpdateTime) > softUpdatePeriod;
+    if (needUpdate) {
+        lastUpdate = event.realTime;
+        if (doHardUpdate) {
+            if (askIpoptDuals) {
+                backends.ipoptBackend->moveDecisionToTime(
+                    state.timeParameters, decisionManager,
+                    actionManager, nullptr, &ipoptDuals);
+            } else {
+                backends.ipoptBackend->moveDecisionToTime(
+                    state.timeParameters, decisionManager,
+                    actionManager, nullptr, nullptr);
+            }
+        }
+    }
+    if (needUpdate || needSoftUpdate) {
+        lastSoftUpdateTime = event.realTime;
+        if (askIpoptDuals && ipoptDuals.muVariables.size() && ipoptDuals.lambdaVariables.size()) {
+            backends.lrBackend->provideIpoptDuals(ipoptDuals);
+        }
+        double futureValue = 0.;
+        duals = backends.lrBackend->provideDuals(state, decisionManager, nullptr, &futureValue);
+        if (keepStory) {
+            story["event_time"].push_back(event.realTime);
+            story["future_value"].push_back(futureValue);
+        }
+        {
+            logging::getOutTestLogger().debugStream() << "Updated_Duals at realTime = "
+                << event.realTime << " relativeTime =  "  << event.relativeTime;
+            auto dualWriter = logging::getOutTestLogger().getStream(log4cpp::Priority::DEBUG);
+            dualWriter << "\n";
+            dualWriter << "LambdaVariables: ";
+            for (const auto& lambdaV : duals.lambdaVariables) {
+                dualWriter << lambdaV << " ";
+            }
+            dualWriter << "\n";
+            dualWriter << "MuVariables: ";
+            for (const auto& muV : duals.muVariables) {
+                dualWriter << muV << " ";
+            }
+            dualWriter << "\n";
+        }
+    }
+}
+
+void LRCuttingPlaneSpotMarketStrategy::processCutoff(const Event& event) {
+    updateParams(event);
+    backends.lrBackend->makeCutoffDecisionWithDuals(
+            event, duals, actionManager, decisionManager, &state);
+}
+
+void LRCuttingPlaneSpotMarketStrategy::reset() {
+    initialize();
+    initBackend(backends.lrBackend, backendConfigs.lrConfig);
+    initBackend(backends.ipoptBackend, backendConfigs.ipoptConfig, config.utilizationRatio.value());
+    backends.bendersBackend = nullptr;
+    backends.dcpBackend = nullptr;
+    lastUpdate = -1e100;
+    lastSoftUpdateTime = -1e100;
+}
+
+void LRCuttingPlaneSpotMarketStrategy::setBackends(const BackendHolder& holder)  {
+    if (holder.ipoptBackend != nullptr) {
+        backends.ipoptBackend = holder.ipoptBackend;
+        backends.ipoptBackend->setUtilizationRatio(config.utilizationRatio.value());
+    }
+    if (holder.lrBackend != nullptr) {
+        backends.lrBackend = holder.lrBackend;
+    }
+    backends.dcpBackend = nullptr;
+    backends.bendersBackend = nullptr;
+}
+
+} // namespace strategy
+} // namespace sea
