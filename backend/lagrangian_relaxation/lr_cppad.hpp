@@ -8,8 +8,8 @@
 
 #include <stdexcept>
 #include <cppad/cppad.hpp>
-#include <cppad/local/value.hpp>
-#include <cppad/local/var2par.hpp>
+#include <cppad/core/value.hpp>
+#include <cppad/core/var2par.hpp>
 
 namespace sea {
 namespace backend {

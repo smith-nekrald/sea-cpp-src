@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cassert>
 #include <iostream>
+#include <limits>
 
 using std::cout;
 using std::endl;

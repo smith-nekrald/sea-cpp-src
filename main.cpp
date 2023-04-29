@@ -7,6 +7,7 @@
 
 #include <jsoncpp/json/json.h>
 
+#include "fix_cppad.h"
 #include "common.h"
 #include "manager.h"
 #include "algorithm/strategic_algorithm.h"
