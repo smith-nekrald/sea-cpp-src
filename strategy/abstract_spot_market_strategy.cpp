@@ -30,7 +30,8 @@ AbstractSpotMarketStrategy::AbstractSpotMarketStrategy(
         const std::string aName)
     : backendConfigs(aBackendConfigs)
     , config(aConfig)
-    , name(aName) {
+    , name(aName)
+    , keepStory(false) {
     initialize();
     logging::getSpotStrategyLogger(config.type.value()).info(
             "Created AbstractSpotMarketStrategy.");
