@@ -13,7 +13,7 @@ using std::endl;
 using std::ostream;
 using std::size_t;
 
-const double HYPOTHESIS_BOUND = 1.96;
+const double HYPOTHESIS_BOUND = 1.645;
 
 // Phi(-∞, x) aka N(x)
 double normalCDF(double x)  {
