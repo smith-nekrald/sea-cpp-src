@@ -2,6 +2,8 @@
 #include "estimator.h"
 #include "../logging/logging.h"
 
+#include <filesystem>
+
 namespace sea {
 
 using std::map;
@@ -22,11 +24,9 @@ map<string, vector<Statistics>> Launcher::doLaunches() {
         config.needMemory,
         config.writeStory
     };
-    for (size_t idx = 0; idx < config.marketDataSetPaths.size();
-            ++idx) {
+    for (size_t idx = 0; idx < config.marketDataSetPaths.size(); ++idx) {
         std::string dataPath = config.marketDataSetPaths[idx];
-        sea::ManagerConfig aConfig =
-            {config.needMemory.value(), dataPath, false};
+        sea::ManagerConfig aConfig = {config.needMemory.value(), dataPath, false};
         sea::MarketManagerPtr market =
             std::make_shared<sea::DataManager<
                 sea::MarketData>>(aConfig);
@@ -41,20 +41,28 @@ map<string, vector<Statistics>> Launcher::doLaunches() {
                 item->getConstData());
         for (const auto& algo : config.algorithms) {
 
-            logging::getEvaluationLogger().info("Started evaluation for algorithm: " + algo->getName());
-            logging::getEvaluationLogger().info("Evaluation set index is: " + std::to_string(idx));
+            logging::getEvaluationLogger().info(
+                    "Started evaluation for algorithm: " + algo->getName());
+            logging::getEvaluationLogger().info(
+                    "Evaluation set index is: " + std::to_string(idx));
 
             algo->reset();
             algo->synchronizeStrategies();
 
             Evaluator evaluator(evaluatorConfig);
 
-            logging::getOutTestLogger().debugStream() << "Evaluation Started: " << algo->getName() << " " << " market_idx= " << idx;
+            logging::getOutTestLogger().debugStream() << "Evaluation Started: "
+                << algo->getName() << " " << " market_idx= " << idx;
 
             auto stats = evaluator.calc(algo, item);
             if (config.writeStory) {
                 auto algoStory = evaluator.getAlgoStory();
                 auto evalStory = evaluator.getEvalStory();
+
+                auto folderPath = std::filesystem::path("eval_story");
+                if (!std::filesystem::exists(folderPath)) {
+                    std::filesystem::create_directories(folderPath);
+                }
                 std::string filePath = "eval_story/story_" + makeUniqueFileName() + ".out";
                 std::ofstream out(filePath);
                 out << "Market: " << dataPath << std::endl;
@@ -74,7 +82,8 @@ map<string, vector<Statistics>> Launcher::doLaunches() {
             assert(stats.allotmentProfit <= estimation.allotment);
             assert(stats.spotProfit <= estimation.spotMarket);
 
-            assert(stats.spotProfit + stats.allotmentProfit <= estimation.allotment + estimation.spotMarket);
+            assert(stats.spotProfit + stats.allotmentProfit
+                    <= estimation.allotment + estimation.spotMarket);
 
             launchResults[algo->getName()].push_back(stats);
         }

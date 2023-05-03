@@ -1,11 +1,12 @@
 #include "../lagrangian_relaxation/functions.h"
 #include "benders_allotment_backend.h"
 
-#include "OsiSolverInterface.hpp"
-#include "OsiCbcSolverInterface.hpp"
-#include "OsiClpSolverInterface.hpp"
+#include <coin-or/OsiSolverInterface.hpp>
+#include <coin-or/OsiCbcSolverInterface.hpp>
+#include <coin-or/OsiClpSolverInterface.hpp>
 
 #include <vector>
+#include <filesystem>
 
 
 using std::size_t;
@@ -156,8 +157,9 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
     // prepare solver
     OsiCbcSolverInterface solver;
 
-    solver.loadProblem(variablesCount, constraintsCount, starts.data(), indices.data(), matrix.data(),
-        varLowerBound.data(), varUpperBound.data(), objective.data(), constraintLowerBound.data(), constraintUpperBound.data());
+    solver.loadProblem(variablesCount, constraintsCount, starts.data(), indices.data(),
+            matrix.data(), varLowerBound.data(), varUpperBound.data(), objective.data(),
+            constraintLowerBound.data(), constraintUpperBound.data());
 
 
     solver.setObjSense(-1); // -> max
@@ -177,14 +179,20 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
         lastSolution.assign(variablesCount, 0);
     }
 
-    prepareBestUSolution(preparedDuals, lastSolution.data(), variablesCount, config.globalPrecision);
-    model.setBestSolution(lastSolution.data(), variablesCount, lastSolution.back() * solver.getObjSense());
+    prepareBestUSolution(preparedDuals, lastSolution.data(),
+                         variablesCount, config.globalPrecision);
+    model.setBestSolution(lastSolution.data(), variablesCount,
+                          lastSolution.back() * solver.getObjSense());
     // solve
     {
             int fd; fpos_t pos;
             fflush(stdout);
             fgetpos(stdout, &pos);
             fd = dup(fileno(stdout));
+            auto folderPath = std::filesystem::path("benders");
+            if (!std::filesystem::exists(folderPath)) {
+                std::filesystem::create_directories(folderPath);
+            }
             freopen("benders/cbc.log", "a+", stdout);
             printf("Benders branch & bound. Started computation.\n");
 

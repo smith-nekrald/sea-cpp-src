@@ -6,6 +6,7 @@
 #include <string>
 #include <limits>
 #include <memory>
+#include <cassert>
 
 namespace sea {
 namespace backend {
@@ -18,6 +19,7 @@ using std::endl;
 using std::size_t;
 
 const double INF = std::numeric_limits<double>::max();
+const double FLOOR_EPS = 1e-3;
 
 void IpoptBackend::recalculate(
         TimeParameters timeParameters,
@@ -30,7 +32,8 @@ void IpoptBackend::recalculate(
 
     auto& logger = logging::getBackendSubLogger(BackendType::IPOPT);
     logger.debug("IpoptBackend::recalcuate is called.");
-    logger.debugStream() << "TimeParameters:: allotments supplied " <<  timeParameters.allotmentsSupplied;
+    logger.debugStream() << "TimeParameters:: allotments supplied "
+        <<  timeParameters.allotmentsSupplied;
 
     assert(timeParameters.timeEvent <
             config.inputManager->getConstData().events.size());
@@ -88,10 +91,12 @@ void IpoptBackend::recalculate(
             for (ui32 idItinerary : event.relatedItineraryIds) {
                 // Processing Q_r
                 ui32 takeQIndex = indexMap.idItineraryToQIndex[idItinerary];
-                variables[takeQIndex] = vlower[takeQIndex] = vupper[takeQIndex] = decision->nonEmptyContainersQ[idItinerary] / SCALE;
+                variables[takeQIndex] = vlower[takeQIndex]
+                    = vupper[takeQIndex] = decision->nonEmptyContainersQ[idItinerary] / SCALE;
                 // Processing Z_r
                 ui32 emptyZIndex = indexMap.idItineraryToZIndex[idItinerary];
-                variables[emptyZIndex] = vlower[emptyZIndex] = vupper[emptyZIndex] = decision->emptyContainersZ[idItinerary] / SCALE;
+                variables[emptyZIndex] = vlower[emptyZIndex]
+                    = vupper[emptyZIndex] = decision->emptyContainersZ[idItinerary] / SCALE;
                 // Processing allotments
                 for (ui32 idAllotment : links.allotmentsWithItinerary[idItinerary]) {
                     ui32 takeIQIndex =
@@ -99,24 +104,28 @@ void IpoptBackend::recalculate(
                     ui32 placeIndex =
                         links.allotmentItineraryToPlace.at(idAllotment).at(idItinerary);
 
-                    assert(decision->allotmentContainersQ[idAllotment][placeIndex].first == idItinerary);
+                    assert(decision->allotmentContainersQ[idAllotment][placeIndex].first
+                            == idItinerary);
                     double targetValue =
                         decision->allotmentContainersQ[idAllotment][placeIndex].second / SCALE;
                     if (!decision->allotmentAccepted[idAllotment]) {
                         targetValue = 0;
                     }
-                    variables[takeIQIndex] = vlower[takeIQIndex] = vupper[takeIQIndex] = targetValue;
+                    variables[takeIQIndex] = vlower[takeIQIndex]
+                        = vupper[takeIQIndex] = targetValue;
                 }
             }
             // tracking variables y_a^H
             ui32 hireIndex = indexMap.arcToHired[arc.id];
-            vlower[hireIndex] = vupper[hireIndex] = variables[hireIndex] = decision->hiredY[arc.id] / SCALE;
+            vlower[hireIndex] = vupper[hireIndex]
+                = variables[hireIndex] = decision->hiredY[arc.id] / SCALE;
         } else if (event.type == EventType::pricing) {
             for (auto idItinerary : event.relatedItineraryIds) {
                 auto* action = &currentActionManager->getConstData();
                 ui32 bookingAmount = action->bookingsB[prevTime][idItinerary];
                 ui32 valueIndex = indexMap.timeItineraryToDemandIndex[prevTime][idItinerary];
-                variables[valueIndex] = vupper[valueIndex] = vlower[valueIndex] = double(bookingAmount) / SCALE;
+                variables[valueIndex] = vupper[valueIndex]
+                    = vlower[valueIndex] = double(bookingAmount) / SCALE;
             }
         } else if (event.type == EventType::arrival) {
             const auto& arc = input.arcs[event.basedArc.value()];
@@ -126,8 +135,11 @@ void IpoptBackend::recalculate(
             variables[variableIndex] = vlower[variableIndex] = vupper[variableIndex] =
                 double(decision->offHiredInPortS[prevTime][port.id]) / SCALE;
             for (const auto& otherPort : input.ports) {
-                if (otherPort.id != port.id && decision->offHiredInPortS[prevTime][otherPort.id] != 0) {
-                    throw std::logic_error("Deterministic Algorithm currently does not support offhiring in other places than arrival port!");
+                if (otherPort.id != port.id
+                        && decision->offHiredInPortS[prevTime][otherPort.id] != 0) {
+                    throw std::logic_error(
+                        std::string("Deterministic Algorithm currently does not support")
+                        + std::string("offhiring in other places than arrival port!"));
                 }
             }
         }
@@ -159,7 +171,8 @@ void IpoptBackend::recalculate(
     assert(variables.size() == solution.x.size());
     variables = solution.x;
 
-    logger.debugStream() << "Expected ipopt-objective to get is: " <<  -solution.solve_result::obj_value;
+    logger.debugStream() << "Expected ipopt-objective to get is: "
+        << -solution.solve_result::obj_value;
     if (!timeParameters.allotmentsSupplied) {
         logger.debugStream() << "Allotments are not supplied. Ipopt will decide on its own.";
 
@@ -174,8 +187,10 @@ void IpoptBackend::recalculate(
         for (ui32 idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
             ui32 variableId = indexMap.allotmentToUIndex[idAllotment];
             double value = solutionValues[variableId];
-            logger.debugStream() << "To be floored: " <<  "allotment_id " << idAllotment << " value " << value;
-            ui32 integer = floor(value + 0.01);
+            logger.debugStream() << "To be floored: " <<  "allotment_id "
+                << idAllotment << " value " << value;
+            assert(value + FLOOR_EPS >= 0);
+            ui32 integer = floor(value + FLOOR_EPS);
             assert(integer == 0 || integer == 1);
             acceptedAllotments[idAllotment] = integer;
             variables[variableId] = vlower[variableId] = vupper[variableId] = integer;
@@ -240,20 +255,26 @@ void IpoptBackend::recalculate(
                 for (ui32 idItinerary : event.relatedItineraryIds) {
                     // Processing Q_r
                     ui32 takeQIndex = indexMap.idItineraryToQIndex[idItinerary];
-                    double valueQ = floor(solution.x[takeQIndex] * SCALE);
+                    double valueQ = floor(solution.x[takeQIndex] * SCALE + FLOOR_EPS);
+                    assert(valueQ >= 0);
                     decision->nonEmptyContainersQ[idItinerary] = ui32(valueQ);
 
                     // Processing Z_r (setting decision and bounds)
                     ui32 emptyZIndex = indexMap.idItineraryToZIndex[idItinerary];
-                    double valueZ = floor(solution.x[emptyZIndex] * SCALE);
+                    double valueZ = floor(solution.x[emptyZIndex] * SCALE + FLOOR_EPS);
+                    assert(valueZ >= 0);
                     decision->emptyContainersZ[idItinerary] = ui32(valueZ);
 
                     // Processing allotments
                     for (ui32 idAllotment : links.allotmentsWithItinerary[idItinerary]) {
-                        ui32 takeIQIndex = indexMap.allotmentItineraryToQIndex[idAllotment][idItinerary];
-                        double valueIQ = floor(solution.x[takeIQIndex] * SCALE);
-                        ui32 placeIndex = links.allotmentItineraryToPlace.at(idAllotment).at(idItinerary);
-                        assert(decision->allotmentContainersQ[idAllotment][placeIndex].first == idItinerary);
+                        ui32 takeIQIndex = indexMap.allotmentItineraryToQIndex[
+                            idAllotment][idItinerary];
+                        double valueIQ = floor(solution.x[takeIQIndex] * SCALE + FLOOR_EPS);
+                        assert(valueIQ >= 0);
+                        ui32 placeIndex = links.allotmentItineraryToPlace.at(
+                                idAllotment).at(idItinerary);
+                        assert(decision->allotmentContainersQ[
+                                idAllotment][placeIndex].first == idItinerary);
                         if (!decision->allotmentAccepted[idAllotment]) {
                             valueIQ = 0;
                         }
@@ -292,7 +313,8 @@ void IpoptBackend::recalculate(
                 const auto& node = input.nodes[arc.toNode];
                 const auto& port = input.ports[node.portId];
                 ui32 variableIndex = indexMap.timeToSIndex[event.relativeTime];
-                double offhired = floor(SCALE * solution.x[variableIndex]);
+                double offhired = floor(SCALE * solution.x[variableIndex] + FLOOR_EPS);
+                assert(offhired >= 0);
                 decision->offHiredInPortS[nextTime][port.id] = offhired;
             } else {
                 throw std::logic_error("Event type is not supported");

@@ -6,6 +6,7 @@
 #include <string>
 #include <limits>
 #include <memory>
+#include <filesystem>
 
 namespace sea {
 namespace backend {
@@ -35,9 +36,7 @@ void logConstraints(
     auto& logger = logging::getBackendSubLogger(backendType);
     logger.debug("Variable constraints: ");
     for (size_t idx = 0; idx < index.variableCount; ++idx) {
-        logger.debug(
-                std::string("Variable ") + std::to_string(idx)
-                + ": ");
+        logger.debug(std::string("Variable ") + std::to_string(idx) + ": ");
         if (index.variableToDescription.find(idx) !=
                 index.variableToDescription.end()) {
             logger.debug(index.variableToDescription.at(idx));
@@ -48,18 +47,13 @@ void logConstraints(
         logger.debug(std::to_string(vupper[idx]) + " = upper");
         logger.debug(std::to_string(variables[idx]) + " = value");
         if (vlower[idx] > vupper[idx]) {
-            logger.error(
-                    "Lower is greater than upper for variable IDX "
-                    + std::to_string(idx));
+            logger.error("Lower is greater than upper for variable IDX " + std::to_string(idx));
         }
     }
     logger.debug("Equation constraints: ");
     for (size_t idx = 0; idx < index.constraintCount; ++idx) {
-        logger.debug(
-                std::string("Constraint ") + std::to_string(idx)
-                + ": ");
-        if (index.constraintToDescription.find(idx) !=
-                index.constraintToDescription.end()) {
+        logger.debug(std::string("Constraint ") + std::to_string(idx) + ": ");
+        if (index.constraintToDescription.find(idx) != index.constraintToDescription.end()) {
             logger.debug(index.constraintToDescription.at(idx));
         } else {
             logger.debug("No description.");
@@ -67,9 +61,7 @@ void logConstraints(
         logger.debug(std::to_string(glower[idx]) + " = lower");
         logger.debug(std::to_string(gupper[idx]) + " = upper");
         if (glower[idx] > gupper[idx]) {
-            logger.error(
-                    "Lower is greater than upper for constraint IDX "
-                    + std::to_string(idx));
+            logger.error("Lower is greater than upper for constraint IDX " + std::to_string(idx));
         }
 
     }
@@ -77,8 +69,7 @@ void logConstraints(
 
 // Logging Functions
 void logOptions(const std::string& options) {
-   logging::getBackendSubLogger(sea::BackendType::IPOPT).debug(
-            "Ipopt Options: " + options);
+   logging::getBackendSubLogger(sea::BackendType::IPOPT).debug("Ipopt Options: " + options);
 }
 
 // Useful functions.
@@ -110,6 +101,11 @@ std::string makeOptionsFromConfig(const IpoptBackendConfig& config) {
 
     auto now = std::chrono::system_clock::now();
     auto inTimeT = std::chrono::system_clock::to_time_t(now);
+
+    auto folderPath = std::filesystem::path(config.path_prefix);
+    if  (!std::filesystem::exists(folderPath)) {
+        std::filesystem::create_directories(folderPath);
+    }
     auto textVal = config.path_prefix + "/" + "ipopt_" + std::to_string(inTimeT) + ".log";
 
     options += "String output_file " + textVal + " \n";
@@ -141,7 +137,7 @@ std::string makeOptionsFromConfig(const IpoptBackendConfig& config) {
     // This option will print all possible options to stdout.
     // options += "String print_options_documentation yes \n";
     //
-     return options;
+    return options;
 }
 
 } // namespace backend

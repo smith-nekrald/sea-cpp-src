@@ -36,10 +36,8 @@ struct IpoptBackendConfig {
     ConstLinksManagerPtr linksManager;
 
     double scale = 1.0;
-    MemoryStrategy memoryManagement =
-        MemoryStrategy::EXACT_COMPUTATION;
-    DerivativeStrategy derivativeComputation =
-        DerivativeStrategy::BACKWARD;
+    MemoryStrategy memoryManagement = MemoryStrategy::EXACT_COMPUTATION;
+    DerivativeStrategy derivativeComputation = DerivativeStrategy::BACKWARD;
     LinearSolver solver = LinearSolver::MA27;
     int filePrintLevel = 5;
     int printLevel = 5;
@@ -81,10 +79,8 @@ public:
     }
 
 protected:
-    void initConstraintsLR(
-            vector<double>* glowerPtr, vector<double>* gupperPtr);
-    void initBoundsLR(
-            vector<double>* vlowerPtr, vector<double>* vupperPtr);
+    void initConstraintsLR(vector<double>* glowerPtr, vector<double>* gupperPtr);
+    void initBoundsLR(vector<double>* vlowerPtr, vector<double>* vupperPtr);
     void recalculate(TimeParameters timeParameters,
             DecisionManagerPtr decisionManagerToWrite,
             ConstActionManagerPtr currentActionManager,

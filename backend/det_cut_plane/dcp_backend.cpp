@@ -11,10 +11,11 @@
 #include <memory>
 #include <cassert>
 #include <cmath>
+#include <filesystem>
 
-#include "OsiSolverInterface.hpp"
-#include "OsiCbcSolverInterface.hpp"
-#include "OsiClpSolverInterface.hpp"
+#include <coin-or/OsiSolverInterface.hpp>
+#include <coin-or/OsiCbcSolverInterface.hpp>
+#include <coin-or/OsiClpSolverInterface.hpp>
 
 namespace sea {
 namespace backend {
@@ -32,18 +33,26 @@ const double THRESHOLD_SET_OBJ = 1e40;
 const double LOG_TOLERANCE = 1e-200;
 const double EXP_BOUND = 1e-100;
 const double CHECK_TOLERANCE = 1e-2;
+const double EPS = 1e-3;
 
 // Useful functions.
-void addMultiVarConstraint(const vector<CoefIndex>& vars, double coef, ui32 constraintId, vector<vector<CoefIndex>>& constraints) {
+void addMultiVarConstraint(const vector<CoefIndex>& vars,
+                           double coef,
+                           ui32 constraintId,
+                           vector<vector<CoefIndex>>& constraints) {
     for (auto varIndex : vars) {
-        if (constraints[varIndex.index].empty() || constraints[varIndex.index].back().index != constraintId) {
+        if (constraints[varIndex.index].empty()
+                || constraints[varIndex.index].back().index != constraintId) {
             constraints[varIndex.index].push_back({0, constraintId});
         }
-        constraints[varIndex.index].back().coef += coef * varIndex.coef; // Multiple similar indices in one constraint
+        // Multiple similar indices in one constraint
+        constraints[varIndex.index].back().coef += coef * varIndex.coef;
     }
 }
 
-void addMultiVarConstraint(const vector<ui32>& vars, double coef, ui32 constraintId, vector<vector<CoefIndex>>& constraints) {
+void addMultiVarConstraint(const vector<ui32>& vars,
+                           double coef, ui32 constraintId,
+                           vector<vector<CoefIndex>>& constraints) {
     for (auto varIndex : vars) {
         if (constraints[varIndex].empty() || constraints[varIndex].back().index != constraintId) {
             constraints[varIndex].push_back({0, constraintId});
@@ -138,7 +147,8 @@ void DetCutPlaneBackend::setupMainProblem() {
         if (event.type == InputData::Event::Type::pricing) {
             debugStream << "Considering pricing event." << "\n";
             debugStream << "Will now iterate over event.relatedItineraryIds.\n";
-            for (ui32 relatedIndex = 0; relatedIndex < event.relatedItineraryIds.size(); ++relatedIndex) {
+            for (ui32 relatedIndex = 0; relatedIndex < event.relatedItineraryIds.size();
+                    ++relatedIndex) {
 
                 ui32 idItinerary = event.relatedItineraryIds[relatedIndex];
                 debugStream << "Related idItinerary is " << idItinerary << "\n";
@@ -149,7 +159,8 @@ void DetCutPlaneBackend::setupMainProblem() {
                 ui32 zi = indexMap.timeItineraryToZi[timeNow][idItinerary];
 
                 debugStream << "Adding demandVar to bookings.\n";
-                bookings[idItinerary].push_back(demandIndex); // bookings[idItinerary] += demandVar;
+                // bookings[idItinerary] += demandVar;
+                bookings[idItinerary].push_back(demandIndex);
                 cbcLastProblem.objective[zi] = 1; // objective += zi
             }
         } else {
@@ -176,10 +187,12 @@ void DetCutPlaneBackend::setupMainProblem() {
 
                 ui32 hireIndex = indexMap.arcToHired[idBasedArc];
 
-                containers[idPort].push_back({+1, hireIndex}); // containers[idPort] += hired; // TODO deal with containers
+                // containers[idPort] += hired; // TODO deal with containers
+                containers[idPort].push_back({+1, hireIndex});
                 debugStream << "Adding to containers[idPort] amount of hired containers.\n";
 
-                cbcLastProblem.objective[hireIndex] -= port.hiringCost; // objective -= port.hiringCost * hired * SCALE;
+                // objective -= port.hiringCost * hired * SCALE;
+                cbcLastProblem.objective[hireIndex] -= port.hiringCost;
 
                 debugStream << "For loop over links.itinerariesFromArc[idBasedArc] \n";
                 for (ui32 idItinerary : links.itinerariesFromArc[idBasedArc]) {
@@ -187,7 +200,8 @@ void DetCutPlaneBackend::setupMainProblem() {
 
                     const auto& itinerary = input.itineraries[idItinerary];
                     ui32 qSpotIndex = indexMap.idItineraryToQIndex[idItinerary];
-                    debugStream << "Computing " << "ui32 qSpotIndex = indexMap.idItineraryToQIndex[idItinerary]" << "\n";
+                    debugStream << "Computing "
+                        << "ui32 qSpotIndex = indexMap.idItineraryToQIndex[idItinerary]" << "\n";
                     debugStream << "qSpotIndex = " << qSpotIndex << "\n";
 
                     ui32 zIndex = indexMap.idItineraryToZIndex[idItinerary];
@@ -206,10 +220,11 @@ void DetCutPlaneBackend::setupMainProblem() {
                     debugStream << "Subtracting qSpot and zEmpty from containers[idPort]\n";
 
                     ui32 qIdConstraint = indexMap.spotQNConstraints[idItinerary];
-                    debugStream << "Taking qIdConstraint as indexMap.spotQNConstraints[idItinerary]" << "\n";
+                    debugStream << "Taking qIdConstraint" <<
+                        " as indexMap.spotQNConstraints[idItinerary]" << "\n";
 
 
-                    //     expectedShow = bookings[idItinerary] * itinerary.showRate.estimatedProba;
+                    // expectedShow = bookings[idItinerary] * itinerary.showRate.estimatedProba;
 
                     // spotQNConstraint = expectedShow - qSpot; // inf >= spotQNConstraint >= 0
                     addMultiVarConstraint(bookings[idItinerary], itinerary.showRate.estimatedProba,
@@ -435,6 +450,12 @@ double DetCutPlaneBackend::runCbc() {
         fflush(stdout);
         fgetpos(stdout, &pos);
         fd = dup(fileno(stdout));
+
+        auto folderPath = std::filesystem::path("dcp");
+        if (!std::filesystem::exists(folderPath)) {
+            std::filesystem::create_directories(folderPath);
+        }
+
         freopen("dcp/cbc.log", "a+", stdout);
         printf("Deterministic cutting plane branch & bound."
                 "Started computation.\n");
@@ -695,18 +716,18 @@ void DetCutPlaneBackend::fillDecision(Decision* decision) {
             for (ui32 idItinerary : event.relatedItineraryIds) {
                 // Processing Q_r
                 ui32 takeQIndex = indexMap.idItineraryToQIndex[idItinerary];
-                double valueQ = floor(lastSolution[takeQIndex]);
+                double valueQ = floor(lastSolution[takeQIndex] + EPS);
                 decision->nonEmptyContainersQ[idItinerary] = ui32(valueQ);
 
                 // Processing Z_r (setting decision and bounds)
                 ui32 emptyZIndex = indexMap.idItineraryToZIndex[idItinerary];
-                double valueZ = floor(lastSolution[emptyZIndex]);
+                double valueZ = floor(lastSolution[emptyZIndex] + EPS);
                 decision->emptyContainersZ[idItinerary] = ui32(valueZ);
 
                 // Processing allotments
                 for (ui32 idAllotment : links.allotmentsWithItinerary[idItinerary]) {
                     ui32 takeIQIndex = indexMap.allotmentItineraryToQIndex[idAllotment][idItinerary];
-                    double valueIQ = floor(lastSolution[takeIQIndex]);
+                    double valueIQ = floor(lastSolution[takeIQIndex] + EPS);
                     ui32 placeIndex = links.allotmentItineraryToPlace.at(idAllotment).at(idItinerary);
                     assert(decision->allotmentContainersQ[idAllotment][placeIndex].first == idItinerary);
                     if (!decision->allotmentAccepted[idAllotment]) {
@@ -747,7 +768,7 @@ void DetCutPlaneBackend::fillDecision(Decision* decision) {
             const auto& node = input.nodes[arc.toNode];
             const auto& port = input.ports[node.portId];
             ui32 variableIndex = indexMap.timeToSIndex[event.relativeTime];
-            double offhired = floor(lastSolution[variableIndex]);
+            double offhired = floor(lastSolution[variableIndex] + EPS);
             decision->offHiredInPortS[nextTime][port.id] = offhired;
         } else {
             throw std::logic_error("Event type is not supported");

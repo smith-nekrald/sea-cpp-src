@@ -4,19 +4,15 @@
 namespace sea {
 namespace strategy {
 
-void IpoptSpotMarketStrategy::updateParams(
-        const InputData::Event& event) {
+void IpoptSpotMarketStrategy::updateParams(const InputData::Event& event) {
 
-    logging::getSpotStrategyLogger(
-            sea::SpotStrategyType::IPOPT).debugStream()
+    logging::getSpotStrategyLogger(sea::SpotStrategyType::IPOPT).debugStream()
             << "Entered IpoptSpot:: updateParams.";
 
-    bool needUpdate =
-        (event.realTime - lastUpdate) > config.updateInterval;
+    bool needUpdate = (event.realTime - lastUpdate) > config.updateInterval;
 
-    logging::getSpotStrategyLogger(
-        sea::SpotStrategyType::IPOPT).debugStream()
-        << "If update is required? " << needUpdate;
+    logging::getSpotStrategyLogger(sea::SpotStrategyType::IPOPT).debugStream()
+            << "If update is required? " << needUpdate;
 
     if (needUpdate) {
         double futureValue = 0;
@@ -32,9 +28,8 @@ void IpoptSpotMarketStrategy::updateParams(
         }
     }
 
-    logging::getSpotStrategyLogger(
-        sea::SpotStrategyType::IPOPT).debugStream()
-        << "Left updateParams.";
+    logging::getSpotStrategyLogger(sea::SpotStrategyType::IPOPT).debugStream()
+            << "Left updateParams.";
 }
 
 void IpoptSpotMarketStrategy::processCutoff(const InputData::Event& event) {
@@ -65,7 +60,8 @@ void IpoptSpotMarketStrategy::processCutoff(const InputData::Event& event) {
                 ui32 placeIndex = links.allotmentItineraryToPlace.at(idAllotment).at(idItinerary);
                 ui32 shownAllotment = action->allotmentDemandN[idAllotment][placeIndex].second;
                 assert(action->allotmentDemandN[idAllotment][placeIndex].first == idItinerary);
-                assert(decision->allotmentContainersQ[idAllotment][placeIndex].first == idItinerary);
+                assert(decision->allotmentContainersQ[idAllotment][placeIndex].first
+                        == idItinerary);
                 auto& QI_value = decision->allotmentContainersQ[idAllotment][placeIndex].second;
                 QI_value = std::min(QI_value, shownAllotment);
                 state.containersInPorts[portId] -= QI_value;
@@ -81,10 +77,9 @@ void IpoptSpotMarketStrategy::processCutoff(const InputData::Event& event) {
 
 void IpoptSpotMarketStrategy::reset() {
     initialize();
-    initBackend(
-        backends.ipoptBackend,
-        backendConfigs.ipoptConfig,
-        config.utilizationRatio.value());
+    initBackend(backends.ipoptBackend,
+            backendConfigs.ipoptConfig,
+            config.utilizationRatio.value());
     backends.dcpBackend = nullptr;
     backends.bendersBackend = nullptr;
     backends.lrBackend = nullptr;

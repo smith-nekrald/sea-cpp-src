@@ -4,9 +4,9 @@
 #include "../lagrangian_relaxation/index.h"
 #include "index_map.h"
 
-#include "OsiSolverInterface.hpp"
-#include "OsiCbcSolverInterface.hpp"
-#include "OsiClpSolverInterface.hpp"
+#include <coin-or/OsiSolverInterface.hpp>
+#include <coin-or/OsiCbcSolverInterface.hpp>
+#include <coin-or/OsiClpSolverInterface.hpp>
 
 #include <iostream>
 #include <limits>
@@ -106,8 +106,9 @@ struct CbcPreMap {
         assert(int(glower.size()) == constraintCount);
         assert(int(gupper.size()) == constraintCount);
 
-        solver.loadProblem(variableCount, constraintCount, starts.data(), indices.data(), matrix.data(),
-            vlower.data(), vupper.data(), objective.data(), glower.data(), gupper.data());
+        solver.loadProblem(variableCount, constraintCount, starts.data(), indices.data(),
+                matrix.data(), vlower.data(), vupper.data(),
+                objective.data(), glower.data(), gupper.data());
 
         solver.setObjSense(-1); // -> max
     }

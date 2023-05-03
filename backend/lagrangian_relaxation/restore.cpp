@@ -3,6 +3,7 @@
 #include "../../logging/logging.h"
 
 #include <limits>
+#include <filesystem>
 #include <stdio.h>
 
 const ui32 MAX_INDEX = std::numeric_limits<ui32>::max();
@@ -14,7 +15,6 @@ namespace backend {
 
 using EventType=InputData::Event::Type;
 using ArcType=InputData::Arc::Type;
-
 
 
 void byItineraryRestore(
@@ -52,7 +52,8 @@ void byItineraryRestore(
                 return input.itineraries[lhs].declineCost > input.itineraries[rhs].declineCost;
             });
     for(ui32 itineraryId : interestingItineraries) {
-        logger.debug("By itinerary restore. Processing itinerary with id" + std::to_string(itineraryId));
+        logger.debug("By itinerary restore. Processing itinerary with id"
+                + std::to_string(itineraryId));
 
         vector<double> objective;
         vector<int> correspondingAllotments;
@@ -61,7 +62,8 @@ void byItineraryRestore(
         vector<double> columnUpper;
 
         const auto& itinerary = input.itineraries[itineraryId];
-        ui32 F_r = decision->nonEmptyContainersQ[itinerary.id] + decision->emptyContainersZ[itinerary.id];
+        ui32 F_r = decision->nonEmptyContainersQ[itinerary.id]
+            + decision->emptyContainersZ[itinerary.id];
         logger.debugStream() << "byItineraryRestore: " << "F_r = " << F_r;
 
         double lambdaSum = 0.;
@@ -113,8 +115,10 @@ void byItineraryRestore(
         for (ui32 allotmentId : links.allotmentsWithItinerary[itinerary.id]) {
             if (decision->allotmentAccepted[allotmentId]) {
                 const auto& allotment = input.allotments[allotmentId];
-                ui32 placeIndex = links.allotmentItineraryToPlace.at(allotment.id).at(itinerary.id);
-                assert(decision->allotmentContainersQ[allotmentId][placeIndex].first == itinerary.id);
+                ui32 placeIndex = links.allotmentItineraryToPlace.at(
+                        allotment.id).at(itinerary.id);
+                assert(decision->allotmentContainersQ[allotmentId][placeIndex].first
+                        == itinerary.id);
                 // The following assert is OK only when we always change deterministic solution.
                 F_r += decision->allotmentContainersQ[allotmentId][placeIndex].second;
                 double qri = qr;
@@ -216,6 +220,10 @@ void byItineraryRestore(
             fflush(stdout);
             fgetpos(stdout, &pos);
             fd = dup(fileno(stdout));
+            auto folderPath = std::filesystem::path("lr");
+            if (!std::filesystem::exists(folderPath)) {
+                std::filesystem::create_directories(folderPath);
+            }
             freopen("lr/clp.log", "a+", stdout);
             printf("LR-restore. Started computation.\n");
 
@@ -238,7 +246,8 @@ void byItineraryRestore(
         decision->nonEmptyContainersQ[itinerary.id] = ui32(solution[0]);
 
         logger.debugStream() << "restore.cpp : itinerary = " << itinerary.id;
-        logger.debugStream() << "restore.cpp : Q = " << decision->nonEmptyContainersQ[itinerary.id];
+        logger.debugStream() << "restore.cpp : Q = "
+            << decision->nonEmptyContainersQ[itinerary.id];
 
         takenSum += ui32(solution[0]);
 
