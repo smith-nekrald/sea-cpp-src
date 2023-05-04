@@ -743,7 +743,10 @@ void doCuttingPlaneOptimization(
             if (!std::filesystem::exists(folderPath)) {
                 std::filesystem::create_directories(folderPath);
             }
+            #pragma GCC diagnostic push
+            #pragma GCC diagnostic ignored "-Wunused-result"
             freopen("lr/clp.log", "a+", stdout);
+            #pragma GCC diagnostic pop
             printf("LR-cutting-plane. Started computation.\n");
             if (configIter.clpMethod == ClpSolutionConfig::CLP_PRIMAL) {
                 printf("LR-cutting-plane. Primal method.\n");

@@ -456,7 +456,10 @@ double DetCutPlaneBackend::runCbc() {
             std::filesystem::create_directories(folderPath);
         }
 
+        #pragma GCC diagnostic push
+        #pragma GCC diagnostic ignored "-Wunused-result"
         freopen("dcp/cbc.log", "a+", stdout);
+        #pragma GCC diagnostic pop
         printf("Deterministic cutting plane branch & bound."
                 "Started computation.\n");
 

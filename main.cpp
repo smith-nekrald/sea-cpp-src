@@ -52,6 +52,10 @@ private:
 
 void fillBackendConfig(json::Value& configRoot, IpoptBackendConfig& config) {
     auto backendsConfig = configRoot["backends_config"];
+    if (!backendsConfig.isMember("ipopt_backend_config")) {
+        logging::getRootLogger().error("No Ipopt Backend configuration in JSON.");
+        return;
+    }
     auto ipoptRoot = backendsConfig["ipopt_backend_config"];
     auto solverType = ipoptRoot["solver_type"].asString();
     config.needMemory = configRoot["launch_config"]["need_memory"].asBool();
@@ -110,6 +114,11 @@ void fillBackendConfig(json::Value& configRoot, IpoptBackendConfig& config) {
 
 void fillBackendConfig(json::Value& configRoot, LagrangianRelaxationBackendConfig& config) {
     auto backendsConfig = configRoot["backends_config"];
+    if (!backendsConfig.isMember("lr_backend_config")) {
+        logging::getRootLogger().warn(
+                "No configuration in JSON for Lagrangian Relaxation Backend.");
+        return;
+    }
     auto lrRoot = backendsConfig["lr_backend_config"];
 
     // Common entries set.
@@ -217,6 +226,10 @@ void fillBackendConfig(json::Value& configRoot, LagrangianRelaxationBackendConfi
 
 void fillBackendConfig(json::Value& configRoot, BendersAllotmentBackendConfig& config) {
     auto backendsConfig = configRoot["backends_config"];
+    if (!backendsConfig.isMember("benders_backend_config")) {
+        logging::getRootLogger().warn("No configuration for Benders Backend in JSON.");
+        return;
+    }
     auto bendersRoot = backendsConfig["benders_backend_config"];
     config.needMemory = configRoot["launch_config"]["need_memory"].asBool();
     config.cbcFileLogLevel = bendersRoot["file_log_level"].asInt();
@@ -226,6 +239,10 @@ void fillBackendConfig(json::Value& configRoot, BendersAllotmentBackendConfig& c
 
 void fillBackendConfig(json::Value& configRoot, DetCutPlaneBackendConfig& config) {
     auto backendsConfig = configRoot["backends_config"];
+    if (!backendsConfig.isMember("det_cut_plane_backend_config")) {
+        logging::getRootLogger().warn("No configuration for DCP backend in JSON.");
+        return;
+    }
     auto dcpRoot = backendsConfig["det_cut_plane_backend_config"];
     config.needMemory = configRoot["launch_config"]["need_memory"].asBool();
     config.cbcFileLogLevel = dcpRoot["file_log_level"].asInt();
@@ -241,7 +258,7 @@ void fillBackendConfig(json::Value& configRoot, DetCutPlaneBackendConfig& config
 }
 
 
-std::vector<std::string> getMarketDataFiles(std::string dataPath, std::size_t count_limit=1e9) {
+std::vector<std::string> getMarketDataFiles(std::string dataPath, std::size_t count_limit=10000) {
     std::vector<std::string> market_data_files;
     for (auto& entry: fs::directory_iterator(dataPath)) {
         if (!fs::is_regular_file(entry)) {
