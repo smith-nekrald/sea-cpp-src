@@ -126,8 +126,8 @@ std::string makeOptionsFromConfig(const IpoptBackendConfig& config) {
         throw std::logic_error("unknown MemoryStrategy");
     }
 
-    options += "Integer max_iter     100 \n"; // default 3000
-    options += "Numeric tol          1e-6 \n"; // default 1e-8
+    options += "Integer max_iter     1000 \n"; // default 3000
+    options += "Numeric tol          1e-3 \n"; // default 1e-8
     options += "String  sb           yes \n";
 
     // In case problem is infeasible, the following options can help:
