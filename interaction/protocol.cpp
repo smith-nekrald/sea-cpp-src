@@ -70,8 +70,7 @@ void loadFromFile(const std::string& pathToFile, Decision* emptyDecision) {
     ia >> *emptyDecision;
 }
 
-void createDecision(const InputData& input,
-        Decision* decision) {
+void createDecision(const InputData& input, Decision* decision) {
     decision->offHiredInPortS.resize(input.events.size());
     decision->offHiredInPortS.shrink_to_fit();
 
@@ -80,7 +79,7 @@ void createDecision(const InputData& input,
 
     for (const auto& event : input.events) {
         if (event.type == InputData::Event::Type::pricing) {
-            for (ui32 idItinerary : event.relatedItineraryIds) {
+            for (unsigned int idItinerary : event.relatedItineraryIds) {
                 decision->prices[event.relativeTime].push_back(std::make_pair(idItinerary, 0));
             }
         }
@@ -105,14 +104,15 @@ void createDecision(const InputData& input,
     decision->allotmentContainersQ.shrink_to_fit();
 
     for (const auto& allotment : input.allotments) {
-        for (ui32 entryId : allotment.entries) {
+        for (unsigned int entryId : allotment.entries) {
             const auto& entry = input.allotmentEntries[entryId];
-            ui32 idItinerary = entry.itinerary;
-            decision->allotmentContainersQ[allotment.id].push_back(std::make_pair(idItinerary, ui32(0)));
+            unsigned int idItinerary = entry.itinerary;
+            decision->allotmentContainersQ[allotment.id].push_back(
+                std::make_pair(idItinerary, (unsigned int)(0)));
         }
     }
 
-    for (ui32 idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
+    for (unsigned int idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
         decision->allotmentContainersQ[idAllotment].shrink_to_fit();
     }
 }
@@ -134,14 +134,15 @@ void createAction(const InputData& input, Action* action) {
     action->allotmentDemandN.shrink_to_fit();
 
     for (const auto& allotment : input.allotments) {
-        for (ui32 entryId : allotment.entries) {
+        for (unsigned int entryId : allotment.entries) {
             const auto& entry = input.allotmentEntries[entryId];
-            ui32 idItinerary = entry.itinerary;
-            action->allotmentDemandN[allotment.id].push_back(std::make_pair(idItinerary, ui32(0)));
+            unsigned int idItinerary = entry.itinerary;
+            action->allotmentDemandN[allotment.id].push_back(
+                std::make_pair(idItinerary, (unsigned int)(0)));
         }
     }
 
-    for (ui32 idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
+    for (unsigned int idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
         action->allotmentDemandN[idAllotment].shrink_to_fit();
     }
 }
@@ -161,8 +162,6 @@ void loadFromFile(const std::string& pathToFile, Action* emptyAction) {
     ::cereal::BinaryInputArchive ia(reader);
     ia >> *emptyAction;
 }
-
-
 
 
 } // namespace sea

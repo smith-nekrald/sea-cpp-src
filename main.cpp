@@ -623,7 +623,13 @@ void runAll(json::Value& configRoot) {
     logging::getRootLogger().info("Finished analysis");
 }
 
-
+/**
+ * @brief Entry point. Expected application: ./<executable> <path-to-json-with-config>.
+ * 
+ * @param argc The number of arguments in CLI.
+ * @param argv The array with CLI arguments
+ * @return The program exit code.
+ */
 int main(int argc, char* argv[]) {
     assert(argc == 2);
     std::string configPath = argv[1];

@@ -7,22 +7,40 @@
 
 namespace sea {
 
+/**
+ * @brief Represents the timing on the current trajectory.
+ * Stores the next event time, whether allotments are supplied,
+ * and whether the corresponding action and decision are processed.
+ */
 struct TimeParameters {
-    bool gotPortDecision = false,
-         doneDecision = false,
-         doneAction = false,
-         allotmentsSupplied = false;
-    ui32 timeEvent = 0;
+    /// @brief If port decision is received.
+    bool gotPortDecision = false;
+
+    /// @brief Boolean flag if decision is received and processed. 
+    bool doneDecision = false;
+
+    /// @brief Boolean flag if action is received and processed.
+    bool doneAction = false;
+
+    /// @brief Boolean flag if allotments are already supplied.
+    bool allotmentsSupplied = false;
+    
+    /// @brief Index of the considered time event.
+    unsigned int timeEvent = 0;
 };
 
 void toNextEvent(TimeParameters* parameters);
 
+/**
+ * @brief State represents 
+ * 
+ */
 struct State {
-    std::vector<ui32> accumulatedBookings; // b_r
-    std::vector<ui32> takenOnRoute; // n_{t,r} + l_{t,r}
+    std::vector<unsigned int> accumulatedBookings; // b_r
+    std::vector<unsigned int> takenOnRoute; // n_{t,r} + l_{t,r}
     std::vector<int> containersInPorts;
     TimeParameters timeParameters;
-    std::vector<ui32> usedCapacity; // indexed by arcs
+    std::vector<unsigned int> usedCapacity; // indexed by arcs
     double estimatedObjective; // up to the end
 
     std::vector<double> itineraryFutureEstimation; // v_t^r

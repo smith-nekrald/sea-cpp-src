@@ -12,7 +12,7 @@
 
 namespace sea {
 
-const ui32 MAX_INDEX = std::numeric_limits<ui32>::max();
+const unsigned int MAX_INDEX = std::numeric_limits<unsigned int>::max();
 const double INF = std::numeric_limits<double>::max();
 
 using std::vector;
@@ -45,9 +45,9 @@ void printTimeMemNow(std::ostream& ostream) {
     ostream << "Memory usage: " << getMemUsage() / (1024. * 1024) << " MB" << std::endl;
 }
 
-std::pair<ui32, ui32> getUsefulIndexCount(const vector<ui32>& target) {
-    std::pair<ui32, ui32> ans = {0, 0};
-    for (ui32 entry : target) {
+std::pair<unsigned int, unsigned int> getUsefulIndexCount(const vector<unsigned int>& target) {
+    std::pair<unsigned int, unsigned int> ans = {0, 0};
+    for (unsigned int entry : target) {
         if (entry != MAX_INDEX) {
             ++ans.first;
         }
