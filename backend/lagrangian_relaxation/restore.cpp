@@ -4,10 +4,12 @@
 
 #include <limits>
 #include <filesystem>
+#include <cmath>
 #include <stdio.h>
 
-const ui32 MAX_INDEX = std::numeric_limits<ui32>::max();
+const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
 const double INF = std::numeric_limits<double>::max();
+const double FLOOR_EPS = 1e-3;
 
 
 namespace sea {
@@ -38,7 +40,7 @@ void byItineraryRestore(
 
     assert(event.type == EventType::cutoff);
     const auto& input = inputManager->getConstData();
-    const auto& magicIndex = indexManager->getConstData();
+    const auto& lrIndex = indexManager->getConstData();
     const auto& links = linksManager->getConstData();
     auto* decision = decisionManager->get();
     auto* action = &actionManager->getConstData();
@@ -46,12 +48,12 @@ void byItineraryRestore(
     const auto& basedArc = input.arcs[event.basedArc.value()];
     const auto& beginPort = input.ports[input.nodes[basedArc.fromNode].portId];
 
-    vector<ui32> interestingItineraries = event.relatedItineraryIds;
+    vector<unsigned> interestingItineraries = event.relatedItineraryIds;
     sort(interestingItineraries.begin(), interestingItineraries.end(),
-            [&] (ui32 lhs, ui32 rhs) -> bool {
+            [&] (unsigned lhs, unsigned rhs) -> bool {
                 return input.itineraries[lhs].declineCost > input.itineraries[rhs].declineCost;
             });
-    for(ui32 itineraryId : interestingItineraries) {
+    for(auto itineraryId : interestingItineraries) {
         logger.debug("By itinerary restore. Processing itinerary with id"
                 + std::to_string(itineraryId));
 
@@ -62,15 +64,15 @@ void byItineraryRestore(
         vector<double> columnUpper;
 
         const auto& itinerary = input.itineraries[itineraryId];
-        ui32 F_r = decision->nonEmptyContainersQ[itinerary.id]
+        unsigned F_r = decision->nonEmptyContainersQ[itinerary.id]
             + decision->emptyContainersZ[itinerary.id];
         logger.debugStream() << "byItineraryRestore: " << "F_r = " << F_r;
 
         double lambdaSum = 0.;
-        for (ui32 idArc : itinerary.orderedArcs) {
+        for (unsigned idArc : itinerary.orderedArcs) {
             const auto& arc = input.arcs[idArc];
             if (arc.type == ArcType::travel) {
-                lambdaSum += dualVariables.lambdaVariables[magicIndex.arcToLambdaIndex[idArc]];
+                lambdaSum += dualVariables.lambdaVariables[lrIndex.arcToLambdaIndex[idArc]];
             }
         }
         logger.debugStream() << "byItineraryRestore: " <<  "Lambda Sum = " << lambdaSum;
@@ -103,19 +105,21 @@ void byItineraryRestore(
         double yros = beginPort.offHiringCost + endPort.hiringCost;
 
         objective.push_back(-yrhs);
+        // To indicate that this index is irrelevant for allotments.
         correspondingAllotments.push_back(-1);
         columnLower.push_back(0);
         columnUpper.push_back(COIN_DBL_MAX);
 
         objective.push_back(-yros);
+        // To indicate that this index is irrelevant for allotments.
         correspondingAllotments.push_back(-1);
         columnLower.push_back(0);
         columnUpper.push_back(COIN_DBL_MAX);
 
-        for (ui32 allotmentId : links.allotmentsWithItinerary[itinerary.id]) {
+        for (unsigned allotmentId : links.allotmentsWithItinerary[itinerary.id]) {
             if (decision->allotmentAccepted[allotmentId]) {
                 const auto& allotment = input.allotments[allotmentId];
-                ui32 placeIndex = links.allotmentItineraryToPlace.at(
+                unsigned placeIndex = links.allotmentItineraryToPlace.at(
                         allotment.id).at(itinerary.id);
                 assert(decision->allotmentContainersQ[allotmentId][placeIndex].first
                         == itinerary.id);
@@ -129,11 +133,11 @@ void byItineraryRestore(
                 objective.push_back(qri);
                 correspondingAllotments.push_back(allotmentId);
                 columnLower.push_back(0);
-                ui32 place = links.allotmentItineraryToPlace.at(allotmentId).at(itineraryId);
+                unsigned place = links.allotmentItineraryToPlace.at(allotmentId).at(itineraryId);
                 columnUpper.push_back(action->allotmentDemandN[allotmentId][place].second);
             } else {
                 const auto& allotment = input.allotments[allotmentId];
-                ui32 placeIndex =
+                unsigned placeIndex =
                     links.allotmentItineraryToPlace.at(allotment.id).at(itinerary.id);
                 assert(decision->allotmentContainersQ[allotmentId][placeIndex].first
                     == itinerary.id);
@@ -148,12 +152,12 @@ void byItineraryRestore(
         rowValue[objective.size() + 3] = 0;    // yr_OS in second row
 
         vector<int> rowStart(3, 0);
-        for (ui32 i = 0; i < rowStart.size(); ++i) {
+        for (unsigned i = 0; i < rowStart.size(); ++i) {
             rowStart[i] = i * objective.size();
         }
         vector<int> indices(2 * objective.size());
-        for (ui32 i = 0; i < 2; ++i) {
-            for (ui32 j = 0; j < objective.size(); ++j) {
+        for (unsigned i = 0; i < 2; ++i) {
+            for (unsigned j = 0; j < objective.size(); ++j) {
                 indices[i * objective.size() + j] = j;
             }
         }
@@ -193,7 +197,7 @@ void byItineraryRestore(
         rowUpper[0] = F_r;
 
         double minCapacityArc = COIN_DBL_MAX;
-        for (ui32 arcId : itinerary.orderedArcs) {
+        for (unsigned arcId : itinerary.orderedArcs) {
             const auto& innerArc = input.arcs[arcId];
             if (innerArc.type == ArcType::travel) {
                 const auto& vessel = input.vessels[innerArc.vesselId.value()];
@@ -243,46 +247,64 @@ void byItineraryRestore(
         const double* solution = solver.primalColumnSolution();
 
         // Reconstructing decision from solution.
-        ui32 takenSum = 0;
-        decision->emptyContainersZ[itinerary.id] = ui32(solution[1]);
-        takenSum += ui32(solution[1]);
-        decision->nonEmptyContainersQ[itinerary.id] = ui32(solution[0]);
+        unsigned takenSum = 0;
+
+        double emptyCount = floor(solution[1] + FLOOR_EPS);
+        assert(emptyCount >= 0.);
+        decision->emptyContainersZ[itinerary.id] = static_cast<unsigned>(emptyCount);
+        takenSum += static_cast<unsigned>(emptyCount);
+
+        double nonEmptySpotCount = floor(solution[0] + FLOOR_EPS);
+        assert(nonEmptySpotCount >= 0.);
+        decision->nonEmptyContainersQ[itinerary.id] = static_cast<unsigned>(nonEmptySpotCount);
+        takenSum += static_cast<unsigned>(nonEmptySpotCount);
 
         logger.debugStream() << "restore.cpp : itinerary = " << itinerary.id;
-        logger.debugStream() << "restore.cpp : Q = "
-            << decision->nonEmptyContainersQ[itinerary.id];
+        logger.debugStream() << "restore.cpp : Q = " << decision->nonEmptyContainersQ[itinerary.id];
 
-        takenSum += ui32(solution[0]);
-
-        for (ui32 ind = 0; ind < objective.size(); ++ind) {
+        for (unsigned ind = 0; ind < objective.size(); ++ind) {
+            // Otherwise, this entry in the solution is irrelevant for allotments.
             if (correspondingAllotments[ind] != -1) {
-                ui32 takenNow = solution[ind];
+                double longCount = floor(solution[ind] + FLOOR_EPS);
+                assert(longCount >= 0);
+                unsigned takenNow = static_cast<unsigned> (solution[ind]);
                 takenSum += takenNow;
-                ui32 idAllotment = correspondingAllotments[ind];
-                ui32 place = links.allotmentItineraryToPlace.at(idAllotment).at(itinerary.id);
+                unsigned idAllotment = correspondingAllotments[ind];
+                unsigned place = links.allotmentItineraryToPlace.at(
+                    idAllotment).at(itinerary.id);
                 decision->allotmentContainersQ[idAllotment][place].second = takenNow;
                 assert(decision->allotmentContainersQ[idAllotment][place].first == itinerary.id);
             }
         }
 
-        ui32 Y_HS = round(solution[2]);
-        ui32 Y_OS = round(solution[3]);
+        // Rebalancing hiring-offhiring-allocating for containers.
+        double Y_HS_solution = round(solution[2]), Y_OS_solution = round(solution[3]);
+        assert(Y_HS_solution >= 0. && Y_OS_solution >= 0.);
+        unsigned Y_HS = static_cast<unsigned>(Y_HS_solution);
+        unsigned Y_OS = static_cast<unsigned>(Y_OS_solution);
         while (F_r + Y_HS < takenSum + Y_OS) {
-            if (Y_OS > 0) --Y_OS;
-            else ++Y_HS;
+            if (Y_OS > 0) {
+                --Y_OS;
+            } else {
+                ++Y_HS;
+            }
         }
         while (F_r + Y_HS > takenSum + Y_OS) {
-            if (Y_HS > 0) --Y_HS;
-            else ++Y_OS;
+            if (Y_HS > 0) {
+                --Y_HS;
+            } else {
+                ++Y_OS;
+            }
         }
         assert(F_r + Y_HS == Y_OS  + takenSum);
 
-        int hiringDiff = int(Y_HS) - int(Y_OS);
-        ui32& hiredNow = decision->hiredY[basedArc.id];
-        ui32& offHiredNow = decision->offHiredInPortS[event.relativeTime][beginPort.id];
+        int hiringDiff = static_cast<int>(Y_HS) - static_cast<int>(Y_OS);
+        unsigned & hiredNow = decision->hiredY[basedArc.id];
+        unsigned & offHiredNow = decision->offHiredInPortS[event.relativeTime][beginPort.id];
         if (hiringDiff > 0) {
             if (offHiredNow > 0) {
-                ui32 minVal = std::min(hiringDiff, int(offHiredNow));
+                int minVal = std::min(hiringDiff, static_cast<int>(offHiredNow));
+                assert(minVal >= 0);
                 hiringDiff -= minVal;
                 offHiredNow -= minVal;
             }
@@ -291,23 +313,23 @@ void byItineraryRestore(
         } else {
             int offHiringDiff = -hiringDiff;
             if (hiredNow > 0) {
-                ui32 minVal = std::min(offHiringDiff, int(hiredNow));
+                int minVal = std::min(offHiringDiff, static_cast<int>(hiredNow));
+                assert(minVal >= 0);
                 hiredNow -= minVal;
                 offHiringDiff -= minVal;
             }
             decision->offHiredInPortS[event.relativeTime][beginPort.id] += offHiringDiff;;
-            ui32 hiringArc = links.firstArcToHireAfterArc[endArc.id];
+            unsigned hiringArc = links.firstArcToHireAfterArc[endArc.id];
 
             if (hiringArc != MAX_INDEX) {
                 decision->hiredY[hiringArc] += offHiringDiff;
             }
         }
 
-
         state->containersInPorts[beginPort.id] -= takenSum;
 
         // Update used capacity.
-        for (ui32 arcId : itinerary.orderedArcs) {
+        for (unsigned arcId : itinerary.orderedArcs) {
             const auto& arc = input.arcs[arcId];
             if (arc.type == ArcType::travel) {
                 state->usedCapacity[arcId] += takenSum;
