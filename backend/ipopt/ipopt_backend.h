@@ -93,13 +93,22 @@ private:
             vector<double>* vlower,
             vector<double>* vupper,
             vector<double>* variables);
-    void setAlreadyMadeDecisions(
+    void setPreviouslyMadeDecisions(
             TimeParameters timeParameters,
             DecisionManagerPtr decisionManagerToWrite,
             ConstActionManagerPtr currentActionManager,
             vector<double>* vlower,
             vector<double>* vupper,
             vector<double>* variables);
+    void supplyAllotmentsFromSolution(
+            const vector<double>& solutionValues,
+            DecisionManagerPtr decisionManagerToWrite,
+            bool writeDecision,
+            vector<bool>* allotmentsToSelect,
+            vector<double>* vlower,
+            vector<double>* vupper,
+            vector<double>* variables);
+
 
 protected:
     IpoptBackendConfig config;

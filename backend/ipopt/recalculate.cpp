@@ -42,7 +42,7 @@ void IpoptBackend::initializeSuppliedAllotments(DecisionManagerPtr decisionManag
     }
 }
 
-void IpoptBackend::setAlreadyMadeDecisions(
+void IpoptBackend::setPreviouslyMadeDecisions(
         TimeParameters timeParameters,
         DecisionManagerPtr decisionManagerToWrite,
         ConstActionManagerPtr currentActionManager,
@@ -114,13 +114,59 @@ void IpoptBackend::setAlreadyMadeDecisions(
     }
 }
 
+void IpoptBackend::supplyAllotmentsFromSolution(
+        const vector<double>& solutionValues,
+        DecisionManagerPtr decisionManagerToWrite,
+        bool writeDecision,
+        vector<bool>* allotmentsToSelect,
+        vector<double>* vlower,
+        vector<double>* vupper,
+        vector<double>* variables) {
+
+    auto& logger = logging::getBackendSubLogger(BackendType::IPOPT);
+    logger.debugStream() << "Allotments are not supplied. Ipopt will decide on its own.";
+
+    // Restoring structures in case they were dumped.
+    const auto& input = config.inputManager->getConstData();
+    const auto& indexMap = indexManager->getConstData();
+
+    vector<bool> acceptedAllotments(input.allotments.size(), false);
+    logger.debugStream() << "input.allotments.size() = " <<  input.allotments.size();
+
+    for (unsigned idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
+            unsigned variableId = indexMap.allotmentToUIndex[idAllotment];
+            double value = solutionValues[variableId];
+            logger.debugStream() << "To be floored: " <<  "allotment_id "
+                << idAllotment << " value " << value;
+            assert(value + FLOOR_EPS >= 0);
+            unsigned integer = round(value + FLOOR_EPS);
+            assert(integer == 0 || integer == 1);
+            acceptedAllotments[idAllotment] = integer;
+            variables->at(variableId) = vlower->at(variableId) = vupper->at(variableId) = integer;
+    }
+
+
+    if (writeDecision) {
+        auto* decision = decisionManagerToWrite->get();
+        decision->allotmentAccepted = acceptedAllotments;
+    }
+
+    if (allotmentsToSelect != nullptr) {
+        auto stream = logger.getStream(log4cpp::Priority::DEBUG);
+        stream << "Assigning decision to accepted allotments." << "\n";
+        *allotmentsToSelect = acceptedAllotments;
+        for (auto v : *allotmentsToSelect) {
+            stream << v << " ";
+        }
+    }
+}
 
 void IpoptBackend::recalculate(
         TimeParameters timeParameters,
         DecisionManagerPtr decisionManagerToWrite,
         ConstActionManagerPtr currentActionManager,
         bool writeDecision,
-        vector<bool>* allotmentDecisionResult,
+        vector<bool>* allotmentsToSelect,
         double* objectiveEstimation,
         DualVariables* duals) {
 
@@ -156,7 +202,7 @@ void IpoptBackend::recalculate(
     if (timeParameters.allotmentsSupplied) {
         initializeSuppliedAllotments(decisionManagerToWrite, &vlower, &vupper, &variables);
     }
-    setAlreadyMadeDecisions(timeParameters, decisionManagerToWrite, currentActionManager,
+    setPreviouslyMadeDecisions(timeParameters, decisionManagerToWrite, currentActionManager,
             &vlower, &vupper, &variables);
 
     // Creating problem and calling IPOPT.
@@ -171,8 +217,7 @@ void IpoptBackend::recalculate(
     problemConfig.utilizationRatio = utilizationRatio;
     OptimizationProblem problem(problemConfig);
 
-    logConstraints(vlower, vupper, glower, gupper, variables,
-            indexManager->getConstData());
+    logConstraints(vlower, vupper, glower, gupper, variables, indexManager->getConstData());
 
     std::string options = makeOptionsFromConfig(config);
     logOptions(options);
@@ -187,41 +232,9 @@ void IpoptBackend::recalculate(
     logger.debugStream() << "Expected ipopt-objective to get is: "
         << -solution.solve_result::obj_value;
     if (!timeParameters.allotmentsSupplied) {
-        logger.debugStream() << "Allotments are not supplied. Ipopt will decide on its own.";
-
-        // Restoring structures in case they were dumped.
-        const auto& input = config.inputManager->getConstData();
-        const auto& indexMap = indexManager->getConstData();
-
-        const auto& solutionValues = variables;
-        vector<bool> acceptedAllotments(input.allotments.size(), false);
-        logger.debugStream() << "input.allotments.size() = " <<  input.allotments.size();
-
-        for (unsigned idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
-            unsigned variableId = indexMap.allotmentToUIndex[idAllotment];
-            double value = solutionValues[variableId];
-            logger.debugStream() << "To be floored: " <<  "allotment_id "
-                << idAllotment << " value " << value;
-            assert(value + FLOOR_EPS >= 0);
-            unsigned integer = floor(value + FLOOR_EPS);
-            assert(integer == 0 || integer == 1);
-            acceptedAllotments[idAllotment] = integer;
-            variables[variableId] = vlower[variableId] = vupper[variableId] = integer;
-        }
-
-        if (writeDecision) {
-            auto* decision = decisionManagerToWrite->get();
-            decision->allotmentAccepted = acceptedAllotments;
-        }
-
-        if (allotmentDecisionResult != nullptr) {
-            auto stream = logger.getStream(log4cpp::Priority::DEBUG);
-            stream << "Assigning decision to accepted allotments." << "\n";
-            *allotmentDecisionResult = acceptedAllotments;
-            for (auto v : *allotmentDecisionResult) {
-                stream << v << " ";
-            }
-        }
+        const vector<double> solutionValues = variables;
+        supplyAllotmentsFromSolution(solutionValues, decisionManagerToWrite, writeDecision,
+                allotmentsToSelect, &vlower, &vupper, &variables);
     }
     if (config.saveVariables) {
         canInitVariables = true;
