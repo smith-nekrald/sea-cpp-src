@@ -35,7 +35,6 @@ struct IpoptBackendConfig {
     ConstInputManagerPtr inputManager;
     ConstLinksManagerPtr linksManager;
 
-    double scale = 1.0;
     MemoryStrategy memoryManagement = MemoryStrategy::EXACT_COMPUTATION;
     DerivativeStrategy derivativeComputation = DerivativeStrategy::BACKWARD;
     LinearSolver solver = LinearSolver::MA27;
@@ -88,6 +87,19 @@ protected:
             vector<bool>* allotmentsToSelect = nullptr,
             double* objectiveEstimation = nullptr,
             DualVariables* duals = nullptr);
+private:
+    void initializeSuppliedAllotments(
+            DecisionManagerPtr decisionManagerToWrite,
+            vector<double>* vlower,
+            vector<double>* vupper,
+            vector<double>* variables);
+    void setAlreadyMadeDecisions(
+            TimeParameters timeParameters,
+            DecisionManagerPtr decisionManagerToWrite,
+            ConstActionManagerPtr currentActionManager,
+            vector<double>* vlower,
+            vector<double>* vupper,
+            vector<double>* variables);
 
 protected:
     IpoptBackendConfig config;

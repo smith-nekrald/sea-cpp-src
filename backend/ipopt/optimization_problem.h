@@ -15,7 +15,6 @@ struct OptimizationConfig {
     ConstDecisionManagerPtr decisionManager;
     ConstActionManagerPtr actionManager;
 
-    double scale = 1.0;
     ui32 updateTime = 0;
 
     bool useEnhancedVersion = true;

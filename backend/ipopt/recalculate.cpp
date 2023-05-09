@@ -20,6 +20,100 @@ using std::size_t;
 
 const double INF = std::numeric_limits<double>::max();
 const double FLOOR_EPS = 1e-3;
+const double VARIABLES_INIT = 1e-4;
+const double LOG_EPS = 1e-50;
+const double HIRE_EPS = 1e-2;
+const double DEMAND_EPS = 1e-2;
+const double PRICE_EPS = 1e-2;
+
+
+void IpoptBackend::initializeSuppliedAllotments(DecisionManagerPtr decisionManagerToWrite,
+        vector<double>* vlower, vector<double>* vupper, vector<double>* variables) {
+    const auto& input =  config.inputManager->getConstData();
+    const auto& indexMap = indexManager->getConstData();
+    for (unsigned idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
+        unsigned variableId = indexMap.allotmentToUIndex[idAllotment];
+        auto* decision = decisionManagerToWrite->get();
+        if (decision->allotmentAccepted[idAllotment]) {
+            variables->at(variableId) = vlower->at(variableId) = vupper->at(variableId) = 1;
+        } else {
+            variables->at(variableId) = vlower->at(variableId) = vupper->at(variableId) = 0;
+        }
+    }
+}
+
+void IpoptBackend::setAlreadyMadeDecisions(
+        TimeParameters timeParameters,
+        DecisionManagerPtr decisionManagerToWrite,
+        ConstActionManagerPtr currentActionManager,
+        vector<double>* vlower, vector<double>* vupper, vector<double>* variables) {
+    for (unsigned prevTime = 0; prevTime < timeParameters.timeEvent; ++prevTime) {
+        // Restoring structures in case they were dumped.
+        const auto& input = config.inputManager->getConstData();
+        const auto& links = config.linksManager->getConstData();
+        const auto& indexMap = indexManager->getConstData();
+        const auto& event = input.events[prevTime];
+        auto* decision = decisionManagerToWrite->get();
+        if (event.type == EventType::cutoff) {
+            const auto& arc = input.arcs[event.basedArc.value()];
+            for (unsigned idItinerary : event.relatedItineraryIds) {
+                // Processing Q_r
+                unsigned takeQIndex = indexMap.idItineraryToQIndex[idItinerary];
+                variables->at(takeQIndex) = vlower->at(takeQIndex)
+                    = vupper->at(takeQIndex) = decision->nonEmptyContainersQ[idItinerary];
+                // Processing Z_r
+                unsigned emptyZIndex = indexMap.idItineraryToZIndex[idItinerary];
+                variables->at(emptyZIndex) = vlower->at(emptyZIndex)
+                    = vupper->at(emptyZIndex) = decision->emptyContainersZ[idItinerary];
+                // Processing allotments
+                for (unsigned idAllotment : links.allotmentsWithItinerary[idItinerary]) {
+                    unsigned takeIQIndex =
+                        indexMap.allotmentItineraryToQIndex[idAllotment][idItinerary];
+                    unsigned placeIndex =
+                        links.allotmentItineraryToPlace.at(idAllotment).at(idItinerary);
+
+                    assert(decision->allotmentContainersQ[idAllotment][placeIndex].first
+                            == idItinerary);
+                    double targetValue =
+                        decision->allotmentContainersQ[idAllotment][placeIndex].second;
+                    if (!decision->allotmentAccepted[idAllotment]) {
+                        targetValue = 0;
+                    }
+                    variables->at(takeIQIndex) = vlower->at(takeIQIndex)
+                        = vupper->at(takeIQIndex) = targetValue;
+                }
+            }
+            // tracking variables y_a^H
+            unsigned hireIndex = indexMap.arcToHired[arc.id];
+            vlower->at(hireIndex) = vupper->at(hireIndex)
+                = variables->at(hireIndex) = decision->hiredY[arc.id];
+        } else if (event.type == EventType::pricing) {
+            for (auto idItinerary : event.relatedItineraryIds) {
+                auto* action = &currentActionManager->getConstData();
+                unsigned bookingAmount = action->bookingsB[prevTime][idItinerary];
+                unsigned valueIndex = indexMap.timeItineraryToDemandIndex[prevTime][idItinerary];
+                variables->at(valueIndex) = vupper->at(valueIndex)
+                    = vlower->at(valueIndex) = static_cast<double>(bookingAmount);
+            }
+        } else if (event.type == EventType::arrival) {
+            const auto& arc = input.arcs[event.basedArc.value()];
+            const auto& node = input.nodes[arc.toNode];
+            const auto& port = input.ports[node.portId];
+            unsigned variableIndex = indexMap.timeToSIndex[event.relativeTime];
+            variables->at(variableIndex) = vlower->at(variableIndex) = vupper->at(variableIndex) =
+                static_cast<double>(decision->offHiredInPortS[prevTime][port.id]);
+            for (const auto& otherPort : input.ports) {
+                if (otherPort.id != port.id
+                        && decision->offHiredInPortS[prevTime][otherPort.id] != 0) {
+                    throw std::logic_error(
+                        std::string("Deterministic Algorithm currently does not support")
+                        + std::string("offhiring in other places than arrival port!"));
+                }
+            }
+        }
+    }
+}
+
 
 void IpoptBackend::recalculate(
         TimeParameters timeParameters,
@@ -35,115 +129,35 @@ void IpoptBackend::recalculate(
     logger.debugStream() << "TimeParameters:: allotments supplied "
         <<  timeParameters.allotmentsSupplied;
 
-    assert(timeParameters.timeEvent <
-            config.inputManager->getConstData().events.size());
+    assert(timeParameters.timeEvent < config.inputManager->getConstData().events.size());
 
-    const double SCALE = config.scale;
-
-    vector<double> vlower, vupper,
-                   glower, gupper,
-                   variables(
-                indexManager->getConstData().variableCount, 1e-4);
+    vector<double> vlower, vupper, glower, gupper, variables;
     initConstraintsLR(&glower, &gupper);
     initBoundsLR(&vlower, &vupper);
 
     if (canInitVariables) {
-        assert(variables.size() == lastVariables.size());
+        assert(indexManager->getConstData().variableCount == lastVariables.size());
         variables = lastVariables;
     } else {
-        size_t variableCount =
-            indexManager->getConstData().variableCount;
-        variables.assign(variableCount, 0);
-        for (size_t idx = 0; idx  < indexManager->getConstData().variableCount; ++idx) {
+        size_t variableCount = indexManager->getConstData().variableCount;
+        variables.assign(variableCount, VARIABLES_INIT);
+        for (size_t idx = 0; idx  < variableCount; ++idx) {
             if (vlower[idx] != -INF) { variables[idx] = vlower[idx]; }
             if (vupper[idx] != INF) { variables[idx] = vupper[idx]; }
             if (vlower[idx] != -INF && vupper[idx] != INF) {
-                variables[idx] = vlower[idx] + (-vlower[idx] + vupper[idx]) / 10.;
+                variables[idx] = (vlower[idx] + vupper[idx]) / 2.;
             }
-            if (vlower[idx] == -INF && vupper[idx] == INF) { variables[idx] = 0; };
+            if (vlower[idx] == -INF && vupper[idx] == INF) {
+                variables[idx] = VARIABLES_INIT;
+            };
         }
     }
 
     if (timeParameters.allotmentsSupplied) {
-        // Restoring structures in case they were dumped.
-        const auto& input =  config.inputManager->getConstData();
-        const auto& indexMap = indexManager->getConstData();
-        for (ui32 idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
-            ui32 variableId = indexMap.allotmentToUIndex[idAllotment];
-            auto* decision = decisionManagerToWrite->get();
-            if (decision->allotmentAccepted[idAllotment]) {
-                variables[variableId] = vlower[variableId] = vupper[variableId] = 1;
-            } else {
-                variables[variableId] = vlower[variableId] = vupper[variableId] = 0;
-            }
-        }
+        initializeSuppliedAllotments(decisionManagerToWrite, &vlower, &vupper, &variables);
     }
-
-    for (ui32 prevTime = 0; prevTime < timeParameters.timeEvent; ++prevTime) {
-        // Restoring structures in case they were dumped.
-        const auto& input = config.inputManager->getConstData();
-        const auto& links = config.linksManager->getConstData();
-        const auto& indexMap = indexManager->getConstData();
-        const auto& event = input.events[prevTime];
-        auto* decision = decisionManagerToWrite->get();
-        if (event.type == EventType::cutoff) {
-            const auto& arc = input.arcs[event.basedArc.value()];
-            for (ui32 idItinerary : event.relatedItineraryIds) {
-                // Processing Q_r
-                ui32 takeQIndex = indexMap.idItineraryToQIndex[idItinerary];
-                variables[takeQIndex] = vlower[takeQIndex]
-                    = vupper[takeQIndex] = decision->nonEmptyContainersQ[idItinerary] / SCALE;
-                // Processing Z_r
-                ui32 emptyZIndex = indexMap.idItineraryToZIndex[idItinerary];
-                variables[emptyZIndex] = vlower[emptyZIndex]
-                    = vupper[emptyZIndex] = decision->emptyContainersZ[idItinerary] / SCALE;
-                // Processing allotments
-                for (ui32 idAllotment : links.allotmentsWithItinerary[idItinerary]) {
-                    ui32 takeIQIndex =
-                        indexMap.allotmentItineraryToQIndex[idAllotment][idItinerary];
-                    ui32 placeIndex =
-                        links.allotmentItineraryToPlace.at(idAllotment).at(idItinerary);
-
-                    assert(decision->allotmentContainersQ[idAllotment][placeIndex].first
-                            == idItinerary);
-                    double targetValue =
-                        decision->allotmentContainersQ[idAllotment][placeIndex].second / SCALE;
-                    if (!decision->allotmentAccepted[idAllotment]) {
-                        targetValue = 0;
-                    }
-                    variables[takeIQIndex] = vlower[takeIQIndex]
-                        = vupper[takeIQIndex] = targetValue;
-                }
-            }
-            // tracking variables y_a^H
-            ui32 hireIndex = indexMap.arcToHired[arc.id];
-            vlower[hireIndex] = vupper[hireIndex]
-                = variables[hireIndex] = decision->hiredY[arc.id] / SCALE;
-        } else if (event.type == EventType::pricing) {
-            for (auto idItinerary : event.relatedItineraryIds) {
-                auto* action = &currentActionManager->getConstData();
-                ui32 bookingAmount = action->bookingsB[prevTime][idItinerary];
-                ui32 valueIndex = indexMap.timeItineraryToDemandIndex[prevTime][idItinerary];
-                variables[valueIndex] = vupper[valueIndex]
-                    = vlower[valueIndex] = double(bookingAmount) / SCALE;
-            }
-        } else if (event.type == EventType::arrival) {
-            const auto& arc = input.arcs[event.basedArc.value()];
-            const auto& node = input.nodes[arc.toNode];
-            const auto& port = input.ports[node.portId];
-            ui32 variableIndex = indexMap.timeToSIndex[event.relativeTime];
-            variables[variableIndex] = vlower[variableIndex] = vupper[variableIndex] =
-                double(decision->offHiredInPortS[prevTime][port.id]) / SCALE;
-            for (const auto& otherPort : input.ports) {
-                if (otherPort.id != port.id
-                        && decision->offHiredInPortS[prevTime][otherPort.id] != 0) {
-                    throw std::logic_error(
-                        std::string("Deterministic Algorithm currently does not support")
-                        + std::string("offhiring in other places than arrival port!"));
-                }
-            }
-        }
-    }
+    setAlreadyMadeDecisions(timeParameters, decisionManagerToWrite, currentActionManager,
+            &vlower, &vupper, &variables);
 
     // Creating problem and calling IPOPT.
     OptimizationConfig problemConfig;
@@ -152,7 +166,6 @@ void IpoptBackend::recalculate(
     problemConfig.linksManager = config.linksManager;
     problemConfig.actionManager = currentActionManager;
     problemConfig.decisionManager = decisionManagerToWrite;
-    problemConfig.scale = config.scale;
     problemConfig.useEnhancedVersion = config.useEnhancedVersion;
     problemConfig.updateTime = timeParameters.timeEvent;
     problemConfig.utilizationRatio = utilizationRatio;
@@ -164,7 +177,7 @@ void IpoptBackend::recalculate(
     std::string options = makeOptionsFromConfig(config);
     logOptions(options);
 
-    CppAD::ipopt::solve_result<vector<double>> solution; // scaled
+    CppAD::ipopt::solve_result<vector<double>> solution;
     CppAD::ipopt::solve<std::vector<double>, OptimizationProblem>(
           options, variables, vlower, vupper, glower, gupper, problem, solution
     );
@@ -184,13 +197,13 @@ void IpoptBackend::recalculate(
         vector<bool> acceptedAllotments(input.allotments.size(), false);
         logger.debugStream() << "input.allotments.size() = " <<  input.allotments.size();
 
-        for (ui32 idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
-            ui32 variableId = indexMap.allotmentToUIndex[idAllotment];
+        for (unsigned idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
+            unsigned variableId = indexMap.allotmentToUIndex[idAllotment];
             double value = solutionValues[variableId];
             logger.debugStream() << "To be floored: " <<  "allotment_id "
                 << idAllotment << " value " << value;
             assert(value + FLOOR_EPS >= 0);
-            ui32 integer = floor(value + FLOOR_EPS);
+            unsigned integer = floor(value + FLOOR_EPS);
             assert(integer == 0 || integer == 1);
             acceptedAllotments[idAllotment] = integer;
             variables[variableId] = vlower[variableId] = vupper[variableId] = integer;
@@ -243,35 +256,35 @@ void IpoptBackend::recalculate(
 
         // Writing results to decision.
         const auto& solutionValues = solution.x;
-        for (ui32 nextTime = timeParameters.timeEvent;
+        for (unsigned nextTime = timeParameters.timeEvent;
                 nextTime < input.events.size(); ++nextTime) {
-            for (ui32 idPort = 0; idPort < input.ports.size(); ++idPort) {
+            for (unsigned idPort = 0; idPort < input.ports.size(); ++idPort) {
                 decision->offHiredInPortS[nextTime][idPort] = 0;
             }
             const auto& event = input.events[nextTime];
             if (event.type == EventType::cutoff) {
 
                 const auto& arc = input.arcs[event.basedArc.value()];
-                for (ui32 idItinerary : event.relatedItineraryIds) {
+                for (unsigned idItinerary : event.relatedItineraryIds) {
                     // Processing Q_r
-                    ui32 takeQIndex = indexMap.idItineraryToQIndex[idItinerary];
-                    double valueQ = floor(solution.x[takeQIndex] * SCALE + FLOOR_EPS);
+                    unsigned takeQIndex = indexMap.idItineraryToQIndex[idItinerary];
+                    double valueQ = floor(solution.x[takeQIndex] + FLOOR_EPS);
                     assert(valueQ >= 0);
-                    decision->nonEmptyContainersQ[idItinerary] = ui32(valueQ);
+                    decision->nonEmptyContainersQ[idItinerary] = unsigned(valueQ);
 
                     // Processing Z_r (setting decision and bounds)
-                    ui32 emptyZIndex = indexMap.idItineraryToZIndex[idItinerary];
-                    double valueZ = floor(solution.x[emptyZIndex] * SCALE + FLOOR_EPS);
+                    unsigned emptyZIndex = indexMap.idItineraryToZIndex[idItinerary];
+                    double valueZ = floor(solution.x[emptyZIndex] + FLOOR_EPS);
                     assert(valueZ >= 0);
-                    decision->emptyContainersZ[idItinerary] = ui32(valueZ);
+                    decision->emptyContainersZ[idItinerary] = unsigned(valueZ);
 
                     // Processing allotments
-                    for (ui32 idAllotment : links.allotmentsWithItinerary[idItinerary]) {
-                        ui32 takeIQIndex = indexMap.allotmentItineraryToQIndex[
+                    for (unsigned idAllotment : links.allotmentsWithItinerary[idItinerary]) {
+                        unsigned takeIQIndex = indexMap.allotmentItineraryToQIndex[
                             idAllotment][idItinerary];
-                        double valueIQ = floor(solution.x[takeIQIndex] * SCALE + FLOOR_EPS);
+                        double valueIQ = floor(solution.x[takeIQIndex] + FLOOR_EPS);
                         assert(valueIQ >= 0);
-                        ui32 placeIndex = links.allotmentItineraryToPlace.at(
+                        unsigned placeIndex = links.allotmentItineraryToPlace.at(
                                 idAllotment).at(idItinerary);
                         assert(decision->allotmentContainersQ[
                                 idAllotment][placeIndex].first == idItinerary);
@@ -283,26 +296,29 @@ void IpoptBackend::recalculate(
                 }
 
                 // tracking variables y_a^H
-                ui32 hireIndex = indexMap.arcToHired[arc.id];
-                if (SCALE * solution.x[hireIndex] > 1e-2) {
-                    decision->hiredY[arc.id] = ceil(SCALE * solution.x[hireIndex]);
+                unsigned hireIndex = indexMap.arcToHired[arc.id];
+                if (solution.x[hireIndex] > HIRE_EPS) {
+                    decision->hiredY[arc.id] = ceil(solution.x[hireIndex]);
                 }
 
             } else if (event.type == EventType::pricing) {
-                for (ui32 index = 0; index < event.relatedItineraryIds.size(); ++index) {
-                    ui32 itineraryId = event.relatedItineraryIds[index];
-                    ui32 variableId = indexMap.timeItineraryToDemandIndex[nextTime][itineraryId];
-                    double demandValue = solutionValues[variableId];
-                    double realValue = demandValue * SCALE;
+                for (unsigned index = 0; index < event.relatedItineraryIds.size(); ++index) {
+                    unsigned itineraryId = event.relatedItineraryIds[index];
+                    unsigned variableId = indexMap.timeItineraryToDemandIndex[
+                        nextTime][itineraryId];
+                    double realDemandValue = solutionValues[variableId] + DEMAND_EPS;
+                    assert(realDemandValue >= 0.);
                     const auto& demand = event.demands[index];
                     double price = INF;
                     if (demand.type == Demand::Type::exponential) {
-                        price = log(demand.scale / realValue + 1e-50) / demand.sensitivity;
+                        price = log(demand.scale / realDemandValue + LOG_EPS) / demand.sensitivity;
                     } else if (demand.type == Demand::Type::linear) {
-                        price = (realValue - demand.additive) / demand.multiplicative;
+                        price = (realDemandValue - demand.additive) / demand.multiplicative;
                     } else {
                         throw std::logic_error("Unknown Demand Type");
                     }
+                    price += PRICE_EPS;
+                    assert(price >= 0.);
                     auto& target = decision->prices[event.relativeTime][index];
                     assert(target.first == itineraryId);
                     target.second = price;
@@ -312,8 +328,8 @@ void IpoptBackend::recalculate(
                 const auto& arc = input.arcs[event.basedArc.value()];
                 const auto& node = input.nodes[arc.toNode];
                 const auto& port = input.ports[node.portId];
-                ui32 variableIndex = indexMap.timeToSIndex[event.relativeTime];
-                double offhired = floor(SCALE * solution.x[variableIndex] + FLOOR_EPS);
+                unsigned variableIndex = indexMap.timeToSIndex[event.relativeTime];
+                double offhired = floor(solution.x[variableIndex] + FLOOR_EPS);
                 assert(offhired >= 0);
                 decision->offHiredInPortS[nextTime][port.id] = offhired;
             } else {

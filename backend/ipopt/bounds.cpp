@@ -33,8 +33,6 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
     vlower.assign(indexMap.variableCount, -INF);
     vlower.shrink_to_fit();
 
-    const double SCALE = config.scale;
-
     // Q_r, Z_r, Q_ir
     for (ui32 idItinerary = 0; idItinerary < input.itineraries.size(); ++idItinerary) {
         ui32 indexQr = indexMap.idItineraryToQIndex[idItinerary];
@@ -47,7 +45,7 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
             ui32 indexEntry = links.allotmentItineraryToEntry.at(idAllotment).at(idItinerary);
             const auto& entry = input.allotmentEntries[indexEntry];
             double expectedShow = entry.productAmount * entry.showRate.estimatedProba;
-            updateUpper(vupper[indexQir], expectedShow / SCALE);
+            updateUpper(vupper[indexQir], expectedShow);
         }
     }
 
@@ -72,9 +70,9 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
 
                 updateLower(lower, double(0.));
                 if (demand.type == Demand::Type::linear) {
-                    updateUpper(upper, demand.additive / SCALE);
+                    updateUpper(upper, demand.additive);
                 } else if (demand.type == Demand::Type::exponential) {
-                    updateUpper(upper, demand.scale / SCALE);
+                    updateUpper(upper, demand.scale);
                 } else {
                     throw std::logic_error("Unsupported demand type");
                 }

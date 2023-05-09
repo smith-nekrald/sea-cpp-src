@@ -191,7 +191,7 @@ void DetCutPlaneBackend::setupMainProblem() {
                 containers[idPort].push_back({+1, hireIndex});
                 debugStream << "Adding to containers[idPort] amount of hired containers.\n";
 
-                // objective -= port.hiringCost * hired * SCALE;
+                // objective -= port.hiringCost * hired;
                 cbcLastProblem.objective[hireIndex] -= port.hiringCost;
 
                 debugStream << "For loop over links.itinerariesFromArc[idBasedArc] \n";
@@ -233,22 +233,22 @@ void DetCutPlaneBackend::setupMainProblem() {
 
                     debugStream << "Assiging spotQNConstraint as show >= qSpot" << "\n";
 
-                    // objective -= SCALE * bookings[idItinerary] * itinerary.returnPrice;
+                    // objective -= bookings[idItinerary] * itinerary.returnPrice;
                     addMultiVarObjective(bookings[idItinerary], -itinerary.returnPrice,
                         cbcLastProblem.objective);
                     debugStream << "subtracting itinerary.returnPrice from objective" << "\n";
 
-                    // objective += SCALE * expectedShow * (-itinerary.declineCost + itinerary.returnPrice);
+                    // objective += expectedShow * (-itinerary.declineCost + itinerary.returnPrice);
                     addMultiVarObjective(bookings[idItinerary],
                         itinerary.showRate.estimatedProba * (-itinerary.declineCost + itinerary.returnPrice),
                         cbcLastProblem.objective);
                     debugStream << " adding diff return - decline" << "\n";
 
-                    // objective += SCALE * qSpot * (-itinerary.cost + itinerary.declineCost - event.duration * port.storageCost);
+                    // objective += qSpot * (-itinerary.cost + itinerary.declineCost - event.duration * port.storageCost);
                     cbcLastProblem.objective[qSpotIndex] += (-itinerary.cost + itinerary.declineCost - event.duration * port.storageCost);
                     debugStream << "adding qSpot" << "\n";
 
-                    // objective -= SCALE * zEmpty * itinerary.emptyCost;
+                    // objective -=  zEmpty * itinerary.emptyCost;
                     cbcLastProblem.objective[zIndex] -= itinerary.emptyCost;
                     debugStream << "removing zEmpty * itinerary.emptyCost" << "\n";
 
@@ -274,17 +274,17 @@ void DetCutPlaneBackend::setupMainProblem() {
                         double expectedAllotmentShow = entry.showRate.estimatedProba * entry.productAmount;
                         debugStream << "scaled expectedAllotmentShow = " << expectedAllotmentShow << "\n";
 
-                        // objective += SCALE * uAllotment * expectedAllotmentShow * (-entry.cancellationPrice - itinerary.declineCost);
+                        // objective += uAllotment * expectedAllotmentShow * (-entry.cancellationPrice - itinerary.declineCost);
                         cbcLastProblem.objective[uAllotmentIndex] += expectedAllotmentShow * (-entry.cancellationPrice - itinerary.declineCost);
                         debugStream << "modified objective to expectedAllotmentShow";
 
-                        // objective += qAllotment * (entry.price - itinerary.cost + itinerary.declineCost - event.duration * port.storageCost) * SCALE;
+                        // objective += qAllotment * (entry.price - itinerary.cost + itinerary.declineCost - event.duration * port.storageCost);
                         cbcLastProblem.objective[qAllotmentIndex] += (entry.price - itinerary.cost + itinerary.declineCost - event.duration * port.storageCost);
                         debugStream << "modified objective wrt qAllotment" << "\n";
 
-                        // double cancellationPrice = entry.productAmount * entry.cancellationPrice / SCALE;
+                        // double cancellationPrice = entry.productAmount * entry.cancellationPrice;
                         double cancellationPrice = entry.productAmount * entry.cancellationPrice;
-                        // objective += SCALE * uAllotment * cancellationPrice;
+                        // objective += uAllotment * cancellationPrice;
                         cbcLastProblem.objective[uAllotmentIndex] += cancellationPrice;
 
                         ui32 itineraryAllotmentQConstraintIndex = indexMap.allotmentItineraryQConstraints[idItinerary][idAllotment];
@@ -307,7 +307,7 @@ void DetCutPlaneBackend::setupMainProblem() {
                 const auto& port = input.ports[node.portId];
                 auto offhiredIndex = indexMap.timeToSIndex[event.relativeTime];
                 // const auto& offhired = variables[indexMap.timeToSIndex[event.relativeTime]];
-                // objective -= SCALE * offhired  * port.offHiringCost;
+                // objective -= offhired  * port.offHiringCost;
                 cbcLastProblem.objective[offhiredIndex] -= port.offHiringCost;
 
                 // containers[port.id] -= offhired;
@@ -329,7 +329,7 @@ void DetCutPlaneBackend::setupMainProblem() {
         // Common recalculation.
         for (ui32 idPort = 0; idPort < input.ports.size(); ++idPort) {
             const auto& port = input.ports[idPort];
-            // objective -= SCALE * (containers[idPort] * timeDelta) * port.storageCost;
+            // objective -= (containers[idPort] * timeDelta) * port.storageCost;
             addMultiVarObjective(containers[idPort], -1 * timeDelta * port.storageCost, cbcLastProblem.objective);
         }
     }
@@ -346,7 +346,7 @@ void DetCutPlaneBackend::setupMainProblem() {
             }
             ui32 constraintIndex = indexMap.arcCapacityConstraints[idArc];
             // AD<double>& constraint = functions[constraintIndex];
-            // constraint = inside_arc * SCALE - input.vessels[arc.vesselId.value()].capacity; // -inf <= constraint  <=0
+            // constraint = inside_arc - input.vessels[arc.vesselId.value()].capacity; // -inf <= constraint  <=0
             addMultiVarConstraint(inside_arc_indices, 1, constraintIndex, cbcLastProblem.coefByVar);
             // constraint = inside_arc // -inf <= constraint <= arc.vessel.capacity
         }
@@ -357,11 +357,11 @@ void DetCutPlaneBackend::setupMainProblem() {
         // double finalCount = input.ports[idPort].finalContainerCount;
         ui32 constraintIndex = indexMap.finalContainerConstraints[idPort];
         // AD<double>& constraint = functions[indexMap.finalContainerConstraints[idPort]];
-        // constraint = finalCount / SCALE - containers[idPort]; // 0 >= constraint >= -INF
+        // constraint = finalCount - containers[idPort]; // 0 >= constraint >= -INF
         addMultiVarConstraint(containers[idPort], 1, constraintIndex, cbcLastProblem.coefByVar);
         // constraint = containers[idPort] // finalCount <= contraint <= +inf
 
-        // objective -= (-finalCount/SCALE + containers[idPort]) * (input.ports[idPort].offHiringCost * SCALE);
+        // objective -= (-finalCount + containers[idPort]) * (input.ports[idPort].offHiringCost);
         addMultiVarObjective(containers[idPort], -input.ports[idPort].offHiringCost, cbcLastProblem.objective); // TODO: do we need finalCount here?
     }
 
@@ -916,10 +916,10 @@ void DetCutPlaneBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>*
 
                 updateLower(lower, double(0.));
                 if (demand.type == Demand::Type::linear) {
-                    // updateUpper(upper, demand.additive / SCALE);
+                    // updateUpper(upper, demand.additive);
                     updateUpper(upper, demand.additive);
                 } else if (demand.type == Demand::Type::exponential) {
-                    // updateUpper(upper, demand.scale / SCALE);
+                    // updateUpper(upper, demand.scale);
                     updateUpper(upper, demand.scale);
                     updateLower(lower, EXP_BOUND);
                 } else {

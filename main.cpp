@@ -107,7 +107,6 @@ void fillBackendConfig(json::Value& configRoot, IpoptBackendConfig& config) {
     }
 
     config.needDescriptionsInIndex = ipoptRoot["write_descriptions"].asBool();
-    config.scale = ipoptRoot["scale"].asDouble();
     config.path_prefix = ipoptRoot["path_prefix"].asString();
 }
 

@@ -1,4 +1,6 @@
 {
     "C_Cpp.errorSquiggles": "enabled",
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
     "editor.rulers": [100]
 }

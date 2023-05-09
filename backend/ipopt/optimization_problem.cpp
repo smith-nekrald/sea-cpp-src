@@ -21,10 +21,6 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
 
     debugStream << "Entered OptimizationProblem::operator()\n";
 
-    const double SCALE = config.scale;
-
-    debugStream << "SCALE = " << SCALE << "\n";
-
     auto& input = config.inputManager->getConstData();
     auto& links = config.linksManager->getConstData();
     auto& indexMap = config.indexManager->getConstData();
@@ -47,7 +43,7 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
     debugStream << "Initialized containers with 0.\n";
 
     for (ui32 portId = 0; portId < input.ports.size(); ++portId) {
-        containers[portId] = input.ports[portId].initialContainerCount / SCALE;
+        containers[portId] = input.ports[portId].initialContainerCount;
         debugStream << "Setting containers[portId] to value: "
             << containers[portId] << " for port id = " << portId << "\n";
     }
@@ -95,23 +91,23 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
                 if (timeNow < config.updateTime) {
                     debugStream << "If case. Entered branch where timeNow < config.updateTime" << "\n";
                     auto* decision = &config.decisionManager->getConstData();
-                    revenue = decision->prices[timeNow][relatedIndex].second * demandVar * SCALE;
-                    debugStream << "Revenue is calculated as decision->prices[timeNow][relatedIndex].second * demandVar * SCALE" << "\n";
-                    debugStream <<  "set revenue to " << decision->prices[timeNow][relatedIndex].second * demandVar * SCALE << "\n";
+                    revenue = decision->prices[timeNow][relatedIndex].second * demandVar;
+                    debugStream << "Revenue is calculated as decision->prices[timeNow][relatedIndex].second * demandVar" << "\n";
+                    debugStream <<  "set revenue to " << decision->prices[timeNow][relatedIndex].second * demandVar << "\n";
                 } else {
                     debugStream << "If case. Entred branch where timeNow >= config.updateTime" << "\n";
                     debugStream << "Switch case. Selecting between linear and exponential demands." << "\n";
                     if (demand.type == Demand::Type::linear) {
                         debugStream << "Demand is linear." << "\n";
-                        revenue = SCALE * demandVar * (SCALE * demandVar - demand.additive) / demand.multiplicative;
-                        debugStream << "Revenue is calculated as SCALE * demandVar * (SCALE * demandVar - demand.additive) / demand.multiplicative" << "\n";
+                        revenue = demandVar * (demandVar - demand.additive) / demand.multiplicative;
+                        debugStream << "Revenue is calculated as demandVar * (demandVar - demand.additive) / demand.multiplicative" << "\n";
                         debugStream << "demand.additive = " << demand.additive << "\n";
                         debugStream << "demand.multiplicative = " << demand.multiplicative << "\n";
                     } else if (demand.type == Demand::Type::exponential) {
                         debugStream << "Demand is exponential." << "\n";
                         assert(demand.scale > 0);
-                        revenue = SCALE * demandVar * (- 1.0 / demand.sensitivity * log(1e-40 + demandVar * SCALE / demand.scale));
-                        debugStream << "Revenue is calculated as SCALE * demandVar * (- 1.0 / demand.sensitivity * log(demandVar * SCALE / demand.scale))" << "\n";
+                        revenue = demandVar * (- 1.0 / demand.sensitivity * log(1e-40 + demandVar / demand.scale));
+                        debugStream << "Revenue is calculated as demandVar * (- 1.0 / demand.sensitivity * log(demandVar  / demand.scale))" << "\n";
                         debugStream << "demand.sensitivity = " << demand.sensitivity << "\n";
                         debugStream << "demand.scale = " << demand.scale << "\n";
                     } else {
@@ -157,8 +153,8 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
                 containers[idPort] += hired;
                 debugStream << "Adding to containers[idPort] amount of hired containers.\n";
 
-                objective -= port.hiringCost * hired * SCALE;
-                debugStream << "Subtracting port.hiringCost * hired * SCALE from objective.\n";
+                objective -= port.hiringCost * hired;
+                debugStream << "Subtracting port.hiringCost * hired from objective.\n";
 
                 debugStream << "For loop over links.itinerariesFromArc[idBasedArc] \n";
                 for (ui32 idItinerary : links.itinerariesFromArc[idBasedArc]) {
@@ -200,7 +196,7 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
                     if (timeNow < config.updateTime) {
                         debugStream << "Entering branch timeNow < config.updateTime." << "\n";
                         auto* action = &config.actionManager->getConstData();
-                        expectedShow = action->spotMarketDemandN[idItinerary] / SCALE;
+                        expectedShow = action->spotMarketDemandN[idItinerary];
                         debugStream << "Assigining to expectedShow value in action, divided by scale" << "\n";
                     } else {
                         debugStream << "Entering branch timeNow >= config.updateTime." << "\n";
@@ -212,17 +208,17 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
                     spotQNConstraint = expectedShow - qSpot; // inf >= spotQNConstraint >= 0
                     debugStream << "Assiging spotQNConstraint as show >= qSpot" << "\n";
 
-                    objective -= SCALE * bookings[idItinerary] * itinerary.returnPrice;
+                    objective -= bookings[idItinerary] * itinerary.returnPrice;
                     debugStream << "subtracting itinerary.returnPrice from objective" << "\n";
 
-                    objective += SCALE * expectedShow * (-itinerary.declineCost + itinerary.returnPrice);
+                    objective += expectedShow * (-itinerary.declineCost + itinerary.returnPrice);
                     debugStream << " adding diff return - decline" << "\n";
 
-                    objective += SCALE * qSpot * (-itinerary.cost + itinerary.declineCost - event.duration * port.storageCost);
-                    debugStream << "adding SCALE * qSpot" << "\n";
+                    objective += qSpot * (-itinerary.cost + itinerary.declineCost - event.duration * port.storageCost);
+                    debugStream << "adding  qSpot" << "\n";
 
-                    objective -= SCALE * zEmpty * itinerary.emptyCost;
-                    debugStream << "removing SCALE * zEmpty * itinerary.emptyCost" << "\n";
+                    objective -= zEmpty * itinerary.emptyCost;
+                    debugStream << "removing zEmpty * itinerary.emptyCost" << "\n";
 
                     debugStream << "running cycle by allotmentsWithItinerary for itinerary " << idItinerary <<  "\n";
                     for (ui32 idAllotment : links.allotmentsWithItinerary[idItinerary]) {
@@ -257,30 +253,30 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
                             debugStream << "timeNow < config.updateTime ==> updating from action" << "\n";
                             ui32 place = links.allotmentItineraryToPlace.at(idAllotment).at(idItinerary);
                             auto* action = &config.actionManager->getConstData();
-                            expectedAllotmentShow = action->allotmentDemandN[idAllotment][place].second / SCALE;
+                            expectedAllotmentShow = action->allotmentDemandN[idAllotment][place].second;
                             assert(action->allotmentDemandN[idAllotment][place].first == idItinerary);
                         } else {
                             debugStream << "timeNow >= config.updateTime ==> estimating from entry.showRate.estimatedProba" << "\n";
-                            expectedAllotmentShow = entry.showRate.estimatedProba * entry.productAmount / SCALE;
+                            expectedAllotmentShow = entry.showRate.estimatedProba * entry.productAmount;
                             debugStream << "entry.showRate.estimatedProba = " << entry.showRate.estimatedProba << "\n";
                             debugStream << "entry.productAmount = " << entry.productAmount << "\n";
                         }
                         debugStream << "scaled expectedAllotmentShow = " << expectedAllotmentShow << "\n";
 
-                        objective += SCALE * uAllotment * expectedAllotmentShow * (-entry.cancellationPrice - itinerary.declineCost);
+                        objective += uAllotment * expectedAllotmentShow * (-entry.cancellationPrice - itinerary.declineCost);
                         debugStream << "modified objective to expectedAllotmentShow";
 
                         if (!config.useEnhancedVersion) {
                             objective += uAllotment * qAllotment * (
-                                    entry.price - itinerary.cost + itinerary.declineCost - event.duration * port.storageCost) * SCALE;
+                                    entry.price - itinerary.cost + itinerary.declineCost - event.duration * port.storageCost);
                         } else {
                             objective += qAllotment * (
-                                    entry.price - itinerary.cost + itinerary.declineCost - event.duration * port.storageCost) * SCALE;
+                                    entry.price - itinerary.cost + itinerary.declineCost - event.duration * port.storageCost);
                         }
                         debugStream << "modified objective wrt qAllotment" << "\n";
 
-                        double cancellationPrice = entry.productAmount * entry.cancellationPrice / SCALE;
-                        objective += SCALE * uAllotment * cancellationPrice;
+                        double cancellationPrice = entry.productAmount * entry.cancellationPrice;
+                        objective += uAllotment * cancellationPrice;
                         if (config.useEnhancedVersion) {
                             ui32 itineraryAllotmentQConstraintIndex = indexMap.allotmentItineraryQConstraints[idItinerary][idAllotment];
                             debugStream << "itineraryAllotmentQConstraintIndex = " << itineraryAllotmentQConstraintIndex << "\n";
@@ -300,7 +296,7 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
                 const auto& node = input.nodes[idNode];
                 const auto& port = input.ports[node.portId];
                 const auto& offhired = variables[indexMap.timeToSIndex[event.relativeTime]];
-                objective -= SCALE * offhired  * port.offHiringCost;
+                objective -= offhired  * port.offHiringCost;
                 containers[port.id] -= offhired;
                 for (ui32 idItinerary : links.itinerariesToArc[idBasedArc]) {
                     containers[port.id] += takens[idItinerary];
@@ -314,7 +310,7 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
         // Common recalculation.
         for (ui32 idPort = 0; idPort < input.ports.size(); ++idPort) {
             const auto& port = input.ports[idPort];
-            objective -= SCALE * (containers[idPort] * timeDelta) * port.storageCost;
+            objective -= (containers[idPort] * timeDelta) * port.storageCost;
         }
     }
 
@@ -328,7 +324,7 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
             }
             ui32 constraintIndex = indexMap.arcCapacityConstraints[idArc];
             AD<double>& constraint = functions[constraintIndex];
-            constraint = inside_arc * SCALE - input.vessels[arc.vesselId.value()].capacity * config.utilizationRatio; // -inf <= constraint  <=0
+            constraint = inside_arc - input.vessels[arc.vesselId.value()].capacity * config.utilizationRatio; // -inf <= constraint  <=0
         }
     }
 
@@ -336,8 +332,8 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
     for (ui32 idPort = 0; idPort < input.ports.size(); ++idPort) {
         double finalCount = input.ports[idPort].finalContainerCount;
         AD<double>& constraint = functions[indexMap.finalContainerConstraints[idPort]];
-        constraint = finalCount / SCALE - containers[idPort]; // 0 >= constraint >= -INF
-        objective -= (-finalCount/SCALE + containers[idPort]) * (input.ports[idPort].offHiringCost * SCALE);
+        constraint = finalCount - containers[idPort]; // 0 >= constraint >= -INF
+        objective -= (-finalCount + containers[idPort]) * (input.ports[idPort].offHiringCost);
     }
 
     // Group constraints
