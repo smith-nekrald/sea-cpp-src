@@ -140,5 +140,14 @@ std::string makeOptionsFromConfig(const IpoptBackendConfig& config) {
     return options;
 }
 
+void logSelectedAllotments(const vector<bool>& acceptedAllotments, BackendType backendType) {
+    auto& logger = logging::getBackendSubLogger(backendType);
+    auto stream = logger.getStream(log4cpp::Priority::INFO);
+    stream << "Assigning decision to accepted allotments." << "\n";
+    for (auto v : acceptedAllotments) {
+        stream << v << " ";
+    }
+}
+
 } // namespace backend
 } //namespace sea

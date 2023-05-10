@@ -23,33 +23,33 @@ namespace backend {
 struct IpoptIndexMap {
 
 // Indices of independent variables.
-    std::vector<std::vector<ui32>> timeItineraryToDemandIndex;   // d_t
-    std::vector<ui32> arcToHired; // y_a^H, on cut-off from arc a
+    std::vector<std::vector<unsigned>> timeItineraryToDemandIndex;   // d_t
+    std::vector<unsigned> arcToHired; // y_a^H, on cut-off from arc a
 
-    std::vector<ui32> idItineraryToQIndex; // Q_r
-    std::vector<ui32> idItineraryToZIndex; // Z_r
-    std::vector<std::vector<ui32>> allotmentItineraryToQIndex; // Q_i^r
+    std::vector<unsigned> idItineraryToQIndex; // Q_r
+    std::vector<unsigned> idItineraryToZIndex; // Z_r
+    std::vector<std::vector<unsigned>> allotmentItineraryToQIndex; // Q_i^r
 
-    std::vector<ui32> allotmentToUIndex; // u_i
-    std::vector<ui32> timeToSIndex; // s_t, decision at time t for port of arrival
+    std::vector<unsigned> allotmentToUIndex; // u_i
+    std::vector<unsigned> timeToSIndex; // s_t, decision at time t for port of arrival
 
-    ui32 variableCount;
+    unsigned variableCount;
 
 // Indices of constraints. (Numeration starts from 1,
 // since 0 is for objective function).
 
-    std::vector<ui32> arcCapacityConstraints; // indexed by arc, load_on_arc <= W_a
-    std::vector<ui32> portPositiveCutoffArcConstraints; // indexed by arc
-    std::vector<ui32> portPositiveArrivalArcConstraints; // indexed by arc
-    std::vector<ui32> spotQNConstraints; // indexed by itinerary
-    std::vector<ui32> finalContainerConstraints; // indexed by port
-    std::vector<ui32> groupConstraints; // indexed by group id
-    ui32 constraintCount;
+    std::vector<unsigned> arcCapacityConstraints; // indexed by arc, load_on_arc <= W_a
+    std::vector<unsigned> portPositiveCutoffArcConstraints; // indexed by arc
+    std::vector<unsigned> portPositiveArrivalArcConstraints; // indexed by arc
+    std::vector<unsigned> spotQNConstraints; // indexed by itinerary
+    std::vector<unsigned> finalContainerConstraints; // indexed by port
+    std::vector<unsigned> groupConstraints; // indexed by group id
+    unsigned constraintCount;
 
-    std::map<ui32, std::string> variableToDescription, constraintToDescription;
+    std::map<unsigned, std::string> variableToDescription, constraintToDescription;
 
     // This is used only in enhanced version or dcp!
-    std::vector<std::vector<ui32>> allotmentItineraryQConstraints; // Q_i^r \le u_i EN_i^r
+    std::vector<std::vector<unsigned>> allotmentItineraryQConstraints; // Q_i^r \le u_i EN_i^r
 };
 
 void initIndexMapWithMaxIndex(const InputData& input, IpoptIndexMap* indexMap);

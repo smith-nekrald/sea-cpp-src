@@ -9,7 +9,7 @@
 namespace sea {
 namespace backend {
 
-const ui32 MAX_INDEX = std::numeric_limits<ui32>::max();
+const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
 
 void initIndexMapWithMaxIndex(const InputData& input, IpoptIndexMap* indexMap) {
     // For variables.
@@ -91,10 +91,10 @@ void addIpoptIndexMap(
     auto& constraintToDescription = indexMap->constraintToDescription;
 
     for (const auto& event : input.events) {
-        ui32 relativeTime = event.relativeTime;
+        unsigned relativeTime = event.relativeTime;
         // d_t
         if (event.type == InputData::Event::Type::pricing) {
-            for (ui32 idItinerary : event.relatedItineraryIds) {
+            for (unsigned idItinerary : event.relatedItineraryIds) {
                 if (initDescriptions) {
                     variableToDescription[indexMap->variableCount] =
                         "demand_itinerary_" + std::to_string(idItinerary) + "_at_time_" + std::to_string(relativeTime);
@@ -104,7 +104,7 @@ void addIpoptIndexMap(
             }
         // y_a^H ## portPositiveCutoffArcConstraints
         } else if (event.type == InputData::Event::Type::cutoff) {
-            ui32 idBasedArc = event.basedArc.value();
+            unsigned idBasedArc = event.basedArc.value();
             if (initDescriptions) {
                 variableToDescription[indexMap->variableCount] =
                     "y_a^H_for_arc_" + std::to_string(idBasedArc) + "_at_time_" + std::to_string(event.relativeTime);
@@ -116,7 +116,7 @@ void addIpoptIndexMap(
                 indexMap->constraintCount++;
         // s_t ## portPositiveArrivalArcConstraints
         } else if (event.type == InputData::Event::Type::arrival) {
-            ui32 idBasedArc = event.basedArc.value();
+            unsigned idBasedArc = event.basedArc.value();
             if (initDescriptions) {
                 variableToDescription[indexMap->variableCount] =
                     "offhire_s_t_at_time_" + std::to_string(event.relativeTime);
@@ -149,9 +149,9 @@ void addIpoptIndexMap(
             variableToDescription[indexMap->variableCount] = "u_i_for_allotment_" + std::to_string(allotment.id);
         }
         indexMap->allotmentToUIndex[allotment.id] = indexMap->variableCount++;
-        for (ui32 idEntry : allotment.entries) {
+        for (unsigned idEntry : allotment.entries) {
             const auto& entry = input.allotmentEntries[idEntry];
-            ui32 idItinerary = entry.itinerary;
+            unsigned idItinerary = entry.itinerary;
 
             if (initDescriptions) {
                 variableToDescription[indexMap->variableCount] = "Q^i_r_for_allotment_" + std::to_string(allotment.id) + "_itinerary_" +
@@ -173,7 +173,7 @@ void addIpoptIndexMap(
     }
 
     // finalContainerConstraints
-    for (ui32 idPort = 0; idPort < input.ports.size(); ++idPort) {
+    for (unsigned idPort = 0; idPort < input.ports.size(); ++idPort) {
         if (initDescriptions) {
             constraintToDescription[indexMap->constraintCount] =
                 "finalContainerConstraint_for_port_" + std::to_string(idPort);
@@ -183,7 +183,7 @@ void addIpoptIndexMap(
     }
 
     // groupConstraints
-    for (ui32 idGroup = 0; idGroup < input.allotmentGroups.size(); ++idGroup) {
+    for (unsigned idGroup = 0; idGroup < input.allotmentGroups.size(); ++idGroup) {
         if (initDescriptions) {
             constraintToDescription[indexMap->constraintCount] =
                 "groupConstraint_for_group_"  + std::to_string(idGroup);
@@ -193,7 +193,7 @@ void addIpoptIndexMap(
     if (useEnhancement) {
         indexMap->allotmentItineraryQConstraints.resize(input.itineraries.size());
         indexMap->allotmentItineraryQConstraints.shrink_to_fit();
-        for (ui32 idItinerary = 0; idItinerary < indexMap->allotmentItineraryQConstraints.size(); idItinerary++) {
+        for (unsigned idItinerary = 0; idItinerary < indexMap->allotmentItineraryQConstraints.size(); idItinerary++) {
             auto& allotmentQConstraints = indexMap->allotmentItineraryQConstraints[idItinerary];
             allotmentQConstraints.resize(input.allotments.size());
             allotmentQConstraints.shrink_to_fit();
@@ -213,7 +213,7 @@ void printIndexMapStatsGeneral(Writer&  out, const IpoptIndexMap& indexMap) {
         out << "IndexMap Statistics: " << "\n";
         // Statistics related to variables.
         out << "variable count = " << indexMap.variableCount << "\n";
-        std::pair<ui32, ui32> statStorage;
+        std::pair<unsigned, unsigned> statStorage;
 
         statStorage = getUsefulIndexCount(indexMap.timeItineraryToDemandIndex);
         out << "timeItineraryToDemandIndex: field count = " << statStorage.second << " useful fields(real constraints) = " << statStorage.first << "\n";

@@ -34,15 +34,15 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
     vlower.shrink_to_fit();
 
     // Q_r, Z_r, Q_ir
-    for (ui32 idItinerary = 0; idItinerary < input.itineraries.size(); ++idItinerary) {
-        ui32 indexQr = indexMap.idItineraryToQIndex[idItinerary];
+    for (unsigned idItinerary = 0; idItinerary < input.itineraries.size(); ++idItinerary) {
+        unsigned indexQr = indexMap.idItineraryToQIndex[idItinerary];
         updateLower(vlower[indexQr], double(0.));
-        ui32 indexZr = indexMap.idItineraryToZIndex[idItinerary];
+        unsigned indexZr = indexMap.idItineraryToZIndex[idItinerary];
         updateLower(vlower[indexZr], double(0.));
-        for (ui32 idAllotment : links.allotmentsWithItinerary[idItinerary]) {
-            ui32 indexQir = indexMap.allotmentItineraryToQIndex[idAllotment][idItinerary];
+        for (unsigned idAllotment : links.allotmentsWithItinerary[idItinerary]) {
+            unsigned indexQir = indexMap.allotmentItineraryToQIndex[idAllotment][idItinerary];
             updateLower(vlower[indexQir], double(0.));
-            ui32 indexEntry = links.allotmentItineraryToEntry.at(idAllotment).at(idItinerary);
+            unsigned indexEntry = links.allotmentItineraryToEntry.at(idAllotment).at(idItinerary);
             const auto& entry = input.allotmentEntries[indexEntry];
             double expectedShow = entry.productAmount * entry.showRate.estimatedProba;
             updateUpper(vupper[indexQir], expectedShow);
@@ -50,21 +50,21 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
     }
 
     // u_i
-    for (ui32 idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
-        ui32 indexUi = indexMap.allotmentToUIndex[idAllotment];
+    for (unsigned idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
+        unsigned indexUi = indexMap.allotmentToUIndex[idAllotment];
         updateLower(vlower[indexUi], double(0.0));
         updateUpper(vupper[indexUi], double(1.0));
     }
 
     // d_t, s_t, y_a^H
     for (const auto& event : input.events) {
-        ui32 relativeTime = event.relativeTime;
+        unsigned relativeTime = event.relativeTime;
         // d_t
         if (event.type == InputData::Event::Type::pricing) {
-            for (ui32 index = 0; index < event.relatedItineraryIds.size(); ++index) {
-                ui32 idItinerary = event.relatedItineraryIds[index];
+            for (unsigned index = 0; index < event.relatedItineraryIds.size(); ++index) {
+                unsigned idItinerary = event.relatedItineraryIds[index];
                 const auto& demand = event.demands[index];
-                ui32 variableIndex = indexMap.timeItineraryToDemandIndex[relativeTime][idItinerary];
+                unsigned variableIndex = indexMap.timeItineraryToDemandIndex[relativeTime][idItinerary];
                 double& lower = vlower[variableIndex];
                 double& upper = vupper[variableIndex];
 
@@ -79,12 +79,12 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
             }
         // s_t
         } else if (event.type == InputData::Event::Type::arrival) {
-            ui32 variableIndex = indexMap.timeToSIndex[relativeTime];
+            unsigned variableIndex = indexMap.timeToSIndex[relativeTime];
             updateLower(vlower[variableIndex], double(0.));
         // y_a^H
         }  else if (event.type == InputData::Event::Type::cutoff) {
-            ui32 basedArcId = event.basedArc.value();
-            ui32 variableIndex = indexMap.arcToHired[basedArcId];
+            unsigned basedArcId = event.basedArc.value();
+            unsigned variableIndex = indexMap.arcToHired[basedArcId];
             updateLower(vlower[variableIndex], double(0.));
         } else {
             throw std::logic_error("Unsupported event type");
@@ -93,11 +93,11 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
 
     if (ignoreSpot) {
         for (const auto& event : input.events) {
-            ui32 relativeTime = event.relativeTime;
+            unsigned relativeTime = event.relativeTime;
             if (event.type == InputData::Event::Type::pricing) {
-                for (ui32 index = 0; index < event.relatedItineraryIds.size(); ++index) {
-                    ui32 idItinerary = event.relatedItineraryIds[index];
-                    ui32 variableIndex =
+                for (unsigned index = 0; index < event.relatedItineraryIds.size(); ++index) {
+                    unsigned idItinerary = event.relatedItineraryIds[index];
+                    unsigned variableIndex =
                         indexMap.timeItineraryToDemandIndex[relativeTime][idItinerary];
                     vlower[variableIndex] = vupper[variableIndex] = 0;
                     if (event.demands[index].type == Demand::Type::exponential) {
@@ -126,7 +126,7 @@ void IpoptBackend::initConstraintsLR(vector<double>* glowerPtr, vector<double>* 
     // arc capacity constraints
     for (const auto& arc : input.arcs) {
         if (arc.type == InputData::Arc::Type::travel) {
-            ui32 constraintIndex = indexMap.arcCapacityConstraints[arc.id];
+            unsigned constraintIndex = indexMap.arcCapacityConstraints[arc.id];
             updateUpper(gupper[constraintIndex - 1], double(0.));
         }
     }
@@ -134,32 +134,32 @@ void IpoptBackend::initConstraintsLR(vector<double>* glowerPtr, vector<double>* 
     // positive in ports for cutoff and arrival
     for (const auto& event : input.events) {
         if (event.type == InputData::Event::Type::cutoff) {
-            ui32 idBasedArc = event.basedArc.value();
-            ui32 constraintIndex = indexMap.portPositiveCutoffArcConstraints[idBasedArc];
+            unsigned idBasedArc = event.basedArc.value();
+            unsigned constraintIndex = indexMap.portPositiveCutoffArcConstraints[idBasedArc];
             updateLower(glower[constraintIndex - 1], double(0.));
         } else if (event.type == InputData::Event::Type::arrival) {
-            ui32 idBasedArc = event.basedArc.value();
-            ui32 constraintIndex = indexMap.portPositiveArrivalArcConstraints[idBasedArc];
+            unsigned idBasedArc = event.basedArc.value();
+            unsigned constraintIndex = indexMap.portPositiveArrivalArcConstraints[idBasedArc];
             updateLower(glower[constraintIndex - 1], double(0.));
         }
     }
 
     // spotQN constraints
     for (const auto& itinerary : input.itineraries) {
-        ui32 idItinerary = itinerary.id;
-        ui32 constraintIndex = indexMap.spotQNConstraints[idItinerary];
+        unsigned idItinerary = itinerary.id;
+        unsigned constraintIndex = indexMap.spotQNConstraints[idItinerary];
         updateLower(glower[constraintIndex - 1], double(0.));
     }
 
     // final container constraints
-    for (ui32 idPort = 0; idPort < input.ports.size(); ++idPort) {
-        ui32 constraintIndex = indexMap.finalContainerConstraints[idPort];
+    for (unsigned idPort = 0; idPort < input.ports.size(); ++idPort) {
+        unsigned constraintIndex = indexMap.finalContainerConstraints[idPort];
         updateUpper(gupper[constraintIndex - 1], double(0.));
     }
 
     // group constraints
-    for (ui32 idGroup = 0; idGroup < input.allotmentGroups.size(); ++idGroup) {
-        ui32 constraintIndex = indexMap.groupConstraints[idGroup];
+    for (unsigned idGroup = 0; idGroup < input.allotmentGroups.size(); ++idGroup) {
+        unsigned constraintIndex = indexMap.groupConstraints[idGroup];
         updateLower(glower[constraintIndex - 1], double(0.));
         updateUpper(gupper[constraintIndex - 1], double(1.));
     }

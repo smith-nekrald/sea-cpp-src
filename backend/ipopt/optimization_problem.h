@@ -15,7 +15,7 @@ struct OptimizationConfig {
     ConstDecisionManagerPtr decisionManager;
     ConstActionManagerPtr actionManager;
 
-    ui32 updateTime = 0;
+    unsigned updateTime = 0;
 
     bool useEnhancedVersion = true;
     double utilizationRatio = 1.0;
