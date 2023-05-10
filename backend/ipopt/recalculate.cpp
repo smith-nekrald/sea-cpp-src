@@ -1,3 +1,8 @@
+// Implements IpoptBackend::recalculate and corresponding stages.
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "ipopt_backend.h"
 #include "optimization_problem.h"
 #include "../lagrangian_relaxation/index.h"
@@ -18,17 +23,9 @@ using std::cout;
 using std::endl;
 using std::size_t;
 
-const double INF = std::numeric_limits<double>::max();
-const double FLOOR_EPS = 1e-3;
-const double VARIABLES_INIT = 1e-4;
-const double LOG_EPS = 1e-50;
-const double HIRE_EPS = 1e-2;
-const double DEMAND_EPS = 1e-2;
-const double PRICE_EPS = 1e-2;
-const double ALLOTMENT_THRESHOLD = 0.7;
-
 
 void IpoptBackend::formDuals(const vector<double>& lambdas, DualVariables* duals) const {
+
     if (duals != nullptr) {
         const auto& input = config.inputManager->getConstData();
         const auto& links = config.linksManager->getConstData();
@@ -51,16 +48,17 @@ void IpoptBackend::formDuals(const vector<double>& lambdas, DualVariables* duals
 
 void IpoptBackend::initializeSuppliedAllotments(ConstDecisionManagerPtr decisionManager,
         vector<double>* vlowerPtr, vector<double>* vupperPtr, vector<double>* variablesPtr) const {
+
     const auto& input =  config.inputManager->getConstData();
     const auto& indexMap = indexManager->getConstData();
     for (unsigned idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
         unsigned variableId = indexMap.allotmentToUIndex[idAllotment];
         auto* decision = decisionManager->get();
         if (decision->allotmentAccepted[idAllotment]) {
-            variablesPtr->at(variableId) = vlowerPtr->at(variableId) 
+            variablesPtr->at(variableId) = vlowerPtr->at(variableId)
                 = vupperPtr->at(variableId) = 1;
         } else {
-            variablesPtr->at(variableId) = vlowerPtr->at(variableId) 
+            variablesPtr->at(variableId) = vlowerPtr->at(variableId)
                 = vupperPtr->at(variableId) = 0;
         }
     }
@@ -70,9 +68,10 @@ void IpoptBackend::setPreviouslyMadeDecisions(
         const TimeParameters& timeParameters,
         ConstDecisionManagerPtr decisionManager,
         ConstActionManagerPtr currentActionManager,
-        vector<double>* vlowerPtr, 
-        vector<double>* vupperPtr, 
+        vector<double>* vlowerPtr,
+        vector<double>* vupperPtr,
         vector<double>* variablesPtr) const {
+
     for (unsigned prevTime = 0; prevTime < timeParameters.timeEvent; ++prevTime) {
         const auto& input = config.inputManager->getConstData();
         const auto& links = config.linksManager->getConstData();
@@ -125,8 +124,9 @@ void IpoptBackend::setPreviouslyMadeDecisions(
             const auto& node = input.nodes[arc.toNode];
             const auto& port = input.ports[node.portId];
             unsigned variableIndex = indexMap.timeToSIndex[event.relativeTime];
-            variablesPtr->at(variableIndex) = vlowerPtr->at(variableIndex) = vupperPtr->at(variableIndex) =
-                static_cast<double>(decision->offHiredInPortS[prevTime][port.id]);
+            variablesPtr->at(variableIndex) = vlowerPtr->at(variableIndex)
+                = vupperPtr->at(variableIndex)
+                = static_cast<double>(decision->offHiredInPortS[prevTime][port.id]);
             for (const auto& otherPort : input.ports) {
                 if (otherPort.id != port.id
                         && decision->offHiredInPortS[prevTime][otherPort.id] != 0) {
@@ -148,23 +148,23 @@ void IpoptBackend::supplyAllotmentsFromSolution(
         vector<double>* vupperPtr,
         vector<double>* variablesPtr) const {
 
-    auto& logger = logging::getBackendSubLogger(BackendType::IPOPT);
-    logger.debugStream() << "Allotments are not supplied. Ipopt will decide on its own.";
-
     // Restoring structures in case they were dumped.
     const auto& input = config.inputManager->getConstData();
     const auto& indexMap = indexManager->getConstData();
 
     vector<bool> acceptedAllotments(input.allotments.size(), false);
-    logger.debugStream() << "input.allotments.size() = " <<  input.allotments.size();
 
+    // Decision is based on the threshold. Above threshold converts in accepted allotment,
+    // below threshold converts in declined allotment.
+    const double ALLOTMENT_THRESHOLD = 0.7;
     for (unsigned idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
             unsigned variableId = indexMap.allotmentToUIndex[idAllotment];
             double value = solutionValues[variableId];
             unsigned integer = (value > ALLOTMENT_THRESHOLD ? 1 : 0);
             assert(integer == 0 || integer == 1);
             acceptedAllotments[idAllotment] = integer;
-            variablesPtr->at(variableId) = vlowerPtr->at(variableId) = vupperPtr->at(variableId) = integer;
+            variablesPtr->at(variableId) = vlowerPtr->at(variableId)
+                = vupperPtr->at(variableId) = integer;
     }
 
 
@@ -182,10 +182,13 @@ void IpoptBackend::supplyAllotmentsFromSolution(
 void IpoptBackend::initVariables(const vector<double>& vlower,
         const vector<double>& vupper,
         vector<double>* variablesPtr) const {
+
     if (canInitVariables) {
         assert(indexManager->getConstData().variableCount == lastVariables.size());
         *variablesPtr = lastVariables;
     } else {
+        const double VARIABLES_INIT = 1e-4;
+        const double INF = std::numeric_limits<double>::max();
         size_t variableCount = indexManager->getConstData().variableCount;
         variablesPtr->assign(variableCount, VARIABLES_INIT);
         for (size_t idx = 0; idx  < variableCount; ++idx) {
@@ -199,7 +202,6 @@ void IpoptBackend::initVariables(const vector<double>& vlower,
             };
         }
     }
-
 }
 
 void IpoptBackend::recalculate(
@@ -210,10 +212,6 @@ void IpoptBackend::recalculate(
         vector<bool>* allotmentsToSelect,
         double* objectiveEstimation,
         DualVariables* duals) {
-
-    auto& logger = logging::getBackendSubLogger(BackendType::IPOPT);
-    logger.debug("IpoptBackend::recalcuate is called.");
-    logger.debugStream() << "If allotments are supplied: " << timeParameters.allotmentsSupplied;
 
     assert(timeParameters.timeEvent < config.inputManager->getConstData().events.size());
 
@@ -255,8 +253,6 @@ void IpoptBackend::recalculate(
     assert(variables.size() == solution.x.size());
     variables = solution.x;
 
-    logger.debugStream() << "Expected ipopt-objective to get is: "
-        << -solution.solve_result::obj_value;
     if (!timeParameters.allotmentsSupplied) {
         const vector<double> solutionValues = solution.x;
         supplyAllotmentsFromSolution(
@@ -286,13 +282,15 @@ void IpoptBackend::writeSolutionToDecision(
         const TimeParameters& timeParameters,
         const vector<double>& solutionValues,
     DecisionManagerPtr decisionManagerToWrite) const {
+
     const auto& input = config.inputManager->getConstData();
     const auto& links = config.linksManager->getConstData();
     const auto& indexMap = indexManager->getConstData();
     auto* decision = decisionManagerToWrite->get();
 
     // Writing results to decision.
-    for (unsigned nextTime = timeParameters.timeEvent; nextTime < input.events.size(); ++nextTime) {
+    for (unsigned nextTime = timeParameters.timeEvent;
+            nextTime < input.events.size(); ++nextTime) {
         for (unsigned idPort = 0; idPort < input.ports.size(); ++idPort) {
             decision->offHiredInPortS[nextTime][idPort] = 0;
         }
@@ -301,17 +299,19 @@ void IpoptBackend::writeSolutionToDecision(
 
             const auto& arc = input.arcs[event.basedArc.value()];
             for (unsigned idItinerary : event.relatedItineraryIds) {
+                const double FLOOR_EPS = 1e-3;
+
                 // Processing Q_r
                 unsigned takeQIndex = indexMap.idItineraryToQIndex[idItinerary];
                 double valueQ = floor(solutionValues[takeQIndex] + FLOOR_EPS);
                 assert(valueQ >= 0);
-                decision->nonEmptyContainersQ[idItinerary] = unsigned(valueQ);
+                decision->nonEmptyContainersQ[idItinerary] = static_cast<unsigned>(valueQ);
 
                 // Processing Z_r (setting decision and bounds)
                 unsigned emptyZIndex = indexMap.idItineraryToZIndex[idItinerary];
                 double valueZ = floor(solutionValues[emptyZIndex] + FLOOR_EPS);
                 assert(valueZ >= 0);
-                decision->emptyContainersZ[idItinerary] = unsigned(valueZ);
+                decision->emptyContainersZ[idItinerary] = static_cast<unsigned>(valueZ);
 
                 // Processing allotments
                 for (unsigned idAllotment : links.allotmentsWithItinerary[idItinerary]) {
@@ -332,38 +332,41 @@ void IpoptBackend::writeSolutionToDecision(
 
             // tracking variables y_a^H
             unsigned hireIndex = indexMap.arcToHired[arc.id];
+            const double HIRE_EPS = 1e-2;
             if (solutionValues[hireIndex] > HIRE_EPS) {
                 decision->hiredY[arc.id] = ceil(solutionValues[hireIndex]);
             }
-
         } else if (event.type == EventType::pricing) {
             for (unsigned index = 0; index < event.relatedItineraryIds.size(); ++index) {
                 unsigned itineraryId = event.relatedItineraryIds[index];
                 unsigned variableId = indexMap.timeItineraryToDemandIndex[
                     nextTime][itineraryId];
+                const double DEMAND_EPS = 1e-2;
                 double realDemandValue = solutionValues[variableId] + DEMAND_EPS;
                 assert(realDemandValue >= 0.);
                 const auto& demand = event.demands[index];
-                double price = INF;
+                double price = std::numeric_limits<double>::max();
                 if (demand.type == Demand::Type::exponential) {
+                    const double LOG_EPS = 1e-50;
                     price = log(demand.scale / realDemandValue + LOG_EPS) / demand.sensitivity;
                 } else if (demand.type == Demand::Type::linear) {
                     price = (realDemandValue - demand.additive) / demand.multiplicative;
                 } else {
                     throw std::logic_error("Unknown Demand Type");
                 }
+                const double PRICE_EPS = 1e-8;
                 price += PRICE_EPS;
                 assert(price >= 0.);
                 auto& target = decision->prices[event.relativeTime][index];
                 assert(target.first == itineraryId);
                 target.second = price;
             }
-
         } else if (event.type == EventType::arrival) {
             const auto& arc = input.arcs[event.basedArc.value()];
             const auto& node = input.nodes[arc.toNode];
             const auto& port = input.ports[node.portId];
             unsigned variableIndex = indexMap.timeToSIndex[event.relativeTime];
+            const double FLOOR_EPS = 1e-3;
             double offhired = floor(solutionValues[variableIndex] + FLOOR_EPS);
             assert(offhired >= 0);
             decision->offHiredInPortS[nextTime][port.id] = offhired;
@@ -372,7 +375,6 @@ void IpoptBackend::writeSolutionToDecision(
         }
     }
 }
-
 
 } // namespace backend
 } // namespace sea

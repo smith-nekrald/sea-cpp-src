@@ -18,7 +18,6 @@ using std::cout;
 using std::endl;
 using std::size_t;
 
-const double INF = std::numeric_limits<double>::max();
 
 void logConstraints(
         const vector<double>& vlower,
@@ -143,9 +142,9 @@ std::string makeOptionsFromConfig(const IpoptBackendConfig& config) {
 void logSelectedAllotments(const vector<bool>& acceptedAllotments, BackendType backendType) {
     auto& logger = logging::getBackendSubLogger(backendType);
     auto stream = logger.getStream(log4cpp::Priority::INFO);
-    stream << "Assigning decision to accepted allotments." << "\n";
-    for (auto v : acceptedAllotments) {
-        stream << v << " ";
+    stream << "These are the accepted allotments: " << "\n";
+    for (auto value : acceptedAllotments) {
+        stream << value << " ";
     }
 }
 
