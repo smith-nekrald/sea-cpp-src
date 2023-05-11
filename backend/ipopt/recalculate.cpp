@@ -1,4 +1,5 @@
 // Implements IpoptBackend::recalculate and corresponding stages.
+
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
@@ -156,7 +157,7 @@ void IpoptBackend::supplyAllotmentsFromSolution(
 
     // Decision is based on the threshold. Above threshold converts in accepted allotment,
     // below threshold converts in declined allotment.
-    const double ALLOTMENT_THRESHOLD = 0.7;
+    const double ALLOTMENT_THRESHOLD = 0.8;
     for (unsigned idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
             unsigned variableId = indexMap.allotmentToUIndex[idAllotment];
             double value = solutionValues[variableId];

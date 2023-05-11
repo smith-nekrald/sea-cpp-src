@@ -1,3 +1,9 @@
+// API computing variable and constraint bounds for fluid approximation optimization via Ipopt.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "ipopt_backend.h"
 #include "optimization_problem.h"
 #include "../lagrangian_relaxation/index.h"
@@ -17,9 +23,8 @@ using std::cout;
 using std::endl;
 using std::size_t;
 
-const double INF = std::numeric_limits<double>::max();
 
-void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vupperPtr) {
+void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vupperPtr) const {
     const auto& input = config.inputManager->getConstData();
     const auto& links = config.linksManager->getConstData();
     const auto& indexMap = indexManager->getConstData();
@@ -27,6 +32,10 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
 
     auto& vupper = *vupperPtr;
     auto& vlower = *vlowerPtr;
+
+    const double INF = std::numeric_limits<double>::max();
+    const double ZERO = 0.;
+    const double ONE = 1.;
 
     vupper.assign(indexMap.variableCount, INF);
     vupper.shrink_to_fit();
@@ -36,12 +45,12 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
     // Q_r, Z_r, Q_ir
     for (unsigned idItinerary = 0; idItinerary < input.itineraries.size(); ++idItinerary) {
         unsigned indexQr = indexMap.idItineraryToQIndex[idItinerary];
-        updateLower(vlower[indexQr], double(0.));
+        updateLower(vlower[indexQr], ZERO);
         unsigned indexZr = indexMap.idItineraryToZIndex[idItinerary];
-        updateLower(vlower[indexZr], double(0.));
+        updateLower(vlower[indexZr], ZERO);
         for (unsigned idAllotment : links.allotmentsWithItinerary[idItinerary]) {
             unsigned indexQir = indexMap.allotmentItineraryToQIndex[idAllotment][idItinerary];
-            updateLower(vlower[indexQir], double(0.));
+            updateLower(vlower[indexQir], ZERO);
             unsigned indexEntry = links.allotmentItineraryToEntry.at(idAllotment).at(idItinerary);
             const auto& entry = input.allotmentEntries[indexEntry];
             double expectedShow = entry.productAmount * entry.showRate.estimatedProba;
@@ -52,8 +61,8 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
     // u_i
     for (unsigned idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
         unsigned indexUi = indexMap.allotmentToUIndex[idAllotment];
-        updateLower(vlower[indexUi], double(0.0));
-        updateUpper(vupper[indexUi], double(1.0));
+        updateLower(vlower[indexUi], ZERO);
+        updateUpper(vupper[indexUi], ONE);
     }
 
     // d_t, s_t, y_a^H
@@ -64,11 +73,12 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
             for (unsigned index = 0; index < event.relatedItineraryIds.size(); ++index) {
                 unsigned idItinerary = event.relatedItineraryIds[index];
                 const auto& demand = event.demands[index];
-                unsigned variableIndex = indexMap.timeItineraryToDemandIndex[relativeTime][idItinerary];
+                unsigned variableIndex = indexMap.timeItineraryToDemandIndex[
+                    relativeTime][idItinerary];
                 double& lower = vlower[variableIndex];
                 double& upper = vupper[variableIndex];
 
-                updateLower(lower, double(0.));
+                updateLower(lower, ZERO);
                 if (demand.type == Demand::Type::linear) {
                     updateUpper(upper, demand.additive);
                 } else if (demand.type == Demand::Type::exponential) {
@@ -80,12 +90,12 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
         // s_t
         } else if (event.type == InputData::Event::Type::arrival) {
             unsigned variableIndex = indexMap.timeToSIndex[relativeTime];
-            updateLower(vlower[variableIndex], double(0.));
+            updateLower(vlower[variableIndex], ZERO);
         // y_a^H
         }  else if (event.type == InputData::Event::Type::cutoff) {
             unsigned basedArcId = event.basedArc.value();
             unsigned variableIndex = indexMap.arcToHired[basedArcId];
-            updateLower(vlower[variableIndex], double(0.));
+            updateLower(vlower[variableIndex], ZERO);
         } else {
             throw std::logic_error("Unsupported event type");
         }
@@ -101,7 +111,8 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
                         indexMap.timeItineraryToDemandIndex[relativeTime][idItinerary];
                     vlower[variableIndex] = vupper[variableIndex] = 0;
                     if (event.demands[index].type == Demand::Type::exponential) {
-                        vupper[variableIndex] = 1e-40;
+                        const double EPS = 1e-40;
+                        vupper[variableIndex] = EPS;
                     }
                 }
             }
@@ -109,7 +120,7 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
     }
 }
 
-void IpoptBackend::initConstraintsLR(vector<double>* glowerPtr, vector<double>* gupperPtr) {
+void IpoptBackend::initConstraintsLR(vector<double>* glowerPtr, vector<double>* gupperPtr) const {
     const auto& indexMap = indexManager->getConstData();
     const auto& input = config.inputManager->getConstData();
 
@@ -117,6 +128,10 @@ void IpoptBackend::initConstraintsLR(vector<double>* glowerPtr, vector<double>* 
 
     auto& glower = *glowerPtr;
     auto& gupper = *gupperPtr;
+
+    const double INF = std::numeric_limits<double>::max();
+    const double ZERO = 0.;
+    const double ONE = 1.;
 
     glower.assign(indexMap.constraintCount, -INF);
     glower.shrink_to_fit();
@@ -127,7 +142,7 @@ void IpoptBackend::initConstraintsLR(vector<double>* glowerPtr, vector<double>* 
     for (const auto& arc : input.arcs) {
         if (arc.type == InputData::Arc::Type::travel) {
             unsigned constraintIndex = indexMap.arcCapacityConstraints[arc.id];
-            updateUpper(gupper[constraintIndex - 1], double(0.));
+            updateUpper(gupper[constraintIndex - 1], ZERO);
         }
     }
 
@@ -136,11 +151,11 @@ void IpoptBackend::initConstraintsLR(vector<double>* glowerPtr, vector<double>* 
         if (event.type == InputData::Event::Type::cutoff) {
             unsigned idBasedArc = event.basedArc.value();
             unsigned constraintIndex = indexMap.portPositiveCutoffArcConstraints[idBasedArc];
-            updateLower(glower[constraintIndex - 1], double(0.));
+            updateLower(glower[constraintIndex - 1], ZERO);
         } else if (event.type == InputData::Event::Type::arrival) {
             unsigned idBasedArc = event.basedArc.value();
             unsigned constraintIndex = indexMap.portPositiveArrivalArcConstraints[idBasedArc];
-            updateLower(glower[constraintIndex - 1], double(0.));
+            updateLower(glower[constraintIndex - 1], ZERO);
         }
     }
 
@@ -148,28 +163,27 @@ void IpoptBackend::initConstraintsLR(vector<double>* glowerPtr, vector<double>* 
     for (const auto& itinerary : input.itineraries) {
         unsigned idItinerary = itinerary.id;
         unsigned constraintIndex = indexMap.spotQNConstraints[idItinerary];
-        updateLower(glower[constraintIndex - 1], double(0.));
+        updateLower(glower[constraintIndex - 1], ZERO);
     }
 
     // final container constraints
     for (unsigned idPort = 0; idPort < input.ports.size(); ++idPort) {
         unsigned constraintIndex = indexMap.finalContainerConstraints[idPort];
-        updateUpper(gupper[constraintIndex - 1], double(0.));
+        updateUpper(gupper[constraintIndex - 1], ZERO);
     }
 
     // group constraints
     for (unsigned idGroup = 0; idGroup < input.allotmentGroups.size(); ++idGroup) {
         unsigned constraintIndex = indexMap.groupConstraints[idGroup];
-        updateLower(glower[constraintIndex - 1], double(0.));
-        updateUpper(gupper[constraintIndex - 1], double(1.));
+        updateLower(glower[constraintIndex - 1], ZERO);
+        updateUpper(gupper[constraintIndex - 1], ONE);
     }
     if (config.useEnhancedVersion) {
         for (const auto& allotmentQConstraints : indexMap.allotmentItineraryQConstraints) {
             for (const auto& qConstraintIndex : allotmentQConstraints) {
-                updateUpper(gupper[qConstraintIndex - 1], double(0.));
+                updateUpper(gupper[qConstraintIndex - 1], ZERO);
             }
         }
-
     }
 }
 

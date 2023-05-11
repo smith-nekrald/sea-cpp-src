@@ -80,8 +80,21 @@ public:
     }
 
 protected:
-    void initConstraintsLR(vector<double>* glowerPtr, vector<double>* gupperPtr);
-    void initBoundsLR(vector<double>* vlowerPtr, vector<double>* vupperPtr);
+    /**
+     * @brief Computes the lower and upper bounds for constraint expressions.
+     *
+     * @param[out] glowerPtr Pointer to a vector that gets lower bounds filled.
+     * @param[out] gupperPtr Pointer to a vector that gets upper bounds filled.
+     */
+    void initConstraintsLR(vector<double>* glowerPtr, vector<double>* gupperPtr) const;
+
+    /**
+     * @brief Computes the lower and upper bounds for optimization variables.
+     *
+     * @param[out] vlowerPtr Pointer to a vector that gets lower bounds filled.
+     * @param[out] vupperPtr Pointer to a vector that gets upper bounds filled.
+     */
+    void initBoundsLR(vector<double>* vlowerPtr, vector<double>* vupperPtr) const;
 
     /**
      * @brief Method to solve optimization problem, or to update current solution.
@@ -225,12 +238,13 @@ protected:
     /// variables from the previous optimal point.
     bool canInitVariables;
 
-    /// @brief TODO
+    /// @brief If true, spot market is ignored. Allows to evaluate allotment-only strategy.
     bool ignoreSpot;
 
     /// @brief Previous optimal point. Useful for initialization.
     vector<double> lastVariables;
-    /// @brief TODO
+
+    /// @brief Capacity utilization ratio. Sometimes helps for performance tuning.
     double utilizationRatio;
 };
 
