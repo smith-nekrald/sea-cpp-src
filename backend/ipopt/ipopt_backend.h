@@ -48,8 +48,6 @@ struct IpoptBackendConfig {
 
     // This group of parameters corresponds to warm/cold start.
     bool saveVariables = true;
-    // Switch on using enhanced or default version.
-    bool useEnhancedVersion = true;
 
     double defaultUtilizationRatio = 1.0;
 };

@@ -17,7 +17,6 @@ struct OptimizationConfig {
 
     unsigned updateTime = 0;
 
-    bool useEnhancedVersion = true;
     double utilizationRatio = 1.0;
 };
 

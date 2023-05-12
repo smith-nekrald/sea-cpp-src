@@ -232,14 +232,8 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
                         debugStream << "uAllotmentIndex = " << uAllotmentIndex << "\n";
                         const AD<double>& uAllotment = variables[uAllotmentIndex];
 
-                        if (!config.useEnhancedVersion) {
-                            takens[idItinerary] += uAllotment * qAllotment;
-                            containers[idPort] -= uAllotment * qAllotment;
-                        } else {
-                            takens[idItinerary] += qAllotment;
-                            containers[idPort] -= qAllotment;
-
-                        }
+                        takens[idItinerary] += qAllotment;
+                        containers[idPort] -= qAllotment;
 
                         auto entryId = links.allotmentItineraryToEntry.at(idAllotment).at(idItinerary);
                         debugStream << "allotmentId = " << idAllotment << " idItinerary = "
@@ -266,23 +260,15 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
                         objective += uAllotment * expectedAllotmentShow * (-entry.cancellationPrice - itinerary.declineCost);
                         debugStream << "modified objective to expectedAllotmentShow";
 
-                        if (!config.useEnhancedVersion) {
-                            objective += uAllotment * qAllotment * (
-                                    entry.price - itinerary.cost + itinerary.declineCost - event.duration * port.storageCost);
-                        } else {
-                            objective += qAllotment * (
-                                    entry.price - itinerary.cost + itinerary.declineCost - event.duration * port.storageCost);
-                        }
+                        objective += qAllotment * (entry.price - itinerary.cost + itinerary.declineCost - event.duration * port.storageCost);
                         debugStream << "modified objective wrt qAllotment" << "\n";
 
                         double cancellationPrice = entry.productAmount * entry.cancellationPrice;
                         objective += uAllotment * cancellationPrice;
-                        if (config.useEnhancedVersion) {
-                            unsigned itineraryAllotmentQConstraintIndex = indexMap.allotmentItineraryQConstraints[idItinerary][idAllotment];
-                            debugStream << "itineraryAllotmentQConstraintIndex = " << itineraryAllotmentQConstraintIndex << "\n";
-                            auto& itineraryAllotmentQConstraint = functions[itineraryAllotmentQConstraintIndex];
-                            itineraryAllotmentQConstraint = qAllotment - uAllotment * expectedAllotmentShow; // -inf <= itineraryAllotmentQConstraint <= 0
-                        }
+                        unsigned itineraryAllotmentQConstraintIndex = indexMap.allotmentItineraryQConstraints[idItinerary][idAllotment];
+                        debugStream << "itineraryAllotmentQConstraintIndex = " << itineraryAllotmentQConstraintIndex << "\n";
+                        auto& itineraryAllotmentQConstraint = functions[itineraryAllotmentQConstraintIndex];
+                        itineraryAllotmentQConstraint = qAllotment - uAllotment * expectedAllotmentShow; // -inf <= itineraryAllotmentQConstraint <= 0
                     }
                 }
 

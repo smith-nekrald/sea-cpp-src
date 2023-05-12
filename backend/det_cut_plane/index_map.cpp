@@ -48,7 +48,7 @@ void dcpCreateIndexMap(const InputData& input, DcpIndexMap& indexMap) {
         }
     }
 
-    addIpoptIndexMap(input, &indexMap, true, true);
+    addIpoptIndexMap(input, &indexMap, true);
 }
 
 } // namespace backend

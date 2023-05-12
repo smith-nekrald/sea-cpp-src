@@ -178,11 +178,11 @@ void IpoptBackend::initConstraintsLR(vector<double>* glowerPtr, vector<double>* 
         updateLower(glower[constraintIndex - 1], ZERO);
         updateUpper(gupper[constraintIndex - 1], ONE);
     }
-    if (config.useEnhancedVersion) {
-        for (const auto& allotmentQConstraints : indexMap.allotmentItineraryQConstraints) {
-            for (const auto& qConstraintIndex : allotmentQConstraints) {
-                updateUpper(gupper[qConstraintIndex - 1], ZERO);
-            }
+
+    // Q_a^i < u^i EN_a^i
+    for (const auto& allotmentQConstraints : indexMap.allotmentItineraryQConstraints) {
+        for (const auto& qConstraintIndex : allotmentQConstraints) {
+            updateUpper(gupper[qConstraintIndex - 1], ZERO);
         }
     }
 }

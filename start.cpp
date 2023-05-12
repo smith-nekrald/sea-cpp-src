@@ -55,9 +55,6 @@ void fillBackendConfig(json::Value& configRoot, IpoptBackendConfig& config) {
         throw std::logic_error("Unknown solver type.");
     }
 
-    auto useEnhancedVersion = ipoptRoot["use_enhanced"].asBool();
-    config.useEnhancedVersion = useEnhancedVersion;
-
     auto derivativeStrategy = ipoptRoot["derivative_strategy"].asString();
     if (derivativeStrategy == "forward") {
         config.derivativeComputation = sea::backend::DerivativeStrategy::FORWARD;

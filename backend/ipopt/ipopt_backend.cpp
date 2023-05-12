@@ -25,7 +25,7 @@ IpoptBackend::IpoptBackend(const IpoptBackendConfig& aConfig)
     ManagerConfig indexMapConfig = {config.needMemory, filePath, true};
     indexManager = std::make_shared<DataManager<IpoptIndexMap>>(indexMapConfig);
     createIndexMap(config.inputManager->getConstData(),
-            indexManager->get(), config.useEnhancedVersion, config.needDescriptionsInIndex);
+            indexManager->get(), config.needDescriptionsInIndex);
     auto ipoptLogger = logging::getBackendSubLogger(BackendType::IPOPT)
         << log4cpp::Priority::DEBUG;
     printIndexMapStats(ipoptLogger, indexManager->getConstData());

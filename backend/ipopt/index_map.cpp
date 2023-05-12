@@ -71,21 +71,18 @@ void initIndexMapWithMaxIndex(const InputData& input, IpoptIndexMap* indexMap) {
 void createIndexMap(
         const InputData& input,
         IpoptIndexMap* indexMap,
-        bool useEnhancement,
         bool initDescriptions) {
 
     initIndexMapWithMaxIndex(input, indexMap);
     indexMap->constraintCount++; // need to offset all constraint indices by 1
-    addIpoptIndexMap(input, indexMap, useEnhancement, initDescriptions);
+    addIpoptIndexMap(input, indexMap, initDescriptions);
     indexMap->constraintCount--;
 }
 
 void addIpoptIndexMap(
         const InputData& input,
         IpoptIndexMap* indexMap,
-        bool useEnhancement,
         bool initDescriptions) {
-
 
     auto& variableToDescription = indexMap->variableToDescription;
     auto& constraintToDescription = indexMap->constraintToDescription;
@@ -97,7 +94,8 @@ void addIpoptIndexMap(
             for (unsigned idItinerary : event.relatedItineraryIds) {
                 if (initDescriptions) {
                     variableToDescription[indexMap->variableCount] =
-                        "demand_itinerary_" + std::to_string(idItinerary) + "_at_time_" + std::to_string(relativeTime);
+                        "demand_itinerary_" + std::to_string(idItinerary) 
+                        + "_at_time_" + std::to_string(relativeTime);
                 }
                 indexMap->timeItineraryToDemandIndex[relativeTime][idItinerary] =
                     indexMap->variableCount++;
@@ -107,7 +105,8 @@ void addIpoptIndexMap(
             unsigned idBasedArc = event.basedArc.value();
             if (initDescriptions) {
                 variableToDescription[indexMap->variableCount] =
-                    "y_a^H_for_arc_" + std::to_string(idBasedArc) + "_at_time_" + std::to_string(event.relativeTime);
+                    "y_a^H_for_arc_" + std::to_string(idBasedArc) 
+                    + "_at_time_" + std::to_string(event.relativeTime);
                 constraintToDescription[indexMap->constraintCount] =
                     "port_positive_on_cutoff_at_event_" + std::to_string(event.relativeTime);
             }
@@ -132,12 +131,15 @@ void addIpoptIndexMap(
     // Q_r, Z_r ## spotQNConstraints
     for (const auto& itinerary : input.itineraries) {
         if (initDescriptions) {
-            variableToDescription[indexMap->variableCount] = "Q_r_for_itinerary_" + std::to_string(itinerary.id);
+            variableToDescription[indexMap->variableCount] = 
+                "Q_r_for_itinerary_" + std::to_string(itinerary.id);
         }
         indexMap->idItineraryToQIndex[itinerary.id] = indexMap->variableCount++;
         if (initDescriptions) {
-            variableToDescription[indexMap->variableCount] = "Z_r_for_itinerary_" + std::to_string(itinerary.id);
-            constraintToDescription[indexMap->constraintCount] = "SpotQN_constraint_for_itinerary_" + std::to_string(itinerary.id);
+            variableToDescription[indexMap->variableCount] = 
+                "Z_r_for_itinerary_" + std::to_string(itinerary.id);
+            constraintToDescription[indexMap->constraintCount] = 
+                "SpotQN_constraint_for_itinerary_" + std::to_string(itinerary.id);
         }
         indexMap->idItineraryToZIndex[itinerary.id] = indexMap->variableCount++;
         indexMap->spotQNConstraints[itinerary.id] = indexMap->constraintCount++;
@@ -146,7 +148,8 @@ void addIpoptIndexMap(
     // Q_i^r, u_i
     for (const auto& allotment : input.allotments) {
         if (initDescriptions) {
-            variableToDescription[indexMap->variableCount] = "u_i_for_allotment_" + std::to_string(allotment.id);
+            variableToDescription[indexMap->variableCount] = 
+                "u_i_for_allotment_" + std::to_string(allotment.id);
         }
         indexMap->allotmentToUIndex[allotment.id] = indexMap->variableCount++;
         for (unsigned idEntry : allotment.entries) {
@@ -154,10 +157,10 @@ void addIpoptIndexMap(
             unsigned idItinerary = entry.itinerary;
 
             if (initDescriptions) {
-                variableToDescription[indexMap->variableCount] = "Q^i_r_for_allotment_" + std::to_string(allotment.id) + "_itinerary_" +
-                    std::to_string(idItinerary);
+                variableToDescription[indexMap->variableCount] = "Q^i_r_for_allotment_" 
+                    + std::to_string(allotment.id) + "_itinerary_" + std::to_string(idItinerary);
             }
-            indexMap->allotmentItineraryToQIndex[allotment.id][idItinerary] =
+            indexMap->allotmentItineraryToQIndex[allotment.id][idItinerary] = 
                 indexMap->variableCount++;
         }
     }
@@ -190,17 +193,16 @@ void addIpoptIndexMap(
         }
         indexMap->groupConstraints[idGroup] = indexMap->constraintCount++;
     }
-    if (useEnhancement) {
-        indexMap->allotmentItineraryQConstraints.resize(input.itineraries.size());
-        indexMap->allotmentItineraryQConstraints.shrink_to_fit();
-        for (unsigned idItinerary = 0; idItinerary < indexMap->allotmentItineraryQConstraints.size(); idItinerary++) {
-            auto& allotmentQConstraints = indexMap->allotmentItineraryQConstraints[idItinerary];
-            allotmentQConstraints.resize(input.allotments.size());
-            allotmentQConstraints.shrink_to_fit();
+    indexMap->allotmentItineraryQConstraints.resize(input.itineraries.size());
+    indexMap->allotmentItineraryQConstraints.shrink_to_fit();
+    for (unsigned idItinerary = 0; idItinerary < indexMap->allotmentItineraryQConstraints.size(); 
+            idItinerary++) {
+        auto& allotmentQConstraints = indexMap->allotmentItineraryQConstraints[idItinerary];
+        allotmentQConstraints.resize(input.allotments.size());
+        allotmentQConstraints.shrink_to_fit();
 
-            for (auto& constraintId: allotmentQConstraints) {
-                constraintId = indexMap->constraintCount++;
-            }
+        for (auto& constraintId: allotmentQConstraints) {
+            constraintId = indexMap->constraintCount++;
         }
     }
 }
@@ -216,45 +218,58 @@ void printIndexMapStatsGeneral(Writer&  out, const IpoptIndexMap& indexMap) {
         std::pair<unsigned, unsigned> statStorage;
 
         statStorage = getUsefulIndexCount(indexMap.timeItineraryToDemandIndex);
-        out << "timeItineraryToDemandIndex: field count = " << statStorage.second << " useful fields(real constraints) = " << statStorage.first << "\n";
+        out << "timeItineraryToDemandIndex: field count = " << statStorage.second 
+            << " useful fields(real constraints) = " << statStorage.first << "\n";
 
         statStorage = getUsefulIndexCount(indexMap.arcToHired);
-        out << "arcToHired: field count = " << statStorage.second << " useful fields(real constraints) = " << statStorage.first << "\n";
+        out << "arcToHired: field count = " << statStorage.second 
+            << " useful fields(real constraints) = " << statStorage.first << "\n";
 
         statStorage = getUsefulIndexCount(indexMap.idItineraryToQIndex);
-        out << "idItineraryToQIndex: field count = " << statStorage.second << " useful fields(real constraints) = " << statStorage.first << "\n";
+        out << "idItineraryToQIndex: field count = " << statStorage.second 
+            << " useful fields(real constraints) = " << statStorage.first << "\n";
 
         statStorage = getUsefulIndexCount(indexMap.idItineraryToZIndex);
-        out << "idItineraryToZIndex: field count = " << statStorage.second << " useful fields(real constraints) = " << statStorage.first << "\n";
+        out << "idItineraryToZIndex: field count = " << statStorage.second 
+            << " useful fields(real constraints) = " << statStorage.first << "\n";
 
         statStorage = getUsefulIndexCount(indexMap.allotmentItineraryToQIndex);
-        out << "allotmentItineraryToQIndex: field count = " << statStorage.second << " useful fields(real constraints) = " << statStorage.first << "\n";
+        out << "allotmentItineraryToQIndex: field count = " << statStorage.second 
+            << " useful fields(real constraints) = " << statStorage.first << "\n";
 
         statStorage = getUsefulIndexCount(indexMap.allotmentToUIndex);
-        out << "allotmentToUIndex: field count = " << statStorage.second << " useful fields(real constraints) = " << statStorage.first << "\n";
+        out << "allotmentToUIndex: field count = " << statStorage.second 
+            << " useful fields(real constraints) = " << statStorage.first << "\n";
 
         statStorage = getUsefulIndexCount(indexMap.timeToSIndex);
-        out << "timeToSIndex: field count = " << statStorage.second << " useful fields(real constraints) = " << statStorage.first << "\n";
+        out << "timeToSIndex: field count = " << statStorage.second 
+            << " useful fields(real constraints) = " << statStorage.first << "\n";
 
         // Statistics related to constraints.
         out << "constraint count = " << indexMap.constraintCount << "\n";
         statStorage = getUsefulIndexCount(indexMap.arcCapacityConstraints);
-        out << "arcCapacityConstraints : field count = " << statStorage.second << " useful fields(real constraints) = " << statStorage.first << "\n";
+        out << "arcCapacityConstraints : field count = " << statStorage.second 
+            << " useful fields(real constraints) = " << statStorage.first << "\n";
 
         statStorage = getUsefulIndexCount(indexMap.portPositiveCutoffArcConstraints);
-        out << "portPositiveCutoffArcConstraints : field count = " << statStorage.second << " useful fields(real constraints) = " << statStorage.first << "\n";
+        out << "portPositiveCutoffArcConstraints : field count = " << statStorage.second 
+            << " useful fields(real constraints) = " << statStorage.first << "\n";
 
         statStorage = getUsefulIndexCount(indexMap.portPositiveArrivalArcConstraints);
-        out << "portPositiveArrivalArcConstraints : field count = " << statStorage.second << " useful fields(real constraints) = " << statStorage.first << "\n";
+        out << "portPositiveArrivalArcConstraints : field count = " << statStorage.second 
+            << " useful fields(real constraints) = " << statStorage.first << "\n";
 
         statStorage = getUsefulIndexCount(indexMap.spotQNConstraints);
-        out << "spotQNConstraints : field count = " << statStorage.second << " useful fields(real constraints) = " << statStorage.first << "\n";
+        out << "spotQNConstraints : field count = " << statStorage.second 
+            << " useful fields(real constraints) = " << statStorage.first << "\n";
 
         statStorage = getUsefulIndexCount(indexMap.finalContainerConstraints);
-        out << "finalContainerConstraints: field count = " << statStorage.second << " useful fields(real constraints) = " << statStorage.first << "\n";
+        out << "finalContainerConstraints: field count = " << statStorage.second 
+            << " useful fields(real constraints) = " << statStorage.first << "\n";
 
         statStorage = getUsefulIndexCount(indexMap.groupConstraints);
-        out << "groupConstraints: field count = " << statStorage.second << " useful fields(real constraints) = " << statStorage.first << "\n";
+        out << "groupConstraints: field count = " << statStorage.second 
+            << " useful fields(real constraints) = " << statStorage.first << "\n";
         out << "memory usage now = " << getMemUsage() / (1024. * 1024) << "MB" << "\n";
         out << "=======================" << "\n";
 }

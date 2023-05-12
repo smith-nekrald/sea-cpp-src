@@ -237,7 +237,6 @@ void IpoptBackend::recalculate(
     problemConfig.linksManager = config.linksManager;
     problemConfig.actionManager = currentActionManager;
     problemConfig.decisionManager = decisionManagerToWrite;
-    problemConfig.useEnhancedVersion = config.useEnhancedVersion;
     problemConfig.updateTime = timeParameters.timeEvent;
     problemConfig.utilizationRatio = utilizationRatio;
     OptimizationProblem problem(problemConfig);
