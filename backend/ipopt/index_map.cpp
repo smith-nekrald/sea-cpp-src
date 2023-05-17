@@ -1,3 +1,8 @@
+// API for IpoptIndexMap class methods and related IO.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
 #include "index_map.h"
 #include "../../common.h"
 
@@ -9,9 +14,10 @@
 namespace sea {
 namespace backend {
 
-const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
 
 void initIndexMapWithMaxIndex(const InputData& input, IpoptIndexMap* indexMap) {
+    const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
+
     // For variables.
     indexMap->variableCount = 0;
 
@@ -68,21 +74,14 @@ void initIndexMapWithMaxIndex(const InputData& input, IpoptIndexMap* indexMap) {
     indexMap->constraintToDescription.clear();
 }
 
-void createIndexMap(
-        const InputData& input,
-        IpoptIndexMap* indexMap,
-        bool initDescriptions) {
-
+void createIndexMap(const InputData& input, IpoptIndexMap* indexMap, bool initDescriptions) {
     initIndexMapWithMaxIndex(input, indexMap);
     indexMap->constraintCount++; // need to offset all constraint indices by 1
     addIpoptIndexMap(input, indexMap, initDescriptions);
     indexMap->constraintCount--;
 }
 
-void addIpoptIndexMap(
-        const InputData& input,
-        IpoptIndexMap* indexMap,
-        bool initDescriptions) {
+void addIpoptIndexMap(const InputData& input, IpoptIndexMap* indexMap, bool initDescriptions) {
 
     auto& variableToDescription = indexMap->variableToDescription;
     auto& constraintToDescription = indexMap->constraintToDescription;
@@ -206,7 +205,6 @@ void addIpoptIndexMap(
         }
     }
 }
-
 
 
 template<typename Writer>

@@ -1,3 +1,11 @@
+/**
+ * @file index_map.h
+ * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
+ * @brief Implements IpoptIndexMap, a structure for indexing optimization problem and converting
+ * between solution of the optimization problem and backend output. Also implements some logging
+ * and IO-related API.
+ * @copyright (c) Smith School of Business, 2023
+ */
 #pragma once
 
 #include "../../types.h"
@@ -78,42 +86,101 @@ struct IpoptIndexMap {
 
 };
 
+/**
+ * @brief Creates a pre-initialized Ipopt index map. Reshapes corresponding vectors and 
+ * sets default values.
+ * 
+ * @param[in] input The InputData entity to derive the required parameters.
+ * @param[out] indexMap  The IndexMap object to initialize.
+ * @param[in] initDescriptions If true, initialize human-readable description. 
+ */
+void createIndexMap(const InputData& input, IpoptIndexMap* indexMap, bool initDescriptions=false);
+
+/**
+ * @brief Reshapes Ipopt index map vectors to correct shapes and initializes with MAX UNSIGNED.
+ * 
+ * @param[in] input The InputData entity to derive the required parameters.
+ * @param[out] indexMap The IpoptIndexMap to process.
+ */
 void initIndexMapWithMaxIndex(const InputData& input, IpoptIndexMap* indexMap);
-void createIndexMap(const InputData& input,
-        IpoptIndexMap* indexMap,
-        bool initDescriptions=false);
-void addIpoptIndexMap(const InputData& input,
-        IpoptIndexMap* indexMap,
-        bool initDescriptions=false);
+
+/**
+ * @brief Forms indices in the IpoptIndexMap and supplies Ipopt Index Map with human-readable 
+ * descriptions.
+ * 
+ * @param[in] input The InputData entity to derive the required parameters.
+ * @param[out] indexMap The IpoptIndexMap entity to fill.
+ * @param[in] initDescriptions If true, initializes human-readable descriptions.
+ */
+void addIpoptIndexMap(const InputData& input, IpoptIndexMap* indexMap, bool initDescriptions=false);
+
+/**
+ * @brief Template method to export indexMap into a human-readable form.
+ * 
+ * @tparam Writer  The type of the out object. Potentially ifstream, ofstream or logger.
+ * @param out The stream object to write. 
+ * @param indexMap  The Ipopt Index Map entity to export.
+ */
+template<typename Writer> 
+void printIndexMapStatsGeneral(Writer&  out, const IpoptIndexMap& indexMap);
+
+/**
+ * @brief Prints index map into output stream.
+ * 
+ * @param out  The output stream for writing.
+ * @param indexMap  The Ipopt Index Map to export.
+ */
 void printIndexMapStats(std::ostream& out, const IpoptIndexMap& indexMap);
+
+/**
+ * @brief Prints Ipopt index map into logger.
+ * 
+ * @param logger The logger to stream into.
+ * @param indexMap  The entity to stream into the logger.
+ */
 void printIndexMapStats(log4cpp::CategoryStream& logger, const IpoptIndexMap& indexMap);
 
 
 } // namespace backend
 
+/**
+ * @brief  Writes IpoptIndexMap to a file.
+ * 
+ * @param filePath The path of the export file.
+ * @param indexMap  The entity to export.
+ */
 void writeToFile(const std::string& filePath, const backend::IpoptIndexMap& indexMap);
+
+/**
+ * @brief  Loads IpoptIndexMap from file.
+ * 
+ * @param[in] filePath The path of the file.
+ * @param[out] indexMap  The entity to load.
+ */
 void loadFromFile(const std::string& filePath, backend::IpoptIndexMap* indexMap);
 
 } // namespace sea
 
 namespace cereal {
 
+/**
+ * @brief  Method to allow exporting InpoptIndexMap with cereal.
+ * 
+ * @tparam Archive Type of cereal output archive.
+ * @param ar The archive object. 
+ * @param indexMap The entity to serialize.
+ */
 template<class Archive>
-void serialize(Archive& ar, sea::backend::IpoptIndexMap& indexMap)
-{
-    ar(indexMap.timeItineraryToDemandIndex,
-
+void serialize(Archive& ar, sea::backend::IpoptIndexMap& indexMap) {
+    // Specify all relevant serialization fields.
+    ar( indexMap.timeItineraryToDemandIndex,
         indexMap.arcToHired,
-
         indexMap.idItineraryToQIndex,
         indexMap.idItineraryToZIndex,
         indexMap.allotmentItineraryToQIndex,
-
         indexMap.allotmentToUIndex,
         indexMap.timeToSIndex,
-
         indexMap.variableCount,
-
         indexMap.arcCapacityConstraints,
         indexMap.portPositiveCutoffArcConstraints,
         indexMap.portPositiveArrivalArcConstraints,
@@ -121,10 +188,8 @@ void serialize(Archive& ar, sea::backend::IpoptIndexMap& indexMap)
         indexMap.finalContainerConstraints,
         indexMap.groupConstraints,
         indexMap.constraintCount,
-
         indexMap.variableToDescription,
         indexMap.constraintToDescription,
-
         indexMap.allotmentItineraryQConstraints);
 }
 
