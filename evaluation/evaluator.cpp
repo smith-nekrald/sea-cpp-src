@@ -144,9 +144,9 @@ Statistics Evaluator::calc(algo::IAlgorithmPtr algo, ConstMarketManagerPtr marke
         }
     }
 
-    logger.noticeStream() << "spotProfit = " << statistics.spotProfit << "\n";
-    logger.noticeStream() << "allotmentProfit = " << statistics.allotmentProfit << "\n";
-    logger.noticeStream() << "fullProfit = " << statistics.fullProfit << "\n";
+    logger.noticeStream() << "spotProfit = " << statistics.spotProfit;
+    logger.noticeStream() << "allotmentProfit = " << statistics.allotmentProfit;
+    logger.noticeStream() << "fullProfit = " << statistics.fullProfit;
 
     logging::getOutTestLogger().debugStream() << "Final counts on all arcs: ";
     auto debugStream = logging::getOutTestLogger().getStream(log4cpp::Priority::DEBUG);
