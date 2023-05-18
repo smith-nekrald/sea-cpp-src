@@ -39,8 +39,6 @@ void fillBackendConfig(json::Value& configRoot, IpoptBackendConfig& config) {
     }
     if (solverType == "mumps") {
         config.solver = sea::backend::LinearSolver::MUMPS;
-    } else if (solverType == "wsmp") {
-        config.solver = sea::backend::LinearSolver::WSMP;
     } else if (solverType == "ma27") {
         config.solver = sea::backend::LinearSolver::MA27;
     } else if (solverType == "ma97") {

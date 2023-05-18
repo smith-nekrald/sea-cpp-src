@@ -1,3 +1,9 @@
+/**
+ * @file ipopt_backend.h
+ * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
+ * @brief Describes IpoptBackend entity and corresponding API. 
+ * @copyright (c) Smith School of Business, 2023
+ */
 #pragma once
 
 #include "../../manager.h"
@@ -10,45 +16,68 @@
 namespace sea {
 namespace backend {
 
+/**
+ * @brief Describes memory management and/or approximations for Ipopt when computing Hessian.
+ */
 enum class MemoryStrategy {
-    EXACT_COMPUTATION,
-    LIMITED_MEMORY_BFGS,
-    LIMITED_MEMORY_SR1,
+    EXACT_COMPUTATION,      ///< Computing Hessian completely.
+    LIMITED_MEMORY_BFGS,    ///< BFGS approximation when computing Hessian.
+    LIMITED_MEMORY_SR1,     ///< SR1 approximation when computing Hessian.
 };
 
+/**
+ * @brief Describes CppAD Auto-Derivation strategy.
+ */
 enum class DerivativeStrategy {
-    FORWARD,
-    BACKWARD
+    FORWARD,    ///< Forward Auto-Derivatives.
+    BACKWARD    ///< Backward Auto-Derivatives.
 };
 
+/**
+ * @brief Describes type of Linear Solver to used in Ipopt Solver.
+ */
 enum class LinearSolver {
-    MA27,
-    MA57,
-    MA86,
-    MA97,
-    MA77,
-    WSMP,
-    MUMPS,
+    MA27,   ///< HSL-MA27 Linear Solver.
+    MA57,   ///< HSL-MA57 Linear Solver.
+    MA86,   ///< HSL-MA86 Linear Solver.
+    MA97,   ///< HSL-MA97 Linear Solver.
+    MA77,   ///< HSL-MA77 Linear Solver.
+    MUMPS,  ///< MUMPS Linear Solver.
 };
 
+/**
+ * @brief Configures Ipopt Backend.
+ */
 struct IpoptBackendConfig {
+    /// @brief Manager for Input Data.
     ConstInputManagerPtr inputManager;
+    /// @brief  Manager for Input Links.
     ConstLinksManagerPtr linksManager;
 
+    /// @brief Type of memory management when computing Hessian.
     MemoryStrategy memoryManagement = MemoryStrategy::EXACT_COMPUTATION;
+    /// @brief Strategy for CppAD auto-derivation.
     DerivativeStrategy derivativeComputation = DerivativeStrategy::BACKWARD;
+    /// @brief Type of linear solver to use in Ipopt.
     LinearSolver solver = LinearSolver::MA27;
+
+    /// @brief Level of verbose output while running Ipopt solver to log file.
     int filePrintLevel = 5;
+    /// @brief Level of verbose output while running Ipopt solver to CLI.
     int printLevel = 5;
 
+    /// @brief If true, backend tends to optimize RAM memory performance.
     bool needMemory = false;
+    /// @brief If true, index contains human-readable descriptions. Helps for debugging.
     bool needDescriptionsInIndex = false;
 
+    /// @brief Path prefix for saving Ipopt solver logs.
     std::string path_prefix = "";
 
-    // This group of parameters corresponds to warm/cold start.
+    /// @brief If true, saves last feasible point, which allows to warm-start later. 
     bool saveVariables = true;
 
+    /// @brief Sometimes non-complete capacity utilization helps with performance tuning.
     double defaultUtilizationRatio = 1.0;
 };
 
@@ -57,22 +86,67 @@ struct IpoptBackendConfig {
  */
 class IpoptBackend {
 public:
+    /**
+     * @brief Constructs a new IpoptBackend object.
+     * 
+     * @param config Backend Configuration.
+     */
     IpoptBackend(const IpoptBackendConfig& config);
+    /**
+     * @brief Updates inner state and variables assuming that the decision is valid for a prefix
+     * until specified time in timeParameters.
+     * 
+     * @param[in] timeParameters Specifies the state of interaction. Tracks event time and the
+     * stage of interaction protocol.
+     * @param[out] decision The Manager with Decision entity. Place to write the decisions,
+     * and place to look for decisions that are already made.
+     * @param[in] action The Manager with Action entity. Allows to recover response of environment.
+     * @param[out] objectiveEstimation Place to write estimated objective. Estimation is written
+     * if the pointer is not nullptr. Objective estimation is how Ipopt solver computed objective.
+     * @param[out] duals Place to write dual variables. Duals are written if the pointer is not 
+     * nullptr. Helps to create starting point for methods based on Lagrangian Relaxation.
+     */
     void moveDecisionToTime(
             TimeParameters timeParameters,
             DecisionManagerPtr decision,
             ConstActionManagerPtr action,
             double* objectiveEstimation = nullptr,
             DualVariables* duals = nullptr);
+    /**
+     * @brief Method to call from Benders-Decomposition Allotment approach.
+     * 
+     * @param[in] allotments The allotments selected in Benders Decomposition approach.
+     * @param[out] objectiveEstimation Pointer to a place for writing objective estimation.
+     * @param[out] duals Pointer to a place for writing dual variables.
+     * @return Smart pointer to a Manager with Decision.
+     */
     DecisionManagerPtr bendersQuery(
             const vector<bool>& allotments,
             double* objectiveEstimation = nullptr,
             DualVariables* duals = nullptr);
-    vector<bool> provideAllotments(
-            double* objectiveEstimation = nullptr);
+    /**
+     * @brief Requesting for allotment decision. 
+     * 
+     * @param[out] objectiveEstimation Place to write objective estimation, in case the pointer is 
+     * distinct from nullptr.
+     * @return Vector with selected allotments. 
+     */
+    vector<bool> provideAllotments(double* objectiveEstimation = nullptr);
+    /**
+     * @brief Sets value for ignoreSpot parameter. Depending on this parameter value,
+     * the spot market is either ignored or not.
+     * 
+     * @param value Value to set.
+     */
     void setIgnoreSpot(bool value) {
         ignoreSpot = value;
     }
+    /**
+     * @brief Sets the capacity utilization ratio. Sometimes having this ratio less than 1.0
+     * is helpful for performance tuning.
+     * 
+     * @param value The new value for capacity utilization ratio.
+     */
     void setUtilizationRatio(double value) {
         utilizationRatio = value;
     }
@@ -246,24 +320,64 @@ protected:
     double utilizationRatio;
 };
 
+/**
+ * @brief Method to update lower bound. Assign value to a maximum from value and new estimation.
+ * 
+ * @tparam T Type of the values to process.
+ * @param value The value to update, previous lower bound.
+ * @param candidate The new lower bound candidate.
+ */
 template<typename T>
 void updateLower(T& value,  T candidate) {
     value = std::max(value, candidate);
 }
 
+/**
+ * @brief Method to update upper bound. Assigns value to a minimum from value and new estimation.
+ * 
+ * @tparam T Type of the values to process.
+ * @param value The value to update, previous upper bound.
+ * @param candidate The new upper bound candidate.
+ */
 template<typename T>
 void updateUpper(T& value, T candidate) {
     value = std::min(value, candidate);
 }
 
+/**
+ * @brief Logs Ipopt options into debug-level sublogger (Ipopt Backend).
+ * 
+ * @param options Ipopt Solver options.
+ */
 void logOptions(const std::string& options);
+
+/**
+ * @brief Makes Ipopt options string from Ipopt configuration.
+ * 
+ * @param config The Ipopt backend configuration.
+ * @return std::string The string with Ipopt configuration.
+ */
 std::string makeOptionsFromConfig(const IpoptBackendConfig& config);
+
+/**
+ * @brief Logs constraints to the logger on debug-level output. The most 
+ * likely use-case is for IPOPT backend, but if the index map is in the 
+ * same format, the other backend-targeted output is supported too.
+ * 
+ * @param vlower Lower variable bounds.
+ * @param vupper Upper variable bounds. 
+ * @param glower  Lower constraint bounds.
+ * @param gupper  Upper constraint bounds.
+ * @param variables The array with variable values (feasible point). 
+ * @param index Ipopt variable index.
+ * @param backendType Type of backend to attribute the log to. The pre-set option is Ipopt backend.
+ */
 void logConstraints(
-        const vector<double>& vlower,
+        const vector<double>& vlower, 
         const vector<double>& vupper,
-        const vector<double>& glower,
+        const vector<double>& glower, 
         const vector<double>& gupper,
-        const vector<double>& variables,
+        const vector<double>& variables, 
         const IpoptIndexMap& index,
         BackendType backendType = BackendType::IPOPT);
 

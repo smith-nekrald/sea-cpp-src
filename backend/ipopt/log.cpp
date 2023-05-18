@@ -1,3 +1,9 @@
+// Logging methods and string-related API. 
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "ipopt_backend.h"
 #include "optimization_problem.h"
 #include "../lagrangian_relaxation/index.h"
@@ -18,6 +24,11 @@ using std::cout;
 using std::endl;
 using std::size_t;
 
+// Logging Functions
+
+void logOptions(const std::string& options) {
+   logging::getBackendSubLogger(sea::BackendType::IPOPT).debug("Ipopt Options: " + options);
+}
 
 void logConstraints(
         const vector<double>& vlower,
@@ -66,11 +77,6 @@ void logConstraints(
     }
 }
 
-// Logging Functions
-void logOptions(const std::string& options) {
-   logging::getBackendSubLogger(sea::BackendType::IPOPT).debug("Ipopt Options: " + options);
-}
-
 // Useful functions.
 std::string makeOptionsFromConfig(const IpoptBackendConfig& config) {
     std::string options = "";
@@ -92,8 +98,6 @@ std::string makeOptionsFromConfig(const IpoptBackendConfig& config) {
         options += "String linear_solver ma97 \n";
     } else if (config.solver == LinearSolver::MA77) {
         options += "String linear_solver ma77 \n";
-    } else if (config.solver == LinearSolver::WSMP) {
-        options += "String linear_solver wsmp \n";
     } else {
         throw std::logic_error("Unknown linear solver");
     }
