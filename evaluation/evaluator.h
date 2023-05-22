@@ -47,18 +47,18 @@ private:
     vector<bool> selectedAllotments;
 
     // [arc-id] -> itineraries end in this arc
-    std::map<ui32, std::vector<ui32>> itinerariesEndInArc;
+    std::map<unsigned, std::vector<unsigned>> itinerariesEndInArc;
     // <port-id, arc-id>
-    std::map<ui32, ui32> arcEndsInPort;
+    std::map<unsigned, unsigned> arcEndsInPort;
 
     // indexed by port-id
-    std::vector<ui32> containersInPorts;
+    std::vector<unsigned> containersInPorts;
     // indexed by itinerary-id
-    std::vector<ui32> containersAssignedOnItineraries;
+    std::vector<unsigned> containersAssignedOnItineraries;
     // indexed by itinerary-id
-    std::vector<ui32> totalBookings;
+    std::vector<unsigned> totalBookings;
     // indexed by arc-id
-    std::vector<ui32> usedCapacity;
+    std::vector<unsigned> usedCapacity;
 
     ActionManagerPtr actionManager;
     ConstDecisionManagerPtr decisionManager;

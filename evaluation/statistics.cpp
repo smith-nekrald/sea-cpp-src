@@ -1,17 +1,24 @@
+// Implementation and API related to Statistics structure.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "statistics.h"
 
 #include <iostream>
 #include <fstream>
 #include <iomanip>
+#include <cassert>
+#include <cmath>
 
 namespace sea {
 
 using std::ostream;
 using std::endl;
 
-void printEvaluatorStatistics(
-        const Statistics& stats,
-        ostream& os) {
+void printEvaluatorStatistics(const Statistics& stats, ostream& os) {
+
     os << std::fixed;
     os << stats.estimation;
     os << "complete_profit = " << std::fixed <<  stats.fullProfit << std::endl;
@@ -27,8 +34,10 @@ void printEvaluatorStatistics(
         << " bookings_spot = " << stats.sumSpotBookingAmount
         << " bookings_allotment = " << stats.sumAllotmentBookingAmount
         << std::endl;
-    assert(stats.fullProfit == stats.spotProfit + stats.allotmentProfit +
-            stats.containerProfit + stats.emptyContainerProfit);
+
+    const double EPS = 1e-2;
+    assert(fabs(stats.fullProfit - (stats.spotProfit + stats.allotmentProfit +
+            stats.containerProfit + stats.emptyContainerProfit)) < EPS);
 }
 
 } // namespace sea
