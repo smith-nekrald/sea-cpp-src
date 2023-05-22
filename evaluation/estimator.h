@@ -21,30 +21,28 @@ struct RevenueEstimate {
 class BaseEstimator {
 public:
     RevenueEstimate calcUpperBound(
-            const InputData& i,
-            const InputLinks& l,
-            const MarketData& m) const {
-        RevenueEstimate eval;
-        assert(eval.allotment == 0);
-        assert(eval.spotMarket == 0);
-        eval.allotment = estimateAllotments(i, l, m);
-        eval.spotMarket = estimateSpotMarket(i, l, m);
-        return eval;
-    }
+            const InputData& input, const InputLinks& links, const MarketData& market);
 
     virtual ~BaseEstimator() {}
 
 protected:
     virtual double estimateAllotments(
-        const InputData&, const InputLinks&, const MarketData&) const;
+        const InputData& input, const InputLinks& links, const MarketData& market);
     virtual double estimateSpotMarket(
-        const InputData&, const InputLinks&, const MarketData&) const;
+        const InputData& input, const InputLinks& links, const MarketData& market);
+    void estimateEachAllotment(
+        const InputData& input, const InputLinks& links, const MarketData& market);
+
+protected:
+    std::vector<double> allotmentProfitEstimation;
 };
 
 class SmartEstimator : public BaseEstimator {
 private:
     virtual double estimateSpotMarket(
-        const InputData&, const InputLinks&, const MarketData&) const override;
+        const InputData& input, const InputLinks& links, const MarketData& market) override;
+    virtual double estimateAllotments(
+        const InputData& input, const InputLinks& links, const MarketData& market) override;
 };
 
 }   // namespace sea
