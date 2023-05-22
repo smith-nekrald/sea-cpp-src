@@ -16,7 +16,7 @@ std::ostream& operator<<(std::ostream& out, const RevenueEstimate& estimate) {
 }
 
 RevenueEstimate BaseEstimator::calcUpperBound(
-        const InputData& input, const InputLinks& links, const MarketData& market) {
+        const InputData& input, const InputLinks& links, const MarketData& market) const {
     RevenueEstimate estimate;
     assert(estimate.allotment == 0 && estimate.spotMarket == 0);
     estimate.allotment = estimateAllotments(input, links, market);
@@ -24,9 +24,9 @@ RevenueEstimate BaseEstimator::calcUpperBound(
     return estimate;
 }
 
-void BaseEstimator::estimateEachAllotment(
-        const InputData& input, const InputLinks& links, const MarketData& market) {
-    allotmentProfitEstimation.resize(input.allotments.size());
+vector<double> BaseEstimator::estimateEachAllotment(
+        const InputData& input, const InputLinks& links, const MarketData& market) const {
+    vector<double> allotmentProfitEstimation(input.allotments.size(), 0);
     assert(market.allotmentShowCount.size() == input.allotments.size());
     for (unsigned contractId = 0; contractId < input.allotments.size(); ++contractId) {
         double possibleRevenue = 0;
@@ -45,11 +45,12 @@ void BaseEstimator::estimateEachAllotment(
         }
         allotmentProfitEstimation[contractId] = std::max<double>(0, possibleRevenue);
     }
+    return allotmentProfitEstimation;
 }
 
 double BaseEstimator::estimateAllotments(
-        const InputData& input, const InputLinks& links, const MarketData& market) {
-    estimateEachAllotment(input, links, market);
+        const InputData& input, const InputLinks& links, const MarketData& market) const {
+    vector<double> allotmentProfitEstimation = estimateEachAllotment(input, links, market);
     double simpleSum = 0.;
     for (const auto& item : allotmentProfitEstimation) {
         simpleSum += item;
@@ -58,7 +59,7 @@ double BaseEstimator::estimateAllotments(
 }
 
 double BaseEstimator::estimateSpotMarket(
-        const InputData& input, const InputLinks&, const MarketData& market) {
+        const InputData& input, const InputLinks&, const MarketData& market) const {
     double estimate = 0;
     for (const auto & entry: market.idEventToWpay) {
         for (const auto & pairSpot : entry.second) {
@@ -80,7 +81,7 @@ double BaseEstimator::estimateSpotMarket(
 }
 
 double SmartEstimator::estimateSpotMarket(
-        const InputData& input, const InputLinks& links, const MarketData& market) {
+        const InputData& input, const InputLinks& links, const MarketData& market) const {
     double estimate = 0;
     for (const auto & entry : market.idEventToWpay) {
         for (const auto & pairSpot : entry.second) {
@@ -127,8 +128,8 @@ double SmartEstimator::estimateSpotMarket(
 }
 
 double SmartEstimator::estimateAllotments(
-        const InputData& input, const InputLinks& links, const MarketData& market) {
-    estimateEachAllotment(input, links, market);
+        const InputData& input, const InputLinks& links, const MarketData& market) const {
+    vector<double> allotmentProfitEstimation = estimateEachAllotment(input, links, market);
 
     // From each group, at most one allotment is selected.
     vector<bool> seenInGroups(input.allotments.size(), false);
@@ -157,4 +158,3 @@ double SmartEstimator::estimateAllotments(
 }
 
 }   // namespace sea
-
