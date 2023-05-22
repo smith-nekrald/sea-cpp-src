@@ -69,6 +69,19 @@ void Evaluator::logEvaluatorLaunched(const Event& event) {
     logger.debugStream() << "Evaluator is launched for event: " << event.relativeTime << "\n";
 }
 
+void Evaluator::logPricingBookingsRevenue(unsigned itinerary, double price, unsigned bookings) {
+    auto& logger = logging::getEvaluationLogger();
+    auto stream = logger.getStream(log4cpp::Priority::DEBUG);
+    stream << "Itinerary: " << itinerary << " Price: " << price << " ";
+    stream << "Bookings: " << bookings << "\n";
+    stream << "Adding to spot profit revenue = " << bookings * price << "\n";
+}
+
+void Evaluator::logAboutMakingPricingActionForEvent(const Event& event) {
+    auto& logger = logging::getEvaluationLogger();
+    auto stream = logger.getStream(log4cpp::Priority::DEBUG);
+    stream << "Evaluator: Making pricing action for event " << event.relativeTime << "\n";
+}
 
 
 } // namespace sea

@@ -50,6 +50,8 @@ private:
     void logAboutOffhiring();
     void logAboutCutoff();
     void logEvaluatorLaunched(const InputData::Event& event);
+    void logAboutMakingPricingActionForEvent(const InputData::Event& event);
+    void logPricingBookingsRevenue(unsigned itinerary, double price, unsigned bookings);
 
 private:
     EvaluatorConfig config;

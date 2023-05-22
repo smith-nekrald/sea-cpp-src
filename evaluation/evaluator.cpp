@@ -137,16 +137,13 @@ void Evaluator::processArrival(const InputData::Event& event) {
     const auto& input = config.inputManager->getConstData();
     const auto & currPort = input.ports[input.nodes[event.basedNode.value()].portId];
 
-    for (auto itId : event.relatedItineraryIds) {
-        containersInPorts[currPort.id] += containersAssignedOnItineraries[itId];
+    for (auto itineraryId : event.relatedItineraryIds) {
+        containersInPorts[currPort.id] += containersAssignedOnItineraries[itineraryId];
     }
 }
 
 void Evaluator::makePricingAction(const Event& event) {
-    auto& logger = logging::getEvaluationLogger();
-    auto stream = logger.getStream(log4cpp::Priority::DEBUG);
-
-    stream << "Evaluator: Making pricing action for event " << event.relativeTime << "\n";
+    logAboutMakingPricingActionForEvent(event);
 
     assert(decisionManager);
     assert(actionManager);
@@ -163,24 +160,19 @@ void Evaluator::makePricingAction(const Event& event) {
     auto wtopay = market.idEventToWpay.find(event.relativeTime);
     assert (wtopay != market.idEventToWpay.end());
 
-    for (const auto & itinerary_price : decision->prices[event.relativeTime]) {
-        stream << "Itinerary: " << itinerary_price.first
-            << " Price: " << itinerary_price.second << " ";
-
+    for (const auto& itinerary_price : decision->prices[event.relativeTime]) {
         auto buyers = wtopay->second.find(itinerary_price.first);
         if (buyers == wtopay->second.end())
             continue;
-
         auto price = itinerary_price.second;
         unsigned books = 0;
         unsigned shows = 0;
-        for (const auto & spotShow : buyers->second) {
+        for (const auto& spotShow : buyers->second) {
             if (spotShow.willingnessToPay >= price) {
                 ++books;
                 shows += spotShow.showFlag;
             }
         }
-        stream << " Bookings: " << books << "\n";
         action->bookingsB[event.relativeTime][itinerary_price.first] = books;
         totalBookings[itinerary_price.first] += books;
         action->spotMarketDemandN[itinerary_price.first] += shows;
@@ -188,7 +180,8 @@ void Evaluator::makePricingAction(const Event& event) {
         assert(books >= 0);
         assert(price > 0);
         statistics.spotProfit += books * price;
-        stream << "Adding to spot profit revenue = " << books * price << "\n";
+
+        logPricingBookingsRevenue(itinerary_price.first, price, books);
         statistics.sumSpotBookingAmount += books;
     }
 }
@@ -420,10 +413,8 @@ void Evaluator::updateContainersInPorts(double durationToNextPeriod) {
 
 void Evaluator::checkFinalContainersInPorts() {
     const auto& input = config.inputManager->getConstData();
-
     for (unsigned idx = 0; idx < input.ports.size(); ++idx) {
         if (containersInPorts[idx] != input.ports[idx].finalContainerCount) {
-
             int diff = int(containersInPorts[idx]) - int(input.ports[idx].finalContainerCount);
             if (diff > 0) {
                 statistics.containerProfit-= input.ports[idx].offHiringCost * diff;
