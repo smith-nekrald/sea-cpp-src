@@ -41,6 +41,17 @@ private:
     void initStartState();
 
 private:
+    void logAllotmentDecision();
+    void logProfits();
+    void logUsedCapacity();
+    void logSpotProfitAfterLastEvent(const InputData::Event& event);
+    void logAboutPricing();
+    void logAboutArrival();
+    void logAboutOffhiring();
+    void logAboutCutoff();
+    void logEvaluatorLaunched(const InputData::Event& event);
+
+private:
     EvaluatorConfig config;
     ConstMarketManagerPtr marketManager;
 

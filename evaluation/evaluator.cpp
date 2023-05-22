@@ -14,14 +14,13 @@ using std::endl;
 using Event = InputData::Event;
 using EventType = Event::Type;
 
-Evaluator::Evaluator(const EvaluatorConfig& aConfig)
-        : config(aConfig) {
+Evaluator::Evaluator(const EvaluatorConfig& aConfig) : config(aConfig) {
     const auto& input = config.inputManager->getConstData();
 
-    for (const auto & it : input.itineraries) {
-        const auto & arc = input.arcs[it.orderedArcs.back()];
+    for (const auto & itinerary : input.itineraries) {
+        const auto & arc = input.arcs[itinerary.orderedArcs.back()];
         arcEndsInPort.insert({input.nodes[arc.toNode].portId, arc.id});
-        itinerariesEndInArc[arc.id].push_back(it.id);
+        itinerariesEndInArc[arc.id].push_back(itinerary.id);
     }
 
     containersInPorts.resize(input.ports.size());
@@ -42,8 +41,7 @@ void Evaluator::initStartState() {
 
     containersInPorts.assign(input.ports.size(), 0);
     std::transform(std::begin(input.ports), std::end(input.ports), std::begin(containersInPorts),
-            [](const InputData::Port& p) { return p.initialContainerCount; }
-    );
+            [](const InputData::Port& port) { return port.initialContainerCount; });
     containersAssignedOnItineraries.assign(input.itineraries.size(), 0);
     totalBookings.assign(input.itineraries.size(), 0);
     usedCapacity.assign(input.arcs.size(), 0);
@@ -53,63 +51,45 @@ void Evaluator::initStartState() {
 }
 
 Statistics Evaluator::calc(algo::IAlgorithmPtr algo, ConstMarketManagerPtr market) {
-
-    auto& logger = logging::getEvaluationLogger();
-
     marketManager = market;
     initStartState();
-    decisionManager = algo->makeDecision();   // time = -1, make decision for allotments
 
-    logger.debugStream() << "Allotment decision: " << decisionManager->getConstData();
+    decisionManager = algo->makeDecision();   // time = -1, make decision for allotments
+    logAllotmentDecision();
 
     processAllotmentDecision();
     const sea::InputData* inputPtr = config.inputManager->get();
 
-    for (ui32 idEvent = 0; idEvent < config.inputManager->getConstData().events.size(); idEvent++) {
-    // for (auto event = std::begin(input.events); event != std::end(input.events); ++event) {
+    for (unsigned idEvent = 0;
+            idEvent < config.inputManager->getConstData().events.size(); idEvent++) {
+
         inputPtr = config.inputManager->get();
         auto event = inputPtr->events[idEvent];
-        logger.debugStream() << "Evaluator is launched for event: " << event.relativeTime << "\n";
+        logEvaluatorLaunched(event);
 
-
-        // Stage 1
+        // Stage 1. Pricing, cut-off or arrival.
         if (event.type == Event::Type::pricing) {
+            logAboutPricing();
             decisionManager = algo->makeDecision();
-            assert(decisionManager->getConstData().allotmentAccepted
-                == selectedAllotments);
-
+            assert(decisionManager->getConstData().allotmentAccepted == selectedAllotments);
             makePricingAction(event);
             algo->submitAction(actionManager);
-            {
-                logger.debugStream() << " Pricing event. \n";
-           }
-
         } else if (event.type == Event::Type::cutoff) {
+            logAboutCutoff();
             makeCutoffAction(event);
             algo->submitAction(actionManager);
             decisionManager = algo->makeDecision();
-            assert(decisionManager->getConstData().allotmentAccepted
-                == selectedAllotments);
-
+            assert(decisionManager->getConstData().allotmentAccepted == selectedAllotments);
             processCutoffDecision(event);
-            {
-                logger.debugStream() << " Cutoff event. \n";
-            }
         } else {
-            {
-                logger.debugStream() << " Arrival event. \n";
-            }
-
+            logAboutArrival();
             processArrival(event);
         }
 
         // Stage 2, get containers off-hired in ports
+        logAboutOffhiring();
         decisionManager = algo->makeDecision();
-        assert(decisionManager->getConstData().allotmentAccepted
-                == selectedAllotments);
-        {
-            logger.debugStream() << "Off-hiring. \n";
-        }
+        assert(decisionManager->getConstData().allotmentAccepted == selectedAllotments);
         inputPtr = config.inputManager->get();
         if (idEvent + 1 != inputPtr->events.size()) {
             auto dur = inputPtr->events[idEvent].realTime - event.realTime;
@@ -119,9 +99,7 @@ Statistics Evaluator::calc(algo::IAlgorithmPtr algo, ConstMarketManagerPtr marke
             updateContainersInPorts(0);
             checkFinalContainersInPorts();
         }
-        logger.debugStream() << "After event: " << event.relativeTime
-            << " spotProfit = " << statistics.spotProfit << "\n";
-
+        logSpotProfitAfterLastEvent(event);
         statistics.fullProfit = statistics.spotProfit + statistics.allotmentProfit
             + statistics.containerProfit + statistics.emptyContainerProfit;
 
@@ -137,25 +115,13 @@ Statistics Evaluator::calc(algo::IAlgorithmPtr algo, ConstMarketManagerPtr marke
             evalStory["spot_bookings_count_now"].push_back(statistics.sumSpotBookingAmount);
             evalStory["allotment_booking_count_now"].push_back(
                     statistics.sumAllotmentBookingAmount);
-            evalStory["spot_container_count_now"].push_back(
-                    statistics.spotContainerCount);
-            evalStory["long_container_count_now"].push_back(
-                    statistics.allotmentContainerCount);
+            evalStory["spot_container_count_now"].push_back(statistics.spotContainerCount);
+            evalStory["long_container_count_now"].push_back(statistics.allotmentContainerCount);
         }
     }
 
-    logger.noticeStream() << "spotProfit = " << statistics.spotProfit;
-    logger.noticeStream() << "allotmentProfit = " << statistics.allotmentProfit;
-    logger.noticeStream() << "fullProfit = " << statistics.fullProfit;
-
-    logging::getOutTestLogger().debugStream() << "Final counts on all arcs: ";
-    auto debugStream = logging::getOutTestLogger().getStream(log4cpp::Priority::DEBUG);
-
-    inputPtr = config.inputManager->get();
-    for (const auto& arc : inputPtr->arcs) {
-        debugStream << usedCapacity[arc.id] << " ";
-    }
-    debugStream.flush();
+    logProfits();
+    logUsedCapacity();
 
     if (config.keepStory) {
         algoStory = algo->getStory();
@@ -206,8 +172,8 @@ void Evaluator::makePricingAction(const Event& event) {
             continue;
 
         auto price = itinerary_price.second;
-        ui32 books = 0;
-        ui32 shows = 0;
+        unsigned books = 0;
+        unsigned shows = 0;
         for (const auto & spotShow : buyers->second) {
             if (spotShow.willingnessToPay >= price) {
                 ++books;
@@ -240,7 +206,7 @@ void Evaluator::makeCutoffAction(const InputData::Event& event) {
     action->time = event.relativeTime;
 
     // demand realization already assigned
-    for (ui32 itId : event.relatedItineraryIds) {
+    for (unsigned itId : event.relatedItineraryIds) {
 
         stream << "Processing itinerary with id " << itId << "\n";
 
@@ -279,7 +245,6 @@ void Evaluator::makeCutoffAction(const InputData::Event& event) {
 
             stream << "Adding cancellation payment to allotments: " << entry.cancellationPrice *
                 (entry.productAmount - showAmountN) << "\n";
-
         }
     }
     stream << "Evaluator: current spot profit = " << statistics.spotProfit << "\n";
@@ -296,15 +261,15 @@ void Evaluator::processAllotmentDecision() {
     selectedAllotments = decision->allotmentAccepted;
 
     for (const auto& group : input.allotmentGroups) {
-        ui32 countValueOn = 0;
-        for (const ui32 allotmentId : group) {
+        unsigned countValueOn = 0;
+        for (const unsigned allotmentId : group) {
             if (decision->allotmentAccepted[allotmentId]) {
                 ++countValueOn;
             }
         }
         assert(countValueOn <= 1);
     }
-    for (ui32 i = 0; i < decision->allotmentAccepted.size(); ++i) {
+    for (unsigned i = 0; i < decision->allotmentAccepted.size(); ++i) {
         if (!decision->allotmentAccepted[i])
             continue;
         for (const auto & p : market.allotmentShowCount[i]) {
@@ -374,7 +339,8 @@ void Evaluator::processCutoffDecision(const Event& event) {
             emptyContainers * itinerary.emptyCost << "\n";
         // pay for waiting in port until departure
 
-        statistics.containerProfit -= port.storageCost * event.duration * (takenContainers + emptyContainers);
+        statistics.containerProfit -= port.storageCost * event.duration
+            * (takenContainers + emptyContainers);
 
         stream << "containers, paying for waiting in port " <<
             port.storageCost * event.duration *
@@ -422,7 +388,7 @@ void Evaluator::processCutoffDecision(const Event& event) {
             assert(containersInPorts[port.id] >= takenContainersQ);
             containersInPorts[port.id] -= takenContainersQ;
         }
-        for (ui32 idArc : itinerary.orderedArcs) {
+        for (unsigned idArc : itinerary.orderedArcs) {
             const auto& arc = input.arcs[idArc];
             usedCapacity[arc.id] += containersAssignedOnItineraries[itinerary.id];
 
@@ -440,32 +406,31 @@ void Evaluator::updateContainersInPorts(double durationToNextPeriod) {
     const auto& input = config.inputManager->getConstData();
     auto* decision = &decisionManager->getConstData();
 
-    ui32 timeNow = decision->time;
-    for (ui32 pId = 0; pId < decision->offHiredInPortS[timeNow].size(); ++pId) {
-        assert(containersInPorts[pId] >= decision->offHiredInPortS[timeNow][pId]);
-        containersInPorts[pId] -= decision->offHiredInPortS[timeNow][pId];
+    unsigned timeNow = decision->time;
+    for (unsigned portId = 0; portId < decision->offHiredInPortS[timeNow].size(); ++portId) {
+        assert(containersInPorts[portId] >= decision->offHiredInPortS[timeNow][portId]);
+        containersInPorts[portId] -= decision->offHiredInPortS[timeNow][portId];
 
-        statistics.containerProfit -= input.ports[pId].offHiringCost * decision->offHiredInPortS[timeNow][pId];
-        statistics.containerProfit-= input.ports[pId].storageCost * durationToNextPeriod * containersInPorts[pId];
+        statistics.containerProfit -= input.ports[portId].offHiringCost
+            * decision->offHiredInPortS[timeNow][portId];
+        statistics.containerProfit-= input.ports[portId].storageCost
+            * durationToNextPeriod * containersInPorts[portId];
     }
 }
 
 void Evaluator::checkFinalContainersInPorts() {
     const auto& input = config.inputManager->getConstData();
 
-    for (ui32 i = 0; i < input.ports.size(); ++i) {
-        if (containersInPorts[i] != input.ports[i].finalContainerCount) {
-            std::cout << "final containers count (" << containersInPorts[i]
-                  << ") doesn't match with expected value ("
-                  << input.ports[i].finalContainerCount << ") for port " << i << std::endl;
+    for (unsigned idx = 0; idx < input.ports.size(); ++idx) {
+        if (containersInPorts[idx] != input.ports[idx].finalContainerCount) {
 
-            int diff = int(containersInPorts[i]) - int(input.ports[i].finalContainerCount);
+            int diff = int(containersInPorts[idx]) - int(input.ports[idx].finalContainerCount);
             if (diff > 0) {
-                statistics.containerProfit-= input.ports[i].offHiringCost * diff;
+                statistics.containerProfit-= input.ports[idx].offHiringCost * diff;
             } else {
-                statistics.containerProfit+= input.ports[i].hiringCost * diff;
+                statistics.containerProfit+= input.ports[idx].hiringCost * diff;
             }
-            containersInPorts[i] -= diff;
+            containersInPorts[idx] -= diff;
         }
     }
 }
