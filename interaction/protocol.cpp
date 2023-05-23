@@ -1,3 +1,10 @@
+// Implements methods defined in protocol.h. This includes 
+// initialization and IO for Decision and Action.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "protocol.hpp"
 
 #include <iostream>
@@ -22,14 +29,14 @@ std::ostream& operator<<(std::ostream& out, const Decision& decision) {
 
 void writeToFile(const std::string& pathToFile, const Decision& decision) {
     std::ofstream writer(pathToFile, std::ios::binary);
-    ::cereal::BinaryOutputArchive oa(writer);
-    oa << decision;
+    ::cereal::BinaryOutputArchive outputArchive(writer);
+    outputArchive << decision;
 }
 
 void loadFromFile(const std::string& pathToFile, Decision* emptyDecision) {
     std::ifstream reader(pathToFile, std::ios::binary);
-    ::cereal::BinaryInputArchive ia(reader);
-    ia >> *emptyDecision;
+    ::cereal::BinaryInputArchive inputArchive(reader);
+    inputArchive >> *emptyDecision;
 }
 
 void createDecision(const InputData& input, Decision* decision) {
@@ -116,14 +123,14 @@ std::ostream& operator<<(std::ostream& out, const Action& action) {
 
 void writeToFile(const std::string& pathToFile, const Action& filledAction) {
     std::ofstream writer(pathToFile, std::ios::binary);
-    ::cereal::BinaryOutputArchive oa(writer);
-    oa << filledAction;
+    ::cereal::BinaryOutputArchive outputArchive(writer);
+    outputArchive << filledAction;
 }
 
 void loadFromFile(const std::string& pathToFile, Action* emptyAction) {
     std::ifstream reader(pathToFile, std::ios::binary);
-    ::cereal::BinaryInputArchive ia(reader);
-    ia >> *emptyAction;
+    ::cereal::BinaryInputArchive inputArchive(reader);
+    inputArchive >> *emptyAction;
 }
 
 
