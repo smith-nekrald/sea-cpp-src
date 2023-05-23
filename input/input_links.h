@@ -17,16 +17,16 @@ using std::map;
 using std::unordered_map;
 
 struct InputLinks {
-    vector<vector<ui32>> itinerariesFromArc; // indexed by arc-id
-    vector<vector<ui32>> itinerariesWithArc; // indexed by arc-id
-    vector<vector<ui32>> itinerariesToArc; // indexed by arc-id
-    vector<vector<pair<ui32, ui32>>> demandTimesForItinerary; // indexed by id-itinerary, demandTimesForItinerary[id-itinerary] contains pairs <event_time, demand_index>
-    vector<vector<ui32>> allotmentsWithItinerary; // indexed by id-itinerary
-    vector<unordered_map<ui32, ui32>> allotmentItineraryToEntry; // indexed by [id-allotment][id-itinerary]
-    vector<unordered_map<ui32, ui32>> allotmentItineraryToPlace; // for action and decision: allotmentContainersQ, allotmentDemandN, indexed by [id-allotment][id-itinerary]
-    vector<vector<ui32>> allotmentToGroups;     // allotmentToGroups[i] -> list of groups with allotment i
-    vector<ui32> firstArcToHireAfterArc; // indexed by arc-id
-    vector<ui32> arrivalTime; // indexed by itinerary-id
+    vector<vector<unsigned>> itinerariesFromArc; // indexed by arc-id
+    vector<vector<unsigned>> itinerariesWithArc; // indexed by arc-id
+    vector<vector<unsigned>> itinerariesToArc; // indexed by arc-id
+    vector<vector<pair<unsigned, unsigned>>> demandTimesForItinerary; // indexed by id-itinerary, demandTimesForItinerary[id-itinerary] contains pairs <event_time, demand_index>
+    vector<vector<unsigned>> allotmentsWithItinerary; // indexed by id-itinerary
+    vector<unordered_map<unsigned, unsigned>> allotmentItineraryToEntry; // indexed by [id-allotment][id-itinerary]
+    vector<unordered_map<unsigned, unsigned>> allotmentItineraryToPlace; // for action and decision: allotmentContainersQ, allotmentDemandN, indexed by [id-allotment][id-itinerary]
+    vector<vector<unsigned>> allotmentToGroups;     // allotmentToGroups[i] -> list of groups with allotment i
+    vector<unsigned> firstArcToHireAfterArc; // indexed by arc-id
+    vector<unsigned> arrivalTime; // indexed by itinerary-id
 };
 
 using InputLinksPtr=std::shared_ptr<InputLinks>;

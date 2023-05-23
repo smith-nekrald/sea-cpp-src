@@ -8,7 +8,7 @@
 using std::cout;
 using std::endl;
 
-const ui32 MAX_INDEX = std::numeric_limits<ui32>::max();
+const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
 
 namespace sea {
 
@@ -47,35 +47,35 @@ void createInputLinks(const InputData& input, InputLinks* linksPtr) {
     links.firstArcToHireAfterArc.shrink_to_fit();
 
     for (const auto& itinerary : input.itineraries) {
-        ui32 idArcStart = itinerary.orderedArcs.front();
-        ui32 idArcEnd = itinerary.orderedArcs.back();
-        for (ui32 i = 0; i < itinerary.orderedArcs.size(); ++i) {
-            ui32 idArcCur = itinerary.orderedArcs[i];
+        unsigned idArcStart = itinerary.orderedArcs.front();
+        unsigned idArcEnd = itinerary.orderedArcs.back();
+        for (unsigned i = 0; i < itinerary.orderedArcs.size(); ++i) {
+            unsigned idArcCur = itinerary.orderedArcs[i];
             links.itinerariesWithArc[idArcCur].push_back(itinerary.id);
         }
         links.itinerariesToArc[idArcEnd].push_back(itinerary.id);
         links.itinerariesFromArc[idArcStart].push_back(itinerary.id);
     }
 
-    vector<ui32> pushStructure(input.allotments.size(), 0);
+    vector<unsigned> pushStructure(input.allotments.size(), 0);
     for (const auto& allotment : input.allotments) {
-        for (ui32 entryId : allotment.entries) {
+        for (unsigned entryId : allotment.entries) {
             const auto& entry = input.allotmentEntries[entryId];
-            ui32 idItinerary = entry.itinerary;
+            unsigned idItinerary = entry.itinerary;
             links.allotmentItineraryToEntry[allotment.id][idItinerary] = entryId;
             links.allotmentItineraryToPlace[allotment.id][idItinerary] = pushStructure[allotment.id]++;
             links.allotmentsWithItinerary[idItinerary].push_back(allotment.id);
         }
     }
 
-    vector<ui32> waitingArc(input.ports.size(), MAX_INDEX);
+    vector<unsigned> waitingArc(input.ports.size(), MAX_INDEX);
 
     for (auto it = input.events.rbegin(); it != input.events.rend(); ++it) {
         if (it->type == EventType::cutoff) {
-            ui32 portId = input.nodes[it->basedNode.value()].portId;
+            unsigned portId = input.nodes[it->basedNode.value()].portId;
             waitingArc[portId] = it->basedArc.value();
         } else if (it->type == EventType::arrival) {
-            ui32 portId = input.nodes[it->basedNode.value()].portId;
+            unsigned portId = input.nodes[it->basedNode.value()].portId;
             links.firstArcToHireAfterArc[it->basedArc.value()] =
                 waitingArc[portId];
 
@@ -84,13 +84,13 @@ void createInputLinks(const InputData& input, InputLinks* linksPtr) {
 
     for (const auto& event : input.events) {
         if (event.type == EventType::pricing) {
-            for (ui32 index = 0; index < event.demands.size(); ++index) {
+            for (unsigned index = 0; index < event.demands.size(); ++index) {
                 assert(event.demands.size() == event.relatedItineraryIds.size());
-                ui32 idItinerary = event.relatedItineraryIds[index];
+                unsigned idItinerary = event.relatedItineraryIds[index];
                 links.demandTimesForItinerary[idItinerary].emplace_back(event.relativeTime, index);
             }
         } else if (event.type == EventType::arrival) {
-            for (ui32 idItinerary : event.relatedItineraryIds) {
+            for (unsigned idItinerary : event.relatedItineraryIds) {
                 links.arrivalTime[idItinerary] = event.relativeTime;
             }
         }
@@ -99,19 +99,19 @@ void createInputLinks(const InputData& input, InputLinks* linksPtr) {
 
     // Shrinking to fit and making unique
 
-    for (ui32 idArc = 0; idArc < input.arcs.size(); ++idArc) {
+    for (unsigned idArc = 0; idArc < input.arcs.size(); ++idArc) {
         links.itinerariesToArc[idArc].shrink_to_fit();
         links.itinerariesFromArc[idArc].shrink_to_fit();
         links.itinerariesWithArc[idArc].shrink_to_fit();
     }
 
-    for (ui32 idItinerary = 0; idItinerary < input.itineraries.size(); ++idItinerary) {
+    for (unsigned idItinerary = 0; idItinerary < input.itineraries.size(); ++idItinerary) {
         links.allotmentsWithItinerary[idItinerary].shrink_to_fit();
     }
 
     links.allotmentToGroups.resize(input.allotments.size());
-    for (ui32 groupId = 0; groupId < input.allotmentGroups.size(); ++groupId) {
-        for (ui32 allotmentIndex : input.allotmentGroups[groupId]) {
+    for (unsigned groupId = 0; groupId < input.allotmentGroups.size(); ++groupId) {
+        for (unsigned allotmentIndex : input.allotmentGroups[groupId]) {
             links.allotmentToGroups[allotmentIndex].push_back(groupId);
         }
     }
@@ -121,8 +121,8 @@ void createInputLinks(const InputData& input, InputLinks* linksPtr) {
     links.allotmentToGroups.shrink_to_fit();
 }
 
-ui32 get2dVectorSize(const vector<vector<ui32>>& target) {
-    ui32 ans = 0;
+unsigned get2dVectorSize(const vector<vector<unsigned>>& target) {
+    unsigned ans = 0;
     for (const auto& member : target) {
         ans += member.size();
     }

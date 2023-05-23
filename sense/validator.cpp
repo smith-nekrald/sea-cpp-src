@@ -9,7 +9,7 @@ namespace sea {
 using std::vector;
 using std::size_t;
 
-bool checkSelection(const vector<bool>& selection, const vector<vector<ui32>>& groups) {
+bool checkSelection(const vector<bool>& selection, const vector<vector<unsigned>>& groups) {
     for (const auto& member : groups) {
         size_t count = 0;
         for (auto item : member) {
@@ -29,7 +29,7 @@ void Validator::bruteForceDo(size_t groupProductLong) {
             haveAllotment[item] = true;
         }
     }
-    for (ui32 idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
+    for (unsigned idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
         if (!haveAllotment[idAllotment]) {
             groupsCopy.push_back({idAllotment});
             assert(groupsCopy.back().size() == 1 && groupsCopy.back()[0] == idAllotment);
@@ -43,7 +43,7 @@ void Validator::bruteForceDo(size_t groupProductLong) {
                 if (checkSelection(haveAllotment, groupsCopy)) {
                     processSelection(haveAllotment);
                 }
-                for (ui32 place = 0; place < groupPlaces.size(); ++place) {
+                for (unsigned place = 0; place < groupPlaces.size(); ++place) {
                     groupPlaces[place] = groupPlaces[place] + 1;
                     if (groupPlaces[place] == int(1 + groupsCopy[place].size())) {
                         groupPlaces[place] = 0;
@@ -52,7 +52,7 @@ void Validator::bruteForceDo(size_t groupProductLong) {
                     }
                 }
                 haveAllotment.assign(input.allotments.size(), false);
-                for (ui32 place = 0; place < groupPlaces.size(); ++place) {
+                for (unsigned place = 0; place < groupPlaces.size(); ++place) {
                     auto target = groupPlaces[place];
                     if (target) {
                         auto id = groupsCopy[place][target - 1];
@@ -93,7 +93,7 @@ void Validator::randomSearch() {
                 iteration < whole_iteration_limit && query_count < deep_iteration_count;
                 ++iteration) {
             vector<bool> haveAllotment(input.allotments.size(), 0);
-            for (ui32 idx = 0; idx < input.allotments.size(); ++idx) {
+            for (unsigned idx = 0; idx < input.allotments.size(); ++idx) {
                 haveAllotment[idx] = d(gen);
             }
             if (checkSelection(haveAllotment, input.allotmentGroups)) {

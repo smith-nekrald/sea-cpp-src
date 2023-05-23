@@ -37,19 +37,19 @@ struct InputData {
     using Optional = std::experimental::optional<T>;
 
     struct Port {
-        ui32 id;
+        unsigned id;
         double hiringCost;
         double offHiringCost;
         double loadCost;
         double offLoadCost;
         double storageCost;
-        ui32 initialContainerCount;
-        ui32 finalContainerCount;
+        unsigned initialContainerCount;
+        unsigned finalContainerCount;
     };
 
     struct Node {
-        ui32 id;
-        ui32 portId;
+        unsigned id;
+        unsigned portId;
         double realTime;
 
         enum class Type {
@@ -61,18 +61,18 @@ struct InputData {
     };
 
     struct Vessel {
-        ui32 id;
+        unsigned id;
         double speedAvg;
         double capacity;
 
-        std::vector<ui32> way;
+        std::vector<unsigned> way;
     };
 
     struct Arc {
-        ui32 id;
-        ui32 fromNode;
-        ui32 toNode;
-        Optional<ui32> vesselId;
+        unsigned id;
+        unsigned fromNode;
+        unsigned toNode;
+        Optional<unsigned> vesselId;
 
         enum class Type {
             reload,
@@ -84,21 +84,21 @@ struct InputData {
     };
 
     struct Itinerary {
-        ui32 id;
+        unsigned id;
         double returnPrice;
         double preparedCapacity;
         double cost;
         double emptyCost;
         double declineCost;
-        std::vector<ui32> orderedArcs;
+        std::vector<unsigned> orderedArcs;
 
         ShowRate showRate;
     };
 
     struct AllotmentEntry {
-        ui32 id;
-        ui32 itinerary;
-        ui32 productAmount;
+        unsigned id;
+        unsigned itinerary;
+        unsigned productAmount;
         double cancellationPrice;
         double price;
 
@@ -106,19 +106,19 @@ struct InputData {
     };
 
     struct Allotment {
-        ui32 id;
-        std::vector<ui32> entries;
+        unsigned id;
+        std::vector<unsigned> entries;
     };
 
     struct Event {
-        std::vector<ui32> relatedItineraryIds;
+        std::vector<unsigned> relatedItineraryIds;
         std::vector<Demand> demands;
         double duration;
         double realTime;
-        ui32 relativeTime;
+        unsigned relativeTime;
 
-        Optional<ui32> basedNode;
-        Optional<ui32> basedArc;
+        Optional<unsigned> basedNode;
+        Optional<unsigned> basedArc;
 
         enum class Type {
             pricing,
@@ -136,7 +136,7 @@ struct InputData {
 
     std::vector<AllotmentEntry> allotmentEntries;
     std::vector<Allotment> allotments;
-    std::vector<std::vector<ui32> > allotmentGroups;
+    std::vector<std::vector<unsigned> > allotmentGroups;
 
     std::vector<Itinerary> itineraries;
     std::vector<Event> events;

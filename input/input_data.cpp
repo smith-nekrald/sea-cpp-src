@@ -19,7 +19,7 @@ void printInputDataStats(const InputData& data) {
     cout << "Number of groups: " << data.allotmentGroups.size() << endl;
     cout << "Number of itineraries: " << data.itineraries.size() << endl;
     cout << "Number of events: " << data.events.size() << endl;
-    ui32 pricingCount = 0, cutoffCount = 0, arrivalCount = 0;
+    unsigned pricingCount = 0, cutoffCount = 0, arrivalCount = 0;
     for (const auto& event : data.events) {
         if (event.type == EventType::cutoff) {
             ++cutoffCount;
