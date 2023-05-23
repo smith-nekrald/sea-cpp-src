@@ -19,25 +19,25 @@
 namespace sea {
 namespace io {
 
-std::ifstream& MarketReader::readEvents(std::ifstream& input, MarketData& data) const {
+std::ifstream& MarketReader::readEvents(std::ifstream& inStream, MarketData& data) const {
     std::string placeholder;   // id_event_to_wpay
     while ((placeholder.find("id_event_to_wpay") == std::string::npos)
-            && std::getline(input, placeholder)) {
+            && std::getline(inStream, placeholder)) {
     }
 
     unsigned pricingEventCount;
-    input >> pricingEventCount;
+    inStream >> pricingEventCount;
 
     for (unsigned idxEvent = 0; idxEvent < pricingEventCount; ++idxEvent) {
         unsigned relatedItineraryCount;
-        input >> relatedItineraryCount;
+        inStream >> relatedItineraryCount;
 
         for (unsigned idxRelated = 0; idxRelated < relatedItineraryCount; ++idxRelated) {
             unsigned eventId;
             unsigned itineraryId;
             unsigned sampleLen;
 
-            input >> eventId >> itineraryId >> sampleLen;
+            inStream >> eventId >> itineraryId >> sampleLen;
 
             if (data.idEventToWpay.find(eventId) == data.idEventToWpay.end()) {
                 data.idEventToWpay.emplace(
@@ -46,54 +46,53 @@ std::ifstream& MarketReader::readEvents(std::ifstream& input, MarketData& data) 
 
             double value;
             for (unsigned jdxEntry = 0; jdxEntry < sampleLen; ++jdxEntry) {
-                input >> value;
+                inStream >> value;
                 // Skipping further activity since the same information is repeated again.
             }
         }
     }
-    return input;
+    return inStream;
 }
 
-std::ifstream& MarketReader::readAllotmentShows(std::ifstream& input, MarketData& data) const {
+std::ifstream& MarketReader::readAllotmentShows(std::ifstream& inStream, MarketData& data) const {
     std::string placeholder;   // Looking for allotment_show_count.
     while ((placeholder.find("allotment_show_count") == std::string::npos)
-            && std::getline(input, placeholder)) {
+            && std::getline(inStream, placeholder)) {
     }
 
     unsigned allotmentCount;
-    input >> allotmentCount;
+    inStream >> allotmentCount;
 
     data.allotmentShowCount.resize(allotmentCount);
     for (unsigned idxAllotment = 0; idxAllotment < allotmentCount; ++idxAllotment) {
         unsigned allotmentId, count;
-        input >> allotmentId >> count;
+        inStream >> allotmentId >> count;
         for (unsigned jdxItem = 0; jdxItem < count; ++jdxItem) {
             unsigned itineraryId, showCount;
-            input >> allotmentId >> itineraryId >> showCount;
+            inStream >> allotmentId >> itineraryId >> showCount;
             data.allotmentShowCount[allotmentId][itineraryId] = showCount;
         }
     }
-    return input;
+    return inStream;
 }
 
-std::ifstream& MarketReader::readSpotShows(std::ifstream& input, MarketData& data) const {
-
+std::ifstream& MarketReader::readSpotShows(std::ifstream& inStream, MarketData& data) const {
     std::string placeholder;   // spot_show_tuples
     while ((placeholder.find("spot_show_tuples") == std::string::npos)
-            && std::getline(input, placeholder)) {
+            && std::getline(inStream, placeholder)) {
     }
 
     unsigned itineraryCount;
-    input >> itineraryCount;
+    inStream >> itineraryCount;
 
     for (unsigned ind = 0; ind < itineraryCount; ++ind) {
         unsigned itineraryId, entriesLen;
-        input >> itineraryId >> entriesLen;
+        inStream >> itineraryId >> entriesLen;
 
         for (unsigned jdx = 0; jdx < entriesLen; ++jdx) {
             unsigned eventId, showFlag, index;
             double willingnessToPay;
-            input >> itineraryId >> eventId >> index >> willingnessToPay >> showFlag;
+            inStream >> itineraryId >> eventId >> index >> willingnessToPay >> showFlag;
             assert(showFlag == 0 || showFlag == 1);
 
             data.idEventToWpay[eventId][itineraryId].emplace_back(
@@ -111,7 +110,7 @@ std::ifstream& MarketReader::readSpotShows(std::ifstream& input, MarketData& dat
         }
     }
 
-    return input;
+    return inStream;
 }
 
 const std::string MarketReader::header = "MarketData:";

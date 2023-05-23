@@ -14,7 +14,7 @@
 namespace sea {
 namespace io {
 
-inline std::ifstream& validate(std::ifstream& stream, const std::string& header, unsigned& count) {
+std::ifstream& validate(std::ifstream& stream, const std::string& header, unsigned& count) {
 
     std::vector<std::string> tokens;
     makeTokens(stream, tokens);
@@ -28,7 +28,6 @@ inline std::ifstream& validate(std::ifstream& stream, const std::string& header,
 }
 
 std::ifstream& operator>>(std::ifstream& stream, InputData::Port& port) {
-
     std::vector<std::string> tokens;
     makeTokens(stream, tokens);
 
@@ -45,7 +44,6 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Port& port) {
 }
 
 std::ifstream& operator>>(std::ifstream& stream, InputData::Node& node) {
-
     std::vector<std::string> tokens;
     makeTokens(stream, tokens);
 
@@ -53,18 +51,18 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Node& node) {
     node.portId = std::stoi(tokens[6]);
     node.realTime = std::stof(tokens[9]);
 
-    if (tokens[12] == "NodeType.arrival")
+    if (tokens[12] == "NodeType.arrival") {
         node.type = InputData::Node::Type::arrival;
-    else if (tokens[12] == "NodeType.departure")
+    } else if (tokens[12] == "NodeType.departure") {
         node.type = InputData::Node::Type::departure;
-    else
+    } else {
         throw std::runtime_error("no such NodeType: " + tokens[12]);
+    }
 
     return stream;
 }
 
 std::ifstream& operator>>(std::ifstream& stream, InputData::Vessel& vessel) {
-
     std::vector<std::string> tokens;
     makeTokens(stream, tokens);
 
@@ -77,8 +75,9 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Vessel& vessel) {
     std::vector<std::string> wayIds;
     makeTokens(stream, wayIds);
 
-    for (unsigned i = 0; i < wayLen; ++i)
-        vessel.way.push_back(std::stoi(wayIds[i + 2]));
+    for (unsigned idx = 0; idx < wayLen; ++idx) {
+        vessel.way.push_back(std::stoi(wayIds[idx + 2]));
+    }
 
     return stream;
 }
@@ -92,14 +91,15 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Arc& arc) {
     arc.fromNode = std::stoi(tokens[6]);
     arc.toNode = std::stoi(tokens[9]);
 
-    if (tokens[12] == "ArcType.travel")
+    if (tokens[12] == "ArcType.travel") {
         arc.type = InputData::Arc::Type::travel;
-    else if (tokens[12] == "ArcType.wait")
+    } else if (tokens[12] == "ArcType.wait") {
         arc.type = InputData::Arc::Type::wait;
-    else if (tokens[12] == "ArcType.reload")
+    } else if (tokens[12] == "ArcType.reload") {
         arc.type = InputData::Arc::Type::reload;
-    else
-        throw std::runtime_error("no such ArcType: " + tokens[12]);
+    } else {
+        throw std::runtime_error("Unknown ArcType: " + tokens[12]);
+    }
 
     if (tokens[15] != "None")
         arc.vesselId = std::stoi(tokens[15]);
@@ -107,42 +107,43 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Arc& arc) {
     return stream;
 }
 
-std::ifstream& operator>>(std::ifstream& stream, ShowRate& s) {
-
+std::ifstream& operator>>(std::ifstream& stream, ShowRate& show) {
     std::vector<std::string> tokens;
     makeTokens(stream, tokens);
 
     assert((tokens[2] == "ShowRate:") || (tokens[2] == "RandomVariable:"));
 
-    if (tokens.size() == 9)
-        s.estimatedProba = std::stof(tokens[8]);
-    else
-        s.estimatedProba = std::stof(tokens[11]);
+    if (tokens.size() == 9) {
+        show.estimatedProba = std::stof(tokens[8]);
+    } else {
+        show.estimatedProba = std::stof(tokens[11]);
+    }
 
     return stream;
 }
 
-std::ifstream& operator>>(std::ifstream& stream, InputData::Itinerary& it) {
+std::ifstream& operator>>(std::ifstream& stream, InputData::Itinerary& itinerary) {
 
     std::vector<std::string> tokens;
     makeTokens(stream, tokens);
 
-    it.id = std::stoi(tokens[3]);
-    it.returnPrice = std::stof(tokens[6]);
-    it.preparedCapacity = std::stof(tokens[9]);
-    it.cost = std::stof(tokens[12]);
-    it.emptyCost = std::stof(tokens[15]);
-    it.declineCost = std::stof(tokens[18]);
+    itinerary.id = std::stoi(tokens[3]);
+    itinerary.returnPrice = std::stof(tokens[6]);
+    itinerary.preparedCapacity = std::stof(tokens[9]);
+    itinerary.cost = std::stof(tokens[12]);
+    itinerary.emptyCost = std::stof(tokens[15]);
+    itinerary.declineCost = std::stof(tokens[18]);
 
     unsigned arcCount = std::stoi(tokens[21]);
 
     tokens.clear();
     makeTokens(stream, tokens);
 
-    for (unsigned i = 0; i < arcCount; ++i)
-        it.orderedArcs.push_back(std::stoi(tokens[i + 2]));
+    for (unsigned idx = 0; idx < arcCount; ++idx) {
+        itinerary.orderedArcs.push_back(std::stoi(tokens[idx + 2]));
+    }
 
-    stream >> it.showRate;
+    stream >> itinerary.showRate;
 
     return stream;
 }
@@ -175,8 +176,9 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Allotment& allotment
     tokens.clear();
     makeTokens(stream, tokens);
 
-    for (unsigned i = 0; i < entryCount; ++i)
-        allotment.entries.push_back(std::stoi(tokens[i + 2]));
+    for (unsigned idx = 0; idx < entryCount; ++idx) {
+        allotment.entries.push_back(std::stoi(tokens[idx + 2]));
+    }
 
     return stream;
 }
@@ -186,12 +188,13 @@ std::ifstream& operator>>(std::ifstream& stream, Demand& demand) {
     std::vector<std::string> tokens;
     makeTokens(stream, tokens);
 
-    if (tokens[8] == "DemandType.exponential")
+    if (tokens[8] == "DemandType.exponential") {
         demand.type = Demand::Type::exponential;
-    else if (tokens[8] == "DemandType.linear")
+    } else if (tokens[8] == "DemandType.linear") {
         demand.type = Demand::Type::linear;
-    else
-        throw std::runtime_error("no such DemandType: " + tokens[8]);
+    } else {
+        throw std::runtime_error("Unknown DemandType: " + tokens[8]);
+    }
 
     if (demand.type == Demand::Type::exponential) {
         demand.scale = std::stof(tokens[11]);
@@ -205,27 +208,29 @@ std::ifstream& operator>>(std::ifstream& stream, Demand& demand) {
 }
 
 std::ifstream& operator>>(std::ifstream& stream, InputData::Event& event) {
-
     std::vector<std::string> tokens;
     makeTokens(stream, tokens);
 
-    if (tokens[3] == "EventType.pricing")
+    if (tokens[3] == "EventType.pricing") {
         event.type = InputData::Event::Type::pricing;
-    else if (tokens[3] == "EventType.cutoff")
+    } else if (tokens[3] == "EventType.cutoff") {
         event.type = InputData::Event::Type::cutoff;
-    else if (tokens[3] == "EventType.arrival")
+    } else if (tokens[3] == "EventType.arrival") {
         event.type = InputData::Event::Type::arrival;
-    else
-        throw std::runtime_error("no such EventType: " + tokens[3]);
+    } else {
+        throw std::runtime_error("Unknown EventType: " + tokens[3]);
+    }
 
     event.realTime = std::stof(tokens[6]);
     event.relativeTime = std::stof(tokens[9]);
     event.duration = std::stof(tokens[12]);
 
-    if (tokens[15] != "None")
+    if (tokens[15] != "None") {
         event.basedNode = std::stoi(tokens[15]);
-    if (tokens[18] != "None")
+    }
+    if (tokens[18] != "None") {
         event.basedArc = std::stoi(tokens[18]);
+    }
 
     unsigned relatedItineraryCount = std::stoi(tokens[21]);
     unsigned demandsCount = std::stoi(tokens[24]);
@@ -233,152 +238,135 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Event& event) {
     tokens.clear();
     makeTokens(stream, tokens);
 
-    for (unsigned i = 0; i < relatedItineraryCount; ++i)
-        event.relatedItineraryIds.push_back(std::stoi(tokens[i + 2]));
+    for (unsigned ind = 0; ind < relatedItineraryCount; ++ind) {
+        event.relatedItineraryIds.push_back(std::stoi(tokens[ind + 2]));
+    }
 
-    for (unsigned i = 0; i < demandsCount; ++i) {
-        Demand d;
-        stream >> d;
-        event.demands.push_back(std::move(d));
+    for (unsigned idx = 0; idx < demandsCount; ++idx) {
+        Demand demand;
+        stream >> demand;
+        event.demands.push_back(std::move(demand));
     }
 
     return stream;
 }
 
-template <typename T, typename Stream = std::ifstream>
-inline std::ifstream& read(Stream& stream, const std::string& header, std::vector<T>& data) {
+std::ifstream& InputReader::readPorts(std::ifstream& inStream, InputData& data) const {
+    return read(inStream, "Ports:", data.ports);
+}
+
+std::ifstream& InputReader::readNodes(std::ifstream& inStream, InputData& data) const {
+    return read(inStream, "Nodes:", data.nodes);
+}
+
+std::ifstream& InputReader::readVessels(std::ifstream& inStream, InputData& data) const {
+    return read(inStream, "Vessels:", data.vessels);
+}
+
+std::ifstream& InputReader::readArcs(std::ifstream& inStream, InputData& data) const {
+    return read(inStream, "Arcs:", data.arcs);
+}
+
+std::ifstream& InputReader::readItineraries(std::ifstream& inStream, InputData& data) const {
+    return read(inStream, "Itineraries:", data.itineraries);
+}
+
+std::ifstream& InputReader::readAllotmentEntries(std::ifstream& inStream, InputData& data) const {
+    return read(inStream, "AllotmentEntries:", data.allotmentEntries);
+}
+
+std::ifstream& InputReader::readAllotments(std::ifstream& inStream, InputData& data) const {
+    return read(inStream, "Allotments:", data.allotments);
+}
+
+std::ifstream& InputReader::readEvents(std::ifstream& inStream, InputData& data) const {
     unsigned count = 0;
-    validate(stream, header, count);
+    validate(inStream, "Events:", count);
 
-    for (unsigned i = 0; i < count; ++i) {
-        T t;
-        stream >> t;
-        data.push_back(std::move(t));
-    }
-
-    std::sort(std::begin(data), std::end(data), [] (const T& l, const T& r) {return l.id < r.id;});
-
-    return stream;
-}
-
-std::ifstream& InputReader::readPorts(std::ifstream& ifs, InputData& data) const {
-    return read(ifs, "Ports:", data.ports);
-}
-
-std::ifstream& InputReader::readNodes(std::ifstream& ifs, InputData& data) const {
-    return read(ifs, "Nodes:", data.nodes);
-}
-
-std::ifstream& InputReader::readVessels(std::ifstream& ifs, InputData& data) const {
-    return read(ifs, "Vessels:", data.vessels);
-}
-
-std::ifstream& InputReader::readArcs(std::ifstream& ifs, InputData& data) const {
-    return read(ifs, "Arcs:", data.arcs);
-}
-
-std::ifstream& InputReader::readItineraries(std::ifstream& ifs, InputData& data) const {
-    return read(ifs, "Itineraries:", data.itineraries);
-}
-
-std::ifstream& InputReader::readAllotmentEntries(std::ifstream& ifs, InputData& data) const {
-    return read(ifs, "AllotmentEntries:", data.allotmentEntries);
-}
-
-std::ifstream& InputReader::readAllotments(std::ifstream& ifs, InputData& data) const {
-    return read(ifs, "Allotments:", data.allotments);
-}
-
-std::ifstream& InputReader::readEvents(std::ifstream& ifs, InputData& data) const {
-    unsigned count = 0;
-    validate(ifs, "Events:", count);
-
-    for (unsigned i = 0; i < count; ++i) {
-        InputData::Event e;
-        ifs >> e;
-        data.events.push_back(std::move(e));
+    for (unsigned idx = 0; idx < count; ++idx) {
+        InputData::Event event;
+        inStream >> event;
+        data.events.push_back(std::move(event));
     }
 
     std::sort(std::begin(data.events), std::end(data.events),
-        [] (const InputData::Event& l, const InputData::Event& r) {
-            return l.relativeTime < r.relativeTime;
+        [] (const InputData::Event& lhs, const InputData::Event& rhs) {
+            return lhs.relativeTime < rhs.relativeTime;
     });
 
-    return ifs;
+    return inStream;
 }
 
-std::ifstream& InputReader::readGroups(std::ifstream& ifs, InputData& data) const {
+std::ifstream& InputReader::readGroups(std::ifstream& inStream, InputData& data) const {
     unsigned count = 0;
-    validate(ifs, "SelectOneGroups:", count);
+    validate(inStream, "SelectOneGroups:", count);
 
-    for (unsigned i = 0; i < count; ++i) {
+    for (unsigned idx = 0; idx < count; ++idx) {
         data.allotmentGroups.emplace_back();
-        makeTokens<unsigned>(ifs, data.allotmentGroups.back());
+        makeTokens<unsigned>(inStream, data.allotmentGroups.back());
     }
 
-    return ifs;
+    return inStream;
 }
 
-std::ifstream& InputReader::readLeaseCost(std::ifstream& ifs, InputData& data) const {
+std::ifstream& InputReader::readLeaseCost(std::ifstream& inStream, InputData& data) const {
     std::vector<std::string> tokens;
-    makeTokens(ifs, tokens);
+    makeTokens(inStream, tokens);
 
     assert(tokens[0] == "LeaseCost:");
 
     data.leaseCost = std::stof(tokens[1]);
 
-    return ifs;
+    return inStream;
 }
 
 const std::string InputReader::header = "InputData:";
 
 void InputReader::Do(const std::string& filepath, InputData& data) const {
-    std::ifstream ifs(filepath, std::ifstream::in);
+    std::ifstream inStream(filepath, std::ifstream::in);
 
-    if (!ifs.good())
-        throw std::runtime_error("failed to open input file: " + filepath);
+    if (!inStream.good()) {
+        throw std::runtime_error("Failed to open input file: " + filepath);
+    }
 
     logging::getRootLogger().debug("Ready to read in InputReader::Do, file is " + filepath);
 
     std::vector<std::string> tokens;
-    makeTokens(ifs, tokens);
+    makeTokens(inStream, tokens);
     logging::getRootLogger().debug("Finished make_tokens.");
     assert(tokens[0] == header);
 
-    readPorts(ifs, data);
+    readPorts(inStream, data);
     logging::getRootLogger().debug("Finished readPorts.");
 
-    readNodes(ifs, data);
+    readNodes(inStream, data);
     logging::getRootLogger().debug("Finished readNodes.");
 
-    readVessels(ifs, data);
+    readVessels(inStream, data);
     logging::getRootLogger().debug("Finished readVessels.");
 
-    readArcs(ifs, data);
+    readArcs(inStream, data);
     logging::getRootLogger().debug("Finished readArcs.");
 
-    readItineraries(ifs, data);
+    readItineraries(inStream, data);
     logging::getRootLogger().debug("Finished readItineraries.");
 
-    readAllotmentEntries(ifs, data);
+    readAllotmentEntries(inStream, data);
     logging::getRootLogger().debug("Finished readAllotmentsEntries.");
 
-    readAllotments(ifs, data);
+    readAllotments(inStream, data);
     logging::getRootLogger().debug("Finished readAllotments.");
 
-    readEvents(ifs, data);
+    readEvents(inStream, data);
     logging::getRootLogger().debug("Finished readEvents.");
 
-    readGroups(ifs, data);
+    readGroups(inStream, data);
     logging::getRootLogger().debug("Finished readGroups.");
 
-    readLeaseCost(ifs, data);
+    readLeaseCost(inStream, data);
     logging::getRootLogger().debug("Finished readLeaseCost.");
 }
 
 }   // namespace io
 }   // namespace sea
-
-
-
 

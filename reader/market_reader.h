@@ -17,9 +17,9 @@ private:
     static const std::string filename;  // market.txt
     static const std::string header;    // MarketData:
 
-    std::ifstream& readEvents(std::ifstream& ifs, MarketData& data) const;
-    std::ifstream& readAllotmentShows(std::ifstream& ifs, MarketData& data) const;
-    std::ifstream& readSpotShows(std::ifstream& ifs, MarketData& data) const;
+    std::ifstream& readEvents(std::ifstream& inStream, MarketData& data) const;
+    std::ifstream& readAllotmentShows(std::ifstream& inStream, MarketData& data) const;
+    std::ifstream& readSpotShows(std::ifstream& inStream, MarketData& data) const;
 };
 
 }   // namespace io
