@@ -1,10 +1,11 @@
-// Implmentation for Evalutor Logging.
+// Implementation for Evaluator and Launcher Logging.
 
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
 
 #include "evaluator.h"
+#include "launcher.h"
 #include "../logging/logging.h"
 
 #include <cassert>
@@ -152,6 +153,25 @@ void Evaluator::logFinishedProcessCutoffDecision() const {
     auto stream = logger.getStream(log4cpp::Priority::DEBUG);
     stream << "Evaluator: current spot profit = " << statistics.spotProfit << "\n";
     stream << "Evaluator: processCutoffDecision finished\n";
+}
+
+void Launcher::logLauncherInitialization() const {
+    logging::getEvaluationLogger().debug("Initizalized Launcher.");
+}
+
+void Launcher::logFinishedEvaluation() const {
+    logging::getOutTestLogger().debugStream() << "Evaluation Finished.";
+}
+
+void Launcher::logStartedEvaluation(std::string algoName, unsigned idxMarket) const {
+    logging::getEvaluationLogger().info("Started evaluation for algorithm: " + algoName);
+    logging::getEvaluationLogger().info("Evaluation set index is: " + std::to_string(idxMarket));
+    logging::getOutTestLogger().debugStream() << "Evaluation Started: "
+                << algoName << " " << " market_idx= " << idxMarket;
+}
+
+void Launcher::logReadMarketDataset(const std::string& dataPath) const {
+    logging::getRootLogger().info("Finished reading market for dataPath: " + dataPath);
 }
 
 

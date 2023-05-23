@@ -23,6 +23,11 @@ public:
     explicit Launcher(const LauncherConfig& aConfig);
     std::map<std::string, std::vector<Statistics>> doLaunches();
 private:
+    void logLauncherInitialization() const;
+    void logStartedEvaluation(std::string algoName, unsigned idxMarket) const;
+    void logFinishedEvaluation() const;
+    void logReadMarketDataset(const std::string& dataPath) const;
+private:
     LauncherConfig config;
 };
 

@@ -1,3 +1,9 @@
+// Implements Launcher logic.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "launcher.h"
 #include "estimator.h"
 #include "../logging/logging.h"
@@ -11,48 +17,35 @@ using std::vector;
 using std::string;
 using std::size_t;
 
-Launcher::Launcher(const LauncherConfig& aConfig)
-    : config(aConfig) {
-    logging::getEvaluationLogger().debug("Initizalized Launcher.");
+Launcher::Launcher(const LauncherConfig& aConfig) : config(aConfig) {
+    logLauncherInitialization();
 }
 
 map<string, vector<Statistics>> Launcher::doLaunches() {
     map<string, vector<Statistics>> launchResults;
     EvaluatorConfig evaluatorConfig = {
-        config.inputManager,
-        config.linksManager,
-        config.needMemory,
-        config.writeStory
-    };
+        config.inputManager, config.linksManager, config.needMemory, config.writeStory};
+
     for (size_t idx = 0; idx < config.marketDataSetPaths.size(); ++idx) {
         std::string dataPath = config.marketDataSetPaths[idx];
         sea::ManagerConfig aConfig = {config.needMemory.value(), dataPath, false};
-        sea::MarketManagerPtr market =
-            std::make_shared<sea::DataManager<
-                sea::MarketData>>(aConfig);
-        logging::getRootLogger().info("Finished reading market for dataPath: " + dataPath);
+        sea::MarketManagerPtr market = std::make_shared<sea::DataManager<
+            sea::MarketData>>(aConfig);
+        logReadMarketDataset(dataPath);
 
         auto& item = market;
         item->load();
         SmartEstimator estimator;
-        auto estimation = estimator.calcUpperBound(
-                config.inputManager->getConstData(),
-                config.linksManager->getConstData(),
-                item->getConstData());
-        for (const auto& algo : config.algorithms) {
+        auto estimation = estimator.calcUpperBound(config.inputManager->getConstData(),
+                config.linksManager->getConstData(), item->getConstData());
 
-            logging::getEvaluationLogger().info(
-                    "Started evaluation for algorithm: " + algo->getName());
-            logging::getEvaluationLogger().info(
-                    "Evaluation set index is: " + std::to_string(idx));
+        for (const auto& algo : config.algorithms) {
+            logStartedEvaluation(algo->getName(), idx);
 
             algo->reset();
             algo->synchronizeStrategies();
 
             Evaluator evaluator(evaluatorConfig);
-
-            logging::getOutTestLogger().debugStream() << "Evaluation Started: "
-                << algo->getName() << " " << " market_idx= " << idx;
 
             auto stats = evaluator.calc(algo, item);
             if (config.writeStory) {
@@ -75,13 +68,12 @@ map<string, vector<Statistics>> Launcher::doLaunches() {
                 out.close();
             }
 
-            logging::getOutTestLogger().debugStream() << "Evaluation Finished.";
+            logFinishedEvaluation();
 
             stats.estimation = estimation;
 
             assert(stats.allotmentProfit <= estimation.allotment);
             assert(stats.spotProfit <= estimation.spotMarket);
-
             assert(stats.spotProfit + stats.allotmentProfit
                     <= estimation.allotment + estimation.spotMarket);
 
