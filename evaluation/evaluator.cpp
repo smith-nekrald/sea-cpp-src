@@ -24,7 +24,6 @@ Evaluator::Evaluator(const EvaluatorConfig& aConfig) : config(aConfig) {
     const auto& input = config.inputManager->getConstData();
     for (const auto& itinerary : input.itineraries) {
         const auto& arc = input.arcs[itinerary.orderedArcs.back()];
-        arcEndsInPort.insert({input.nodes[arc.toNode].portId, arc.id});
         itinerariesEndInArc[arc.id].push_back(itinerary.id);
     }
     containersInPorts.resize(input.ports.size());
