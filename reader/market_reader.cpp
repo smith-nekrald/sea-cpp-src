@@ -5,7 +5,7 @@
 // (c) Smith School of Business, 2023
 
 #include "market_reader.h"
-#include "market_reader.hpp"
+#include "common_reader.hpp"
 
 #include <iostream>
 #include <sstream>

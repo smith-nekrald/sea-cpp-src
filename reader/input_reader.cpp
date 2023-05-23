@@ -1,4 +1,5 @@
 #include "input_reader.h"
+#include "common_reader.hpp"
 #include "../logging/logging.h"
 
 #include <iostream>
@@ -13,36 +14,10 @@
 namespace sea {
 namespace io {
 
-namespace {
-
-template <typename T = std::string>
-inline void make_tokens(const std::string& s, std::vector<T>& tokens) {
-
-    std::istringstream iss(s);
-
-    std::vector<T> tmp{std::istream_iterator<T>{iss}, std::istream_iterator<T>{}};
-
-    tokens.swap(tmp);
-}
-
-template <typename T = std::string>
-inline std::ifstream& make_tokens(std::ifstream& stream, std::vector<T>& tokens) {
-
-    std::string to_parse;
-    while (to_parse.empty())
-        std::getline(stream, to_parse);
-
-    make_tokens<T>(to_parse, tokens);
-
-    return stream;
-}
-
-}   // namespace
-
-inline std::ifstream& validate(std::ifstream& stream, const std::string& header, ui32& count) {
+inline std::ifstream& validate(std::ifstream& stream, const std::string& header, unsigned& count) {
 
     std::vector<std::string> tokens;
-    make_tokens(stream, tokens);
+    makeTokens(stream, tokens);
 
     assert(tokens.size() >= 2);
     assert(tokens[0] == header);
@@ -55,7 +30,7 @@ inline std::ifstream& validate(std::ifstream& stream, const std::string& header,
 std::ifstream& operator>>(std::ifstream& stream, InputData::Port& port) {
 
     std::vector<std::string> tokens;
-    make_tokens(stream, tokens);
+    makeTokens(stream, tokens);
 
     port.id = std::stoi(tokens[3]);
     port.hiringCost = std::stof(tokens[6]);
@@ -72,7 +47,7 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Port& port) {
 std::ifstream& operator>>(std::ifstream& stream, InputData::Node& node) {
 
     std::vector<std::string> tokens;
-    make_tokens(stream, tokens);
+    makeTokens(stream, tokens);
 
     node.id = std::stoi(tokens[3]);
     node.portId = std::stoi(tokens[6]);
@@ -91,18 +66,18 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Node& node) {
 std::ifstream& operator>>(std::ifstream& stream, InputData::Vessel& vessel) {
 
     std::vector<std::string> tokens;
-    make_tokens(stream, tokens);
+    makeTokens(stream, tokens);
 
     vessel.id = std::stoi(tokens[3]);
     vessel.capacity = std::stof(tokens[6]);
     vessel.speedAvg = std::stof(tokens[9]);
 
-    ui32 wayLen = std::stoi(tokens[12]);
+    unsigned wayLen = std::stoi(tokens[12]);
 
     std::vector<std::string> wayIds;
-    make_tokens(stream, wayIds);
+    makeTokens(stream, wayIds);
 
-    for (ui32 i = 0; i < wayLen; ++i)
+    for (unsigned i = 0; i < wayLen; ++i)
         vessel.way.push_back(std::stoi(wayIds[i + 2]));
 
     return stream;
@@ -111,7 +86,7 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Vessel& vessel) {
 std::ifstream& operator>>(std::ifstream& stream, InputData::Arc& arc) {
 
     std::vector<std::string> tokens;
-    make_tokens(stream, tokens);
+    makeTokens(stream, tokens);
 
     arc.id = std::stoi(tokens[3]);
     arc.fromNode = std::stoi(tokens[6]);
@@ -135,7 +110,7 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Arc& arc) {
 std::ifstream& operator>>(std::ifstream& stream, ShowRate& s) {
 
     std::vector<std::string> tokens;
-    make_tokens(stream, tokens);
+    makeTokens(stream, tokens);
 
     assert((tokens[2] == "ShowRate:") || (tokens[2] == "RandomVariable:"));
 
@@ -150,7 +125,7 @@ std::ifstream& operator>>(std::ifstream& stream, ShowRate& s) {
 std::ifstream& operator>>(std::ifstream& stream, InputData::Itinerary& it) {
 
     std::vector<std::string> tokens;
-    make_tokens(stream, tokens);
+    makeTokens(stream, tokens);
 
     it.id = std::stoi(tokens[3]);
     it.returnPrice = std::stof(tokens[6]);
@@ -159,12 +134,12 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Itinerary& it) {
     it.emptyCost = std::stof(tokens[15]);
     it.declineCost = std::stof(tokens[18]);
 
-    ui32 arcCount = std::stoi(tokens[21]);
+    unsigned arcCount = std::stoi(tokens[21]);
 
     tokens.clear();
-    make_tokens(stream, tokens);
+    makeTokens(stream, tokens);
 
-    for (ui32 i = 0; i < arcCount; ++i)
+    for (unsigned i = 0; i < arcCount; ++i)
         it.orderedArcs.push_back(std::stoi(tokens[i + 2]));
 
     stream >> it.showRate;
@@ -175,7 +150,7 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Itinerary& it) {
 std::ifstream& operator>>(std::ifstream& stream, InputData::AllotmentEntry& entry) {
 
     std::vector<std::string> tokens;
-    make_tokens(stream, tokens);
+    makeTokens(stream, tokens);
 
     entry.id = std::stoi(tokens[3]);
     entry.itinerary = std::stoi(tokens[6]);
@@ -191,16 +166,16 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::AllotmentEntry& entr
 std::ifstream& operator>>(std::ifstream& stream, InputData::Allotment& allotment) {
 
     std::vector<std::string> tokens;
-    make_tokens(stream, tokens);
+    makeTokens(stream, tokens);
 
     allotment.id = std::stoi(tokens[3]);
 
-    ui32 entryCount = std::stoi(tokens[6]);
+    unsigned entryCount = std::stoi(tokens[6]);
 
     tokens.clear();
-    make_tokens(stream, tokens);
+    makeTokens(stream, tokens);
 
-    for (ui32 i = 0; i < entryCount; ++i)
+    for (unsigned i = 0; i < entryCount; ++i)
         allotment.entries.push_back(std::stoi(tokens[i + 2]));
 
     return stream;
@@ -209,7 +184,7 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Allotment& allotment
 std::ifstream& operator>>(std::ifstream& stream, Demand& demand) {
 
     std::vector<std::string> tokens;
-    make_tokens(stream, tokens);
+    makeTokens(stream, tokens);
 
     if (tokens[8] == "DemandType.exponential")
         demand.type = Demand::Type::exponential;
@@ -232,7 +207,7 @@ std::ifstream& operator>>(std::ifstream& stream, Demand& demand) {
 std::ifstream& operator>>(std::ifstream& stream, InputData::Event& event) {
 
     std::vector<std::string> tokens;
-    make_tokens(stream, tokens);
+    makeTokens(stream, tokens);
 
     if (tokens[3] == "EventType.pricing")
         event.type = InputData::Event::Type::pricing;
@@ -252,16 +227,16 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Event& event) {
     if (tokens[18] != "None")
         event.basedArc = std::stoi(tokens[18]);
 
-    ui32 relatedItineraryCount = std::stoi(tokens[21]);
-    ui32 demandsCount = std::stoi(tokens[24]);
+    unsigned relatedItineraryCount = std::stoi(tokens[21]);
+    unsigned demandsCount = std::stoi(tokens[24]);
 
     tokens.clear();
-    make_tokens(stream, tokens);
+    makeTokens(stream, tokens);
 
-    for (ui32 i = 0; i < relatedItineraryCount; ++i)
+    for (unsigned i = 0; i < relatedItineraryCount; ++i)
         event.relatedItineraryIds.push_back(std::stoi(tokens[i + 2]));
 
-    for (ui32 i = 0; i < demandsCount; ++i) {
+    for (unsigned i = 0; i < demandsCount; ++i) {
         Demand d;
         stream >> d;
         event.demands.push_back(std::move(d));
@@ -272,10 +247,10 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Event& event) {
 
 template <typename T, typename Stream = std::ifstream>
 inline std::ifstream& read(Stream& stream, const std::string& header, std::vector<T>& data) {
-    ui32 count = 0;
+    unsigned count = 0;
     validate(stream, header, count);
 
-    for (ui32 i = 0; i < count; ++i) {
+    for (unsigned i = 0; i < count; ++i) {
         T t;
         stream >> t;
         data.push_back(std::move(t));
@@ -315,10 +290,10 @@ std::ifstream& InputReader::readAllotments(std::ifstream& ifs, InputData& data) 
 }
 
 std::ifstream& InputReader::readEvents(std::ifstream& ifs, InputData& data) const {
-    ui32 count = 0;
+    unsigned count = 0;
     validate(ifs, "Events:", count);
 
-    for (ui32 i = 0; i < count; ++i) {
+    for (unsigned i = 0; i < count; ++i) {
         InputData::Event e;
         ifs >> e;
         data.events.push_back(std::move(e));
@@ -333,12 +308,12 @@ std::ifstream& InputReader::readEvents(std::ifstream& ifs, InputData& data) cons
 }
 
 std::ifstream& InputReader::readGroups(std::ifstream& ifs, InputData& data) const {
-    ui32 count = 0;
+    unsigned count = 0;
     validate(ifs, "SelectOneGroups:", count);
 
-    for (ui32 i = 0; i < count; ++i) {
+    for (unsigned i = 0; i < count; ++i) {
         data.allotmentGroups.emplace_back();
-        make_tokens<ui32>(ifs, data.allotmentGroups.back());
+        makeTokens<unsigned>(ifs, data.allotmentGroups.back());
     }
 
     return ifs;
@@ -346,7 +321,7 @@ std::ifstream& InputReader::readGroups(std::ifstream& ifs, InputData& data) cons
 
 std::ifstream& InputReader::readLeaseCost(std::ifstream& ifs, InputData& data) const {
     std::vector<std::string> tokens;
-    make_tokens(ifs, tokens);
+    makeTokens(ifs, tokens);
 
     assert(tokens[0] == "LeaseCost:");
 
@@ -366,7 +341,7 @@ void InputReader::Do(const std::string& filepath, InputData& data) const {
     logging::getRootLogger().debug("Ready to read in InputReader::Do, file is " + filepath);
 
     std::vector<std::string> tokens;
-    make_tokens(ifs, tokens);
+    makeTokens(ifs, tokens);
     logging::getRootLogger().debug("Finished make_tokens.");
     assert(tokens[0] == header);
 
