@@ -1,11 +1,9 @@
 /**
  * @file protocol.h
- * 
+ * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
  * @brief Speficies interaction protocol. The interaction happens through two entities, 
  * called Decision and Action. Decision represents the algorithm policy output, and Action
  * represents the reaction of environment.
- *  
- * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
  * @copyright (c) Smith School of Business, 2023
  */
 #pragma once
@@ -28,26 +26,26 @@ namespace sea {
  */
 struct Decision {
     /// @brief The relative time of the decision. 
-    unsigned int time;
+    unsigned time;
 
     /// @brief  Amount of containers to off-hire in ports. The indexation is [time][port].
-    std::vector<std::vector<unsigned int>> offHiredInPortS;
+    std::vector<std::vector<unsigned>> offHiredInPortS;
     
     /// @brief Spot market prices. The indexation is [time][<id-itinerary, price>].
-    std::vector<std::vector<std::pair<unsigned int, double>>> prices;
+    std::vector<std::vector<std::pair<unsigned, double>>> prices;
     
     /// @brief Amount of empty containers to take by itinerary. Indexed by id-itinerary.
-    std::vector<unsigned int> emptyContainersZ; 
+    std::vector<unsigned> emptyContainersZ; 
 
     /// @brief Amount of non-empty containers assigned by itinerary. Indexed by id-itinerary.
-    std::vector<unsigned int> nonEmptyContainersQ;
+    std::vector<unsigned> nonEmptyContainersQ;
 
     /// @brief Amount of non-empty containers assigned by allotment and itinerary. The indexation
     /// is via [contract-id][<id-itinerary, Q>].
-    std::vector<std::vector<std::pair<unsigned int, unsigned int>>> allotmentContainersQ;
+    std::vector<std::vector<std::pair<unsigned, unsigned>>> allotmentContainersQ;
 
     /// @brief Amount of containers to hire. Indexed by arc id.
-    std::vector<unsigned int> hiredY;
+    std::vector<unsigned> hiredY;
 
     /// @brief The decision on allotments. True if accepted, False if rejected. 
     /// Indexed by contract id.
@@ -101,18 +99,18 @@ void writeToFile(const std::string& pathToFile, const Decision& filledDecision);
  * and shown demand in the allotment market.
  */
 struct Action {
-    unsigned int time;
+    unsigned time;
     
     /// @brief Represents the shown demand in spot market. Indexed by id-itinerary.
-    std::vector<unsigned int> spotMarketDemandN; 
+    std::vector<unsigned> spotMarketDemandN; 
 
     /// @brief Represents the spot market bookigns as the response to the set price.
     /// Indexed by [time][id-itinerary].
-    std::vector<std::vector<unsigned int>> bookingsB;  // indexed by [time][id-itinerary]
+    std::vector<std::vector<unsigned>> bookingsB;  // indexed by [time][id-itinerary]
 
     /// @brief Represetns the shown demand in allotment market. 
     /// Indexed in the following fashion: [contract-id][<id-itinerary, N>].
-    std::vector<std::vector<std::pair<unsigned int, unsigned int>>> allotmentDemandN;
+    std::vector<std::vector<std::pair<unsigned, unsigned>>> allotmentDemandN;
 
     /**
      * @brief Writes Action to a stream.

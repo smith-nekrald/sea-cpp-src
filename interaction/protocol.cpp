@@ -5,46 +5,8 @@
 #include <iomanip>
 #include <exception>
 #include <sstream>
-
-#include <cereal/cereal.hpp>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/memory.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/types/map.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/types/string.hpp>
-#include <cereal/types/utility.hpp>
-#include <cereal/types/base_class.hpp>
-
-namespace cereal {
-
-template<class Archive>
-void serialize(Archive& ar, sea::Decision& decision)
-{
-    ar(decision.time,
-        decision.offHiredInPortS,
-        decision.prices,
-
-        decision.emptyContainersZ,
-        decision.nonEmptyContainersQ,
-        decision.allotmentContainersQ,
-
-        decision.hiredY,
-
-        decision.allotmentAccepted);
-}
-
-template<class Archive>
-void serialize(Archive& ar, sea::Action& action)
-{
-    ar(action.time,
-        action.spotMarketDemandN,
-        action.bookingsB,
-
-        action.allotmentDemandN);
-}
-
-} // namespace cereal
+#include <utility>
+#include <algorithm>
 
 
 using std::endl;
@@ -79,8 +41,9 @@ void createDecision(const InputData& input, Decision* decision) {
 
     for (const auto& event : input.events) {
         if (event.type == InputData::Event::Type::pricing) {
-            for (unsigned int idItinerary : event.relatedItineraryIds) {
-                decision->prices[event.relativeTime].push_back(std::make_pair(idItinerary, 0));
+            for (unsigned idItinerary : event.relatedItineraryIds) {
+                decision->prices[event.relativeTime].push_back(
+                        std::pair<unsigned, double>(idItinerary, 0.));
             }
         }
         decision->prices[event.relativeTime].shrink_to_fit();
@@ -104,15 +67,15 @@ void createDecision(const InputData& input, Decision* decision) {
     decision->allotmentContainersQ.shrink_to_fit();
 
     for (const auto& allotment : input.allotments) {
-        for (unsigned int entryId : allotment.entries) {
+        for (unsigned entryId : allotment.entries) {
             const auto& entry = input.allotmentEntries[entryId];
-            unsigned int idItinerary = entry.itinerary;
+            unsigned idItinerary = entry.itinerary;
             decision->allotmentContainersQ[allotment.id].push_back(
-                std::make_pair(idItinerary, (unsigned int)(0)));
+                std::pair<unsigned, unsigned>(idItinerary, 0));
         }
     }
 
-    for (unsigned int idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
+    for (unsigned idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
         decision->allotmentContainersQ[idAllotment].shrink_to_fit();
     }
 }
@@ -126,7 +89,6 @@ void createAction(const InputData& input, Action* action) {
             action->bookingsB[event.relativeTime].shrink_to_fit();
         }
     }
-
     action->spotMarketDemandN.assign(input.itineraries.size(), 0);
     action->spotMarketDemandN.shrink_to_fit();
 
@@ -134,18 +96,19 @@ void createAction(const InputData& input, Action* action) {
     action->allotmentDemandN.shrink_to_fit();
 
     for (const auto& allotment : input.allotments) {
-        for (unsigned int entryId : allotment.entries) {
+        for (unsigned entryId : allotment.entries) {
             const auto& entry = input.allotmentEntries[entryId];
-            unsigned int idItinerary = entry.itinerary;
+            unsigned idItinerary = entry.itinerary;
             action->allotmentDemandN[allotment.id].push_back(
-                std::make_pair(idItinerary, (unsigned int)(0)));
+                std::pair<unsigned, unsigned>(idItinerary, 0));
         }
     }
 
-    for (unsigned int idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
+    for (unsigned idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
         action->allotmentDemandN[idAllotment].shrink_to_fit();
     }
 }
+
 std::ostream& operator<<(std::ostream& out, const Action& action) {
     writeToStream(out, action);
     return out;
