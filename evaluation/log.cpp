@@ -1,3 +1,9 @@
+// Implmentation for Evalutor Logging.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "evaluator.h"
 #include "../logging/logging.h"
 

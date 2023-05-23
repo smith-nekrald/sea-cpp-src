@@ -1,3 +1,9 @@
+// Implementation for Evaluator logic.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "evaluator.h"
 #include "../logging/logging.h"
 
@@ -16,13 +22,11 @@ using EventType = Event::Type;
 
 Evaluator::Evaluator(const EvaluatorConfig& aConfig) : config(aConfig) {
     const auto& input = config.inputManager->getConstData();
-
-    for (const auto & itinerary : input.itineraries) {
-        const auto & arc = input.arcs[itinerary.orderedArcs.back()];
+    for (const auto& itinerary : input.itineraries) {
+        const auto& arc = input.arcs[itinerary.orderedArcs.back()];
         arcEndsInPort.insert({input.nodes[arc.toNode].portId, arc.id});
         itinerariesEndInArc[arc.id].push_back(itinerary.id);
     }
-
     containersInPorts.resize(input.ports.size());
     containersAssignedOnItineraries.resize(input.itineraries.size());
     totalBookings.resize(input.itineraries.size());
@@ -54,7 +58,7 @@ Statistics Evaluator::calc(algo::IAlgorithmPtr algo, ConstMarketManagerPtr marke
     marketManager = market;
     initStartState();
 
-    decisionManager = algo->makeDecision();   // time = -1, make decision for allotments
+    decisionManager = algo->makeDecision();  // time = -1, make decision for allotments
     logAllotmentDecision();
 
     processAllotmentDecision();
@@ -62,7 +66,6 @@ Statistics Evaluator::calc(algo::IAlgorithmPtr algo, ConstMarketManagerPtr marke
 
     for (unsigned idEvent = 0;
             idEvent < config.inputManager->getConstData().events.size(); idEvent++) {
-
         inputPtr = config.inputManager->get();
         auto event = inputPtr->events[idEvent];
         logEvaluatorLaunched(event);
@@ -135,8 +138,7 @@ Statistics Evaluator::calc(algo::IAlgorithmPtr algo, ConstMarketManagerPtr marke
 void Evaluator::processArrival(const InputData::Event& event) {
     assert(event.type == EventType::arrival);
     const auto& input = config.inputManager->getConstData();
-    const auto & currPort = input.ports[input.nodes[event.basedNode.value()].portId];
-
+    const auto& currPort = input.ports[input.nodes[event.basedNode.value()].portId];
     for (auto itineraryId : event.relatedItineraryIds) {
         containersInPorts[currPort.id] += containersAssignedOnItineraries[itineraryId];
     }
@@ -158,7 +160,7 @@ void Evaluator::makePricingAction(const Event& event) {
             std::end(action->bookingsB[event.relativeTime]), 0);
 
     auto wtopay = market.idEventToWpay.find(event.relativeTime);
-    assert (wtopay != market.idEventToWpay.end());
+    assert(wtopay != market.idEventToWpay.end());
 
     for (const auto& itinerary_price : decision->prices[event.relativeTime]) {
         auto buyers = wtopay->second.find(itinerary_price.first);
@@ -224,9 +226,9 @@ void Evaluator::processAllotmentDecision() {
     const auto& input = config.inputManager->getConstData();
     const auto& inputLinks = config.linksManager->getConstData();
     const auto& market = marketManager->getConstData();
+
     auto* decision = &decisionManager->getConstData();
     auto* action = actionManager->get();
-
     selectedAllotments = decision->allotmentAccepted;
 
     for (const auto& group : input.allotmentGroups) {
@@ -238,12 +240,12 @@ void Evaluator::processAllotmentDecision() {
         }
         assert(countValueOn <= 1);
     }
-    for (unsigned i = 0; i < decision->allotmentAccepted.size(); ++i) {
-        if (!decision->allotmentAccepted[i])
+    for (unsigned index = 0; index < decision->allotmentAccepted.size(); ++index) {
+        if (!decision->allotmentAccepted[index])
             continue;
-        for (const auto & p : market.allotmentShowCount[i]) {
-            auto place = inputLinks.allotmentItineraryToPlace.at(i).at(p.first);
-            action->allotmentDemandN[i][place] = p;
+        for (const auto& showPair : market.allotmentShowCount[index]) {
+            auto place = inputLinks.allotmentItineraryToPlace.at(index).at(showPair.first);
+            action->allotmentDemandN[index][place] = showPair;
         }
     }
 }
@@ -255,8 +257,8 @@ void Evaluator::processCutoffDecision(const Event& event) {
     auto* action = actionManager->get();
 
     assert(event.type == EventType::cutoff);
-    const auto & basedArc = input.arcs[event.basedArc.value()];
-    const auto & port = input.ports[input.nodes[basedArc.fromNode].portId];
+    const auto& basedArc = input.arcs[event.basedArc.value()];
+    const auto& port = input.ports[input.nodes[basedArc.fromNode].portId];
 
     // Pay for hiring containers.
     unsigned hiredAmount = decision->hiredY[basedArc.id];
@@ -318,7 +320,7 @@ void Evaluator::processCutoffDecision(const Event& event) {
                 diff, paidDeclineCost, nonEmptyTransferCost, emptyTransferCost,  waitingCost);
     }
 
-    //Process Allotments.
+    // Process Allotments.
     for (auto itineraryId : event.relatedItineraryIds) {
         const auto& itinerary = input.itineraries[itineraryId];
 
@@ -332,7 +334,7 @@ void Evaluator::processCutoffDecision(const Event& event) {
             statistics.allotmentContainerCount += takenContainersQ;
 
             auto entryId = inputLinks.allotmentItineraryToEntry.at(contractId).at(itineraryId);
-            const auto & entry = input.allotmentEntries[entryId];
+            const auto& entry = input.allotmentEntries[entryId];
 
             statistics.allotmentProfit += takenContainersQ * entry.price;
             assert(takenContainersQ >= 0);
