@@ -41,17 +41,30 @@ private:
     void initStartState();
 
 private:
-    void logAllotmentDecision();
-    void logProfits();
-    void logUsedCapacity();
-    void logSpotProfitAfterLastEvent(const InputData::Event& event);
-    void logAboutPricing();
-    void logAboutArrival();
-    void logAboutOffhiring();
-    void logAboutCutoff();
-    void logEvaluatorLaunched(const InputData::Event& event);
-    void logAboutMakingPricingActionForEvent(const InputData::Event& event);
-    void logPricingBookingsRevenue(unsigned itinerary, double price, unsigned bookings);
+    void logAllotmentDecision() const;
+    void logProfits() const;
+    void logUsedCapacity() const;
+    void logSpotProfitAfterLastEvent(const InputData::Event& event) const;
+    void logAboutPricing() const;
+    void logAboutArrival() const;
+    void logAboutOffhiring() const;
+    void logAboutCutoff() const;
+    void logEvaluatorLaunched(const InputData::Event& event) const;
+
+    void logAboutMakingPricingActionForEvent(const InputData::Event& event) const;
+    void logPricingBookingsRevenue(unsigned itinerary, double price, unsigned bookings) const;
+
+    void logStartMakeCutoffAction(const InputData::Event& event) const;
+    void logItineraryInfoInMakeCutoffAction(unsigned itineraryId) const;
+    void logAllotmentInfoInMakeCutoffAction(unsigned showAmountN, unsigned productAmount) const;
+    void logFinishedMakeCutoffAction() const;
+
+    void logStartProcessCutoffDecision(const InputData::Event& event, unsigned hiredAmount,
+            double paidForHiring) const;
+    void logItinerarySpotInProcessCutoffDecision(unsigned itineraryId, unsigned takenContainers,
+            unsigned emptyContainers, double diffDemandTaken, double paidDeclineCost,
+            double nonEmptyTransferCost, double emptyTransferCost,  double waitingCost) const;
+    void logFinishedProcessCutoffDecision() const;
 
 private:
     EvaluatorConfig config;

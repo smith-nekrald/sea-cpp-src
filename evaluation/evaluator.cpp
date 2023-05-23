@@ -187,61 +187,37 @@ void Evaluator::makePricingAction(const Event& event) {
 }
 
 void Evaluator::makeCutoffAction(const InputData::Event& event) {
-
-    auto& logger = logging::getEvaluationLogger();
-    auto stream = logger.getStream(log4cpp::Priority::DEBUG);
-    stream << "Evaluator: making cut-off action on time " <<  event.relativeTime << "\n";
-
-    const auto& inputLinks = config.linksManager->getConstData();
+    logStartMakeCutoffAction(event);
+    const auto& links = config.linksManager->getConstData();
     const auto& input = config.inputManager->getConstData();
     auto* action = actionManager->get();
     auto* decision = &decisionManager->getConstData();
     action->time = event.relativeTime;
-
     // demand realization already assigned
-    for (unsigned itId : event.relatedItineraryIds) {
-
-        stream << "Processing itinerary with id " << itId << "\n";
-
-        assert(itId == input.itineraries[itId].id);
-        assert(totalBookings[itId] >= action->spotMarketDemandN[itId]);
-        auto diff = totalBookings[itId] - action->spotMarketDemandN[itId];
-
-        stream << "Bookings = " << totalBookings[itId] << "\n";
-        stream << "Demand = " << action->spotMarketDemandN[itId] << "\n";
-        stream << "Removing return price from spot profit: "
-            << input.itineraries[itId].returnPrice * diff << "\n";
-
-        statistics.spotProfit -= input.itineraries[itId].returnPrice * diff;
-        assert(input.itineraries[itId].returnPrice >= 0);
+    for (unsigned itineraryId : event.relatedItineraryIds) {
+        assert(itineraryId == input.itineraries[itineraryId].id);
+        assert(totalBookings[itineraryId] >= action->spotMarketDemandN[itineraryId]);
+        unsigned diff = totalBookings[itineraryId] - action->spotMarketDemandN[itineraryId];
+        statistics.spotProfit -= input.itineraries[itineraryId].returnPrice * diff;
+        assert(input.itineraries[itineraryId].returnPrice >= 0);
         assert(diff >= 0);
-
-        stream << "Now processing allotments. \n";
-        for (auto contractId : inputLinks.allotmentsWithItinerary[itId]) {
+        logItineraryInfoInMakeCutoffAction(itineraryId);
+        for (auto contractId : links.allotmentsWithItinerary[itineraryId]) {
             if (!decision->allotmentAccepted[contractId])
                 continue;
-
-            auto place = inputLinks.allotmentItineraryToPlace.at(contractId).at(itId);
+            auto place = links.allotmentItineraryToPlace.at(contractId).at(itineraryId);
             auto showAmountN = action->allotmentDemandN[contractId][place].second;
-            stream << "Shown amount = " << showAmountN << "\n";
-
-            auto entryId = inputLinks.allotmentItineraryToEntry.at(contractId).at(itId);
+            auto entryId = links.allotmentItineraryToEntry.at(contractId).at(itineraryId);
             const auto & entry = input.allotmentEntries[entryId];
             assert (entry.productAmount >= showAmountN);
-
-            stream << "Inital negotiated amount = " << entry.productAmount << "\n";
-
             statistics.sumAllotmentBookingAmount += entry.productAmount;
             assert(entry.productAmount >= showAmountN);
-            statistics.allotmentProfit += entry.cancellationPrice *
-                (entry.productAmount - showAmountN);
-
-            stream << "Adding cancellation payment to allotments: " << entry.cancellationPrice *
-                (entry.productAmount - showAmountN) << "\n";
+            statistics.allotmentProfit += entry.cancellationPrice
+                * (entry.productAmount - showAmountN);
+            logAllotmentInfoInMakeCutoffAction(showAmountN, entry.productAmount);
         }
     }
-    stream << "Evaluator: current spot profit = " << statistics.spotProfit << "\n";
-    stream << "Evaluator: cut-off action is made." << "\n";
+    logFinishedMakeCutoffAction();
 }
 
 void Evaluator::processAllotmentDecision() {
@@ -273,12 +249,6 @@ void Evaluator::processAllotmentDecision() {
 }
 
 void Evaluator::processCutoffDecision(const Event& event) {
-
-    auto& logger = logging::getEvaluationLogger();
-    auto stream = logger.getStream(log4cpp::Priority::DEBUG);
-    stream << "Evaluator: processCutoffDecision for event "
-        << event.relativeTime << "\n";
-
     const auto& input = config.inputManager->getConstData();
     const auto& inputLinks = config.linksManager->getConstData();
     auto* decision = &decisionManager->getConstData();
@@ -288,78 +258,80 @@ void Evaluator::processCutoffDecision(const Event& event) {
     const auto & basedArc = input.arcs[event.basedArc.value()];
     const auto & port = input.ports[input.nodes[basedArc.fromNode].portId];
 
-    // pay for hiring containers
-    statistics.containerProfit -= decision->hiredY[basedArc.id] * port.hiringCost;
-    stream << "hired " << decision->hiredY[basedArc.id] << " containers, "
-        << "paid " << decision->hiredY[basedArc.id] * port.hiringCost
-        << "\n";
+    // Pay for hiring containers.
+    unsigned hiredAmount = decision->hiredY[basedArc.id];
+    double paidForHiring = port.hiringCost * decision->hiredY[basedArc.id];
+    statistics.containerProfit -= paidForHiring;
     containersInPorts[port.id] += decision->hiredY[basedArc.id];
 
-    // process spot market
+    // Log entry in the method and first steps.
+    logStartProcessCutoffDecision(event, hiredAmount, paidForHiring);
+
+    // Process spot market.
     for (auto itineraryId : event.relatedItineraryIds) {
         const auto& itinerary = input.itineraries[itineraryId];
+
         auto takenContainers = decision->nonEmptyContainersQ[itineraryId];
-        stream << "spot market, itinerary " << itineraryId << "\n";
-        stream << "spot market, taken Q_r = " << takenContainers << "\n";
-
         statistics.spotContainerCount += takenContainers;
+
         auto emptyContainers = decision->emptyContainersZ[itineraryId];
-
-        stream << "spot market, taken Z_r = " << emptyContainers << "\n";
-
         statistics.emptyContainerCount += emptyContainers;
 
         assert(action->spotMarketDemandN[itineraryId] >= takenContainers);
         assert(takenContainers >= 0);
         assert(action->spotMarketDemandN[itineraryId] >= 0);
-        double diff = double(action->spotMarketDemandN[itineraryId]) - takenContainers;
-        stream << "spot market, declined " << int(diff) << "containers" << "\n";
-        assert(diff + 1e-8 >= 0);
-        // pay for not taken products
-        statistics.spotProfit -= itinerary.declineCost * diff;
+
+        double diff = static_cast<double>(
+                action->spotMarketDemandN[itineraryId]) - takenContainers;
+
+        const double EPS_ABOVE_ZERO = 1e-8;
+        assert(diff + EPS_ABOVE_ZERO >= 0);
+
+        // Pay for not taken products.
+        double paidDeclineCost = itinerary.declineCost * diff;
+        statistics.spotProfit -= paidDeclineCost;
         assert(itinerary.declineCost >= 0);
-        stream << "spot market, paying decline cost = " << itinerary.declineCost * diff
-            << " for diff = " << diff << "\n";
-        // pay transfer cost for non-empty containers
-        statistics.spotProfit -= takenContainers * itinerary.cost;
+
+        // Pay transfer cost for non-empty containers.
+        double nonEmptyTransferCost = takenContainers * itinerary.cost;
+        statistics.spotProfit -= nonEmptyTransferCost;
         assert(takenContainers >= 0);
         assert(itinerary.cost >= 0);
-        stream << "spot market, paying transfer cost = " <<
-            takenContainers * itinerary.cost << "\n";
-        // pay transfer cost for empty containers
-        statistics.emptyContainerProfit -= emptyContainers * itinerary.emptyCost;
-        stream << "spot market, paying transfer cost for empty containers: " <<
-            emptyContainers * itinerary.emptyCost << "\n";
-        // pay for waiting in port until departure
 
-        statistics.containerProfit -= port.storageCost * event.duration
+        // Pay transfer cost for empty containers.
+        double emptyTransferCost = emptyContainers * itinerary.emptyCost;
+        statistics.emptyContainerProfit -= emptyTransferCost;
+
+        // Pay for waiting in port until departure.
+        double waitingCost = port.storageCost * event.duration
             * (takenContainers + emptyContainers);
+        statistics.containerProfit -= waitingCost;
 
-        stream << "containers, paying for waiting in port " <<
-            port.storageCost * event.duration *
-            (takenContainers + emptyContainers) << "\n";
-
-        // update assigned containers
+        // Update assigned containers.
         assert(containersAssignedOnItineraries[itineraryId] == 0);
         containersAssignedOnItineraries[itineraryId] = takenContainers + emptyContainers;
         assert(containersInPorts[port.id] >= takenContainers + emptyContainers);
         containersInPorts[port.id] -= (takenContainers + emptyContainers);
+
+        // Logging the process.
+        logItinerarySpotInProcessCutoffDecision(itineraryId, takenContainers, emptyContainers,
+                diff, paidDeclineCost, nonEmptyTransferCost, emptyTransferCost,  waitingCost);
     }
 
-    //process allotments
-    for (auto itId : event.relatedItineraryIds) {
-        const auto& itinerary = input.itineraries[itId];
+    //Process Allotments.
+    for (auto itineraryId : event.relatedItineraryIds) {
+        const auto& itinerary = input.itineraries[itineraryId];
 
-        for (auto contractId : inputLinks.allotmentsWithItinerary[itId]) {
+        for (auto contractId : inputLinks.allotmentsWithItinerary[itineraryId]) {
             if (!decision->allotmentAccepted[contractId])
                 continue;
 
-            auto place = inputLinks.allotmentItineraryToPlace.at(contractId).at(itId);
+            auto place = inputLinks.allotmentItineraryToPlace.at(contractId).at(itineraryId);
             auto showAmountN = action->allotmentDemandN[contractId][place].second;
             auto takenContainersQ = decision->allotmentContainersQ[contractId][place].second;
             statistics.allotmentContainerCount += takenContainersQ;
 
-            auto entryId = inputLinks.allotmentItineraryToEntry.at(contractId).at(itId);
+            auto entryId = inputLinks.allotmentItineraryToEntry.at(contractId).at(itineraryId);
             const auto & entry = input.allotmentEntries[entryId];
 
             statistics.allotmentProfit += takenContainersQ * entry.price;
@@ -368,16 +340,16 @@ void Evaluator::processCutoffDecision(const Event& event) {
             assert(showAmountN >= takenContainersQ);
             statistics.allotmentProfit -= (showAmountN - takenContainersQ) * itinerary.declineCost;
 
-            // pay transfer cost for non-empty containers
+            // Pay transfer cost for non-empty containers.
             assert(itinerary.cost >= 0);
             statistics.allotmentProfit -= takenContainersQ * itinerary.cost;
-            // pay for waiting in port until departure
+            // Pay for waiting in port until departure.
             assert(event.duration >= 0);
             assert(port.storageCost >= 0);
             statistics.allotmentProfit -= port.storageCost * event.duration * takenContainersQ;
 
-            // update containers
-            containersAssignedOnItineraries[itId] += takenContainersQ;
+            // Update containers.
+            containersAssignedOnItineraries[itineraryId] += takenContainersQ;
             assert(containersInPorts[port.id] >= takenContainersQ);
             containersInPorts[port.id] -= takenContainersQ;
         }
@@ -391,9 +363,10 @@ void Evaluator::processCutoffDecision(const Event& event) {
             }
         }
     }
-    stream << "Evaluator: current spot profit = " << statistics.spotProfit << "\n";
-    stream << "Evaluator: processCutoffDecision finished\n";
+    // Log that method execution is finished.
+    logFinishedProcessCutoffDecision();
 }
+
 
 void Evaluator::updateContainersInPorts(double durationToNextPeriod) {
     const auto& input = config.inputManager->getConstData();
