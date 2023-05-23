@@ -1,4 +1,11 @@
+// Implements defined methods for MarketReader.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "market_reader.h"
+#include "market_reader.hpp"
 
 #include <iostream>
 #include <sstream>
@@ -12,106 +19,81 @@
 namespace sea {
 namespace io {
 
-namespace {
+std::ifstream& MarketReader::readEvents(std::ifstream& input, MarketData& data) const {
+    std::string placeholder;   // id_event_to_wpay
+    while ((placeholder.find("id_event_to_wpay") == std::string::npos)
+            && std::getline(input, placeholder)) {
+    }
 
-template <typename T = std::string>
-inline void makeTokens(const std::string& s, std::vector<T>& tokens) {
+    unsigned pricingEventCount;
+    input >> pricingEventCount;
 
-    std::istringstream iss(s);
+    for (unsigned idxEvent = 0; idxEvent < pricingEventCount; ++idxEvent) {
+        unsigned relatedItineraryCount;
+        input >> relatedItineraryCount;
 
-    std::vector<T> tmp{std::istream_iterator<T>{iss}, std::istream_iterator<T>{}};
+        for (unsigned idxRelated = 0; idxRelated < relatedItineraryCount; ++idxRelated) {
+            unsigned eventId;
+            unsigned itineraryId;
+            unsigned sampleLen;
 
-    tokens.swap(tmp);
-}
-
-template <typename T = std::string>
-inline std::ifstream& makeTokens(std::ifstream& stream, std::vector<T>& tokens) {
-
-    std::string to_parse;
-    while (to_parse.empty())
-        std::getline(stream, to_parse);
-
-    makeTokens<T>(to_parse, tokens);
-
-    return stream;
-}
-
-}   // namespace
-
-std::ifstream& MarketReader::readEvents(std::ifstream& ifs, MarketData& data) const {
-
-    std::string fake;   // id_event_to_wpay
-    while((fake.find("id_event_to_wpay") == std::string::npos) && std::getline(ifs, fake));
-
-    ui32 pricingEventCount;
-    ifs >> pricingEventCount;
-
-    for (ui32 i = 0; i < pricingEventCount; ++i) {
-        ui32 relatedItineraryCount;
-        ifs >> relatedItineraryCount;
-
-        for (ui32 i = 0; i < relatedItineraryCount; ++i) {
-            ui32 eventId;
-            ui32 itineraryId;
-            ui32 sampleLen;
-
-            ifs >> eventId >> itineraryId >> sampleLen;
+            input >> eventId >> itineraryId >> sampleLen;
 
             if (data.idEventToWpay.find(eventId) == data.idEventToWpay.end()) {
-                data.idEventToWpay.emplace(eventId, std::unordered_map<ui32, std::vector<SpotShow> >{});
+                data.idEventToWpay.emplace(
+                        eventId, std::unordered_map<unsigned, std::vector<SpotShow> >{});
             }
 
             double value;
-            for (ui32 j = 0; j < sampleLen; ++j) {
-                ifs >> value;
+            for (unsigned jdxEntry = 0; jdxEntry < sampleLen; ++jdxEntry) {
+                input >> value;
+                // Skipping further activity since the same information is repeated again.
             }
         }
     }
-
-    return ifs;
+    return input;
 }
 
-std::ifstream& MarketReader::readAllotmentShows(std::ifstream& ifs, MarketData& data) const {
+std::ifstream& MarketReader::readAllotmentShows(std::ifstream& input, MarketData& data) const {
+    std::string placeholder;   // Looking for allotment_show_count.
+    while ((placeholder.find("allotment_show_count") == std::string::npos)
+            && std::getline(input, placeholder)) {
+    }
 
-    std::string fake;   // allotment_show_count
-    while ((fake.find("allotment_show_count") == std::string::npos) && std::getline(ifs, fake));
-
-    ui32 allotmentCount;
-    ifs >> allotmentCount;
+    unsigned allotmentCount;
+    input >> allotmentCount;
 
     data.allotmentShowCount.resize(allotmentCount);
-
-    for (ui32 i = 0; i < allotmentCount; ++i) {
-        ui32 allotmentId, count;
-        ifs >> allotmentId >> count;
-
-        for (ui32 j = 0; j < count; ++j) {
-            ui32 itineraryId, showCount;
-            ifs >> allotmentId >> itineraryId >> showCount;
-
+    for (unsigned idxAllotment = 0; idxAllotment < allotmentCount; ++idxAllotment) {
+        unsigned allotmentId, count;
+        input >> allotmentId >> count;
+        for (unsigned jdxItem = 0; jdxItem < count; ++jdxItem) {
+            unsigned itineraryId, showCount;
+            input >> allotmentId >> itineraryId >> showCount;
             data.allotmentShowCount[allotmentId][itineraryId] = showCount;
         }
     }
-
-    return ifs;
+    return input;
 }
 
-std::ifstream& MarketReader::readSpotShows(std::ifstream& ifs, MarketData& data) const {
+std::ifstream& MarketReader::readSpotShows(std::ifstream& input, MarketData& data) const {
 
-    std::string fake;   // spot_show_tuples
-    while ((fake.find("spot_show_tuples") == std::string::npos) && std::getline(ifs, fake));
+    std::string placeholder;   // spot_show_tuples
+    while ((placeholder.find("spot_show_tuples") == std::string::npos)
+            && std::getline(input, placeholder)) {
+    }
 
-    ui32 itineraryCount;
-    ifs >> itineraryCount;
+    unsigned itineraryCount;
+    input >> itineraryCount;
 
-    for (ui32 i = 0; i < itineraryCount; ++i) {
-        ui32 itineraryId, entriesLen;
-        ifs >> itineraryId >> entriesLen;
+    for (unsigned ind = 0; ind < itineraryCount; ++ind) {
+        unsigned itineraryId, entriesLen;
+        input >> itineraryId >> entriesLen;
 
-        for (ui32 j = 0; j < entriesLen; ++j) {
-            ui32 eventId, showFlag, index;
+        for (unsigned jdx = 0; jdx < entriesLen; ++jdx) {
+            unsigned eventId, showFlag, index;
             double willingnessToPay;
-            ifs >> itineraryId >> eventId >> index >> willingnessToPay >> showFlag;
+            input >> itineraryId >> eventId >> index >> willingnessToPay >> showFlag;
             assert(showFlag == 0 || showFlag == 1);
 
             data.idEventToWpay[eventId][itineraryId].emplace_back(
@@ -119,38 +101,35 @@ std::ifstream& MarketReader::readSpotShows(std::ifstream& ifs, MarketData& data)
         }
     }
 
-    for (auto & itineraries : data.idEventToWpay) {
-        for (auto & i : itineraries.second) {
-            i.second.resize(i.second.size());
-            std::sort(std::begin(i.second), std::end(i.second),
-                [](const SpotShow& l, const SpotShow& r){
-                    return l.indexInSample < r.indexInSample;
+    for (auto& itineraries : data.idEventToWpay) {
+        for (auto& item : itineraries.second) {
+            item.second.resize(item.second.size());
+            std::sort(std::begin(item.second), std::end(item.second),
+                [](const SpotShow& lhs, const SpotShow& rhs){
+                    return lhs.indexInSample < rhs.indexInSample;
             });
         }
     }
 
-    return ifs;
+    return input;
 }
 
 const std::string MarketReader::header = "MarketData:";
 
-void MarketReader::Do(const std::string& filepath, MarketData& data) const {
+void MarketReader::Do(const std::string& filePath, MarketData& data) const {
+    std::ifstream inStream(filePath, std::ios_base::in);
 
-    std::ifstream ifs(filepath, std::ios_base::in);
-
-    if (!ifs.good())
-        throw std::runtime_error("failed to open market file: " + filepath);
+    if (!inStream.good()) {
+        throw std::runtime_error("Failed to open market file: " + filePath);
+    }
 
     std::vector<std::string> tokens;
-    makeTokens(ifs, tokens);
-
+    makeTokens(inStream, tokens);
     assert(tokens[0] == header);
 
-    readEvents(ifs, data);
-
-    readAllotmentShows(ifs, data);
-
-    readSpotShows(ifs, data);
+    readEvents(inStream, data);
+    readAllotmentShows(inStream, data);
+    readSpotShows(inStream, data);
 }
 
 }   // namespace io
