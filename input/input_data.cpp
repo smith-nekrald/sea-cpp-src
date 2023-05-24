@@ -1,3 +1,9 @@
+// Implementation for methods declared in input_data.h.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "input_data.h"
 #include <iostream>
 
@@ -8,6 +14,16 @@ using std::endl;
 using EventType = InputData::Event::Type;
 
 void printInputDataStats(const InputData& data) {
+    unsigned pricingCount = 0, cutoffCount = 0, arrivalCount = 0;
+    for (const auto& event : data.events) {
+        if (event.type == EventType::cutoff) {
+            ++cutoffCount;
+        } else if (event.type == EventType::pricing) {
+            ++pricingCount;
+        } else if (event.type == EventType::arrival) {
+            ++arrivalCount;
+        }
+    }
     cout << "=========================================" << endl;
     cout << "Statistics of InputData:" << endl;
     cout << "Number of ports: " << data.ports.size() << endl;
@@ -19,16 +35,6 @@ void printInputDataStats(const InputData& data) {
     cout << "Number of groups: " << data.allotmentGroups.size() << endl;
     cout << "Number of itineraries: " << data.itineraries.size() << endl;
     cout << "Number of events: " << data.events.size() << endl;
-    unsigned pricingCount = 0, cutoffCount = 0, arrivalCount = 0;
-    for (const auto& event : data.events) {
-        if (event.type == EventType::cutoff) {
-            ++cutoffCount;
-        } else if (event.type == EventType::pricing) {
-            ++pricingCount;
-        } else if (event.type == EventType::arrival) {
-            ++arrivalCount;
-        }
-    }
     cout << "pricing events count: " << pricingCount << endl;
     cout << "cutoff events count: " << cutoffCount << endl;
     cout << "arrival events count: " << arrivalCount << endl;

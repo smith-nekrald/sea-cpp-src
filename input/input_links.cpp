@@ -1,3 +1,9 @@
+// Implements API for creating InputLinks and related IO.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "input_links.h"
 
 #include <algorithm>
@@ -5,19 +11,19 @@
 #include <iostream>
 #include <limits>
 
-using std::cout;
-using std::endl;
-
-const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
 
 namespace sea {
 
+using std::cout;
+using std::endl;
 using std::sort;
 using std::unique;
 using EventType = InputData::Event::Type;
 using ArcType = InputData::Arc::Type;
 
 void createInputLinks(const InputData& input, InputLinks* linksPtr) {
+    const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
+
     assert(linksPtr != nullptr);
     InputLinks& links = *linksPtr;
 
@@ -49,8 +55,8 @@ void createInputLinks(const InputData& input, InputLinks* linksPtr) {
     for (const auto& itinerary : input.itineraries) {
         unsigned idArcStart = itinerary.orderedArcs.front();
         unsigned idArcEnd = itinerary.orderedArcs.back();
-        for (unsigned i = 0; i < itinerary.orderedArcs.size(); ++i) {
-            unsigned idArcCur = itinerary.orderedArcs[i];
+        for (unsigned idx = 0; idx < itinerary.orderedArcs.size(); ++idx) {
+            unsigned idArcCur = itinerary.orderedArcs[idx];
             links.itinerariesWithArc[idArcCur].push_back(itinerary.id);
         }
         links.itinerariesToArc[idArcEnd].push_back(itinerary.id);
@@ -70,14 +76,13 @@ void createInputLinks(const InputData& input, InputLinks* linksPtr) {
 
     vector<unsigned> waitingArc(input.ports.size(), MAX_INDEX);
 
-    for (auto it = input.events.rbegin(); it != input.events.rend(); ++it) {
-        if (it->type == EventType::cutoff) {
-            unsigned portId = input.nodes[it->basedNode.value()].portId;
-            waitingArc[portId] = it->basedArc.value();
-        } else if (it->type == EventType::arrival) {
-            unsigned portId = input.nodes[it->basedNode.value()].portId;
-            links.firstArcToHireAfterArc[it->basedArc.value()] =
-                waitingArc[portId];
+    for (auto iterEvent = input.events.rbegin(); iterEvent != input.events.rend(); ++iterEvent) {
+        if (iterEvent->type == EventType::cutoff) {
+            unsigned portId = input.nodes[iterEvent->basedNode.value()].portId;
+            waitingArc[portId] = iterEvent->basedArc.value();
+        } else if (iterEvent->type == EventType::arrival) {
+            unsigned portId = input.nodes[iterEvent->basedNode.value()].portId;
+            links.firstArcToHireAfterArc[iterEvent->basedArc.value()] = waitingArc[portId];
 
         }
     }
@@ -115,18 +120,18 @@ void createInputLinks(const InputData& input, InputLinks* linksPtr) {
             links.allotmentToGroups[allotmentIndex].push_back(groupId);
         }
     }
-    for (auto & vec : links.allotmentToGroups) {
-        vec.shrink_to_fit();
+    for (auto & groupVector : links.allotmentToGroups) {
+        groupVector.shrink_to_fit();
     }
     links.allotmentToGroups.shrink_to_fit();
 }
 
 unsigned get2dVectorSize(const vector<vector<unsigned>>& target) {
-    unsigned ans = 0;
+    unsigned answer = 0;
     for (const auto& member : target) {
-        ans += member.size();
+        answer += member.size();
     }
-    return ans;
+    return answer;
 }
 
 void printInputLinksStats(const InputLinks& links) {

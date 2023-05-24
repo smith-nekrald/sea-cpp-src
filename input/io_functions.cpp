@@ -1,35 +1,13 @@
+// Read-Write functions for InputData, InputLinks and MarketData.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "io_functions.h"
 #include "../reader/input_reader.h"
 #include "../reader/market_reader.h"
-
-#include <cereal/cereal.hpp>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/memory.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/types/map.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/types/string.hpp>
-#include <cereal/types/utility.hpp>
-
-
-namespace cereal {
-
-template<class Archive>
-void serialize(Archive& ar, sea::InputLinks& links)
-{
-    ar(links.itinerariesFromArc,
-        links.itinerariesWithArc,
-        links.itinerariesToArc,
-        links.demandTimesForItinerary,
-        links.allotmentsWithItinerary,
-        links.allotmentItineraryToEntry,
-        links.allotmentItineraryToPlace,
-        links.allotmentToGroups,
-        links.firstArcToHireAfterArc,
-        links.arrivalTime);
-}
-
-} // namespace cereal
+#include "io_functions.hpp"
 
 
 namespace sea {
@@ -54,14 +32,14 @@ void writeToFile(const std::string& /*pathToFile*/, const MarketData& /*data*/) 
 
 void loadFromFile(const std::string& pathToFile, InputLinks* links) {
     std::ifstream reader(pathToFile, std::ios::binary);
-    ::cereal::BinaryInputArchive ia(reader);
-    ia >> *links;
+    ::cereal::BinaryInputArchive inputArchive(reader);
+    inputArchive >> *links;
 }
 
 void writeToFile(const std::string& pathToFile, const InputLinks& links) {
     std::ofstream writer(pathToFile, std::ios::binary);
-    ::cereal::BinaryOutputArchive oa(writer);
-    oa << links;
+    ::cereal::BinaryOutputArchive outputArchive(writer);
+    outputArchive << links;
 }
 
 } // namespace sea
