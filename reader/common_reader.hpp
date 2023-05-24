@@ -1,3 +1,9 @@
+/**
+ * @file common_reader.hpp
+ * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
+ * @brief Template methods for reading input and market data.
+ * @copyright (c) Smith School of Business, 2023
+ */
 #pragma once
 
 #include <iostream>
@@ -14,6 +20,13 @@ namespace io {
 
 namespace {
 
+/**
+ * @brief Splits string into tokens of a certain type.
+ * 
+ * @tparam Type The type of each token. 
+ * @param[in] source The string to tokenize.
+ * @param[out] tokens The resulting vector with tokens.
+ */
 template <typename Type = std::string>
 inline void makeTokens(const std::string& source, std::vector<Type>& tokens) {
     std::istringstream inputStrStream(source);
@@ -22,6 +35,14 @@ inline void makeTokens(const std::string& source, std::vector<Type>& tokens) {
     tokens.swap(process);
 }
 
+/**
+ * @brief Reads line from stream and splits the line into tokens of a certain type.
+ * 
+ * @tparam Type The type of each token.
+ * @param[out] stream The stream to read string from.
+ * @param[out] tokens The resulting vector with tokens.
+ * @return Updated stream for further applications.
+ */
 template <typename Type = std::string>
 inline std::ifstream& makeTokens(std::ifstream& stream, std::vector<Type>& tokens) {
     std::string to_parse;
@@ -34,8 +55,20 @@ inline std::ifstream& makeTokens(std::ifstream& stream, std::vector<Type>& token
 
 } // namespace
 
+// Re-definition for a function in header. To make further functions familiar with the signature. 
 std::ifstream& validate(std::ifstream& stream, const std::string& header, unsigned& count);
 
+/**
+ * @brief Reads current data pattern from stream. For the implemented IO format, reads
+ * header and number of entries through validate. Afterwards, reads count elements and sorts.
+ * 
+ * @tparam Type The type of entries to read.
+ * @tparam Stream The type of stream to read from.
+ * @param[out] stream The stream for reading information.
+ * @param[in] header Header of the block.
+ * @param[out] data Vector with read data of type Type.
+ * @return The stream after reading.
+ */
 template <typename Type, typename Stream = std::ifstream>
 inline std::ifstream& read(Stream& stream, const std::string& header, std::vector<Type>& data) {
     unsigned count = 0;

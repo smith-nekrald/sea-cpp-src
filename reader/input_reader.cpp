@@ -1,3 +1,9 @@
+// Implementation of methods and API mentioned in input_reader.h.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "input_reader.h"
 #include "common_reader.hpp"
 #include "../logging/logging.h"
@@ -15,15 +21,11 @@ namespace sea {
 namespace io {
 
 std::ifstream& validate(std::ifstream& stream, const std::string& header, unsigned& count) {
-
     std::vector<std::string> tokens;
     makeTokens(stream, tokens);
-
     assert(tokens.size() >= 2);
     assert(tokens[0] == header);
-
     count = std::stoi(tokens[1]);
-
     return stream;
 }
 
@@ -58,7 +60,6 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Node& node) {
     } else {
         throw std::runtime_error("no such NodeType: " + tokens[12]);
     }
-
     return stream;
 }
 
@@ -78,12 +79,10 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Vessel& vessel) {
     for (unsigned idx = 0; idx < wayLen; ++idx) {
         vessel.way.push_back(std::stoi(wayIds[idx + 2]));
     }
-
     return stream;
 }
 
 std::ifstream& operator>>(std::ifstream& stream, InputData::Arc& arc) {
-
     std::vector<std::string> tokens;
     makeTokens(stream, tokens);
 
@@ -110,7 +109,6 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Arc& arc) {
 std::ifstream& operator>>(std::ifstream& stream, ShowRate& show) {
     std::vector<std::string> tokens;
     makeTokens(stream, tokens);
-
     assert((tokens[2] == "ShowRate:") || (tokens[2] == "RandomVariable:"));
 
     if (tokens.size() == 9) {
@@ -118,12 +116,10 @@ std::ifstream& operator>>(std::ifstream& stream, ShowRate& show) {
     } else {
         show.estimatedProba = std::stof(tokens[11]);
     }
-
     return stream;
 }
 
 std::ifstream& operator>>(std::ifstream& stream, InputData::Itinerary& itinerary) {
-
     std::vector<std::string> tokens;
     makeTokens(stream, tokens);
 
@@ -133,23 +129,19 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Itinerary& itinerary
     itinerary.cost = std::stof(tokens[12]);
     itinerary.emptyCost = std::stof(tokens[15]);
     itinerary.declineCost = std::stof(tokens[18]);
-
     unsigned arcCount = std::stoi(tokens[21]);
 
     tokens.clear();
     makeTokens(stream, tokens);
-
     for (unsigned idx = 0; idx < arcCount; ++idx) {
         itinerary.orderedArcs.push_back(std::stoi(tokens[idx + 2]));
     }
 
     stream >> itinerary.showRate;
-
     return stream;
 }
 
 std::ifstream& operator>>(std::ifstream& stream, InputData::AllotmentEntry& entry) {
-
     std::vector<std::string> tokens;
     makeTokens(stream, tokens);
 
@@ -160,12 +152,10 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::AllotmentEntry& entr
     entry.price = std::stof(tokens[15]);
 
     stream >> entry.showRate;
-
     return stream;
 }
 
 std::ifstream& operator>>(std::ifstream& stream, InputData::Allotment& allotment) {
-
     std::vector<std::string> tokens;
     makeTokens(stream, tokens);
 
@@ -184,7 +174,6 @@ std::ifstream& operator>>(std::ifstream& stream, InputData::Allotment& allotment
 }
 
 std::ifstream& operator>>(std::ifstream& stream, Demand& demand) {
-
     std::vector<std::string> tokens;
     makeTokens(stream, tokens);
 
@@ -282,41 +271,33 @@ std::ifstream& InputReader::readAllotments(std::ifstream& inStream, InputData& d
 std::ifstream& InputReader::readEvents(std::ifstream& inStream, InputData& data) const {
     unsigned count = 0;
     validate(inStream, "Events:", count);
-
     for (unsigned idx = 0; idx < count; ++idx) {
         InputData::Event event;
         inStream >> event;
         data.events.push_back(std::move(event));
     }
-
     std::sort(std::begin(data.events), std::end(data.events),
         [] (const InputData::Event& lhs, const InputData::Event& rhs) {
             return lhs.relativeTime < rhs.relativeTime;
     });
-
     return inStream;
 }
 
 std::ifstream& InputReader::readGroups(std::ifstream& inStream, InputData& data) const {
     unsigned count = 0;
     validate(inStream, "SelectOneGroups:", count);
-
     for (unsigned idx = 0; idx < count; ++idx) {
         data.allotmentGroups.emplace_back();
         makeTokens<unsigned>(inStream, data.allotmentGroups.back());
     }
-
     return inStream;
 }
 
 std::ifstream& InputReader::readLeaseCost(std::ifstream& inStream, InputData& data) const {
     std::vector<std::string> tokens;
     makeTokens(inStream, tokens);
-
     assert(tokens[0] == "LeaseCost:");
-
     data.leaseCost = std::stof(tokens[1]);
-
     return inStream;
 }
 
@@ -324,47 +305,24 @@ const std::string InputReader::header = "InputData:";
 
 void InputReader::Do(const std::string& filepath, InputData& data) const {
     std::ifstream inStream(filepath, std::ifstream::in);
-
     if (!inStream.good()) {
         throw std::runtime_error("Failed to open input file: " + filepath);
     }
 
-    logging::getRootLogger().debug("Ready to read in InputReader::Do, file is " + filepath);
-
     std::vector<std::string> tokens;
     makeTokens(inStream, tokens);
-    logging::getRootLogger().debug("Finished make_tokens.");
     assert(tokens[0] == header);
 
     readPorts(inStream, data);
-    logging::getRootLogger().debug("Finished readPorts.");
-
     readNodes(inStream, data);
-    logging::getRootLogger().debug("Finished readNodes.");
-
     readVessels(inStream, data);
-    logging::getRootLogger().debug("Finished readVessels.");
-
     readArcs(inStream, data);
-    logging::getRootLogger().debug("Finished readArcs.");
-
     readItineraries(inStream, data);
-    logging::getRootLogger().debug("Finished readItineraries.");
-
     readAllotmentEntries(inStream, data);
-    logging::getRootLogger().debug("Finished readAllotmentsEntries.");
-
     readAllotments(inStream, data);
-    logging::getRootLogger().debug("Finished readAllotments.");
-
     readEvents(inStream, data);
-    logging::getRootLogger().debug("Finished readEvents.");
-
     readGroups(inStream, data);
-    logging::getRootLogger().debug("Finished readGroups.");
-
     readLeaseCost(inStream, data);
-    logging::getRootLogger().debug("Finished readLeaseCost.");
 }
 
 }   // namespace io
