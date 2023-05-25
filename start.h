@@ -50,4 +50,3 @@ sea::ConstLinksManagerPtr getLinks(const sea::ConstInputManagerPtr& inputManager
 std::vector<sea::ConstMarketManagerPtr> getMarketVector(
         const std::vector<std::string>& pathVector, bool needMemory);
 
-

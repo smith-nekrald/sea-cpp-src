@@ -2,5 +2,10 @@
     "C_Cpp.errorSquiggles": "enabled",
     "editor.tabSize": 4,
     "editor.insertSpaces": true,
-    "editor.rulers": [100]
+    "editor.rulers": [
+        100
+    ],
+    "files.associations": {
+        "unordered_map": "cpp"
+    }
 }

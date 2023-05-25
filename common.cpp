@@ -1,3 +1,9 @@
+// Implementation for methods declared in common.h
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "common.h"
 
 #include <uuid/uuid.h>
@@ -12,42 +18,37 @@
 
 namespace sea {
 
-const unsigned int MAX_INDEX = std::numeric_limits<unsigned int>::max();
-const double INF = std::numeric_limits<double>::max();
-
 using std::vector;
 
 std::size_t getMemUsage() {
     std::ifstream statStream("/proc/self/stat", std::ios_base::in);
-
-    // dummy vars
+    // Variables to read before the desired one.
     std::string pid, comm, state, ppid, pgrp, session, ttyNr, tpgid, flags,
                 minflt, cminflt, majflt, cmajflt, utime, stime, cutime, cstime,
                 priority, nice, O, itervalue, starttime;
 
-    // what we want
+    // The desired target entry.
     std::size_t vmSize;
-
     statStream >> pid >> comm >> state >> ppid >> pgrp >> session >> ttyNr
                >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt
                >> utime >> stime >> cutime >> cstime >> priority >> nice
                >> O >> itervalue >> starttime >> vmSize;
 
     statStream.close();
-
     return vmSize;
 }
 
 void printTimeMemNow(std::ostream& ostream) {
     auto now = std::chrono::system_clock::now();
-    auto in_time_t = std::chrono::system_clock::to_time_t(now);
-    ostream << "Time: " <<  std::put_time(std::localtime(&in_time_t), "%y-%m-%d %X") << std::endl;
+    auto inTimeT = std::chrono::system_clock::to_time_t(now);
+    ostream << "Time: " <<  std::put_time(std::localtime(&inTimeT), "%y-%m-%d %X") << std::endl;
     ostream << "Memory usage: " << getMemUsage() / (1024. * 1024) << " MB" << std::endl;
 }
 
-std::pair<unsigned int, unsigned int> getUsefulIndexCount(const vector<unsigned int>& target) {
-    std::pair<unsigned int, unsigned int> ans = {0, 0};
-    for (unsigned int entry : target) {
+std::pair<unsigned, unsigned> getUsefulIndexCount(const vector<unsigned>& target) {
+    const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
+    std::pair<unsigned, unsigned> ans = {0, 0};
+    for (unsigned entry : target) {
         if (entry != MAX_INDEX) {
             ++ans.first;
         }
@@ -56,10 +57,11 @@ std::pair<unsigned int, unsigned int> getUsefulIndexCount(const vector<unsigned 
     return ans;
 }
 
-std::pair<ui32, ui32> getUsefulIndexCount(const vector<vector<ui32>>& target) {
-    std::pair<ui32, ui32> ans = {0, 0};
+std::pair<unsigned, unsigned> getUsefulIndexCount(const vector<vector<unsigned>>& target) {
+    const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
+    std::pair<unsigned, unsigned> ans = {0, 0};
     for (auto& entry : target) {
-        for (ui32 item : entry) {
+        for (unsigned item : entry) {
             if (item != MAX_INDEX) {
                 ++ans.first;
             }
@@ -72,15 +74,15 @@ std::pair<ui32, ui32> getUsefulIndexCount(const vector<vector<ui32>>& target) {
 void printStory(const std::map<std::string, std::vector<double>>& story,
         std::string prefix, std::string algoId) {
     static size_t call_time = 0;
-    std::ofstream out(prefix + "/story_" + std::to_string(call_time) +  "_" +  makeUniqueFileName());
+    std::ofstream out(prefix + "/story_" + std::to_string(call_time)
+            +  "_" +  makeUniqueFileName());
     out << "Algo ID: " << algoId << std::endl;
     out << "Call Time: " << call_time << std::endl;
     printStory(story, out);
     call_time += 1;
 }
 
-void printStory(const std::map<std::string, std::vector<double>>& story,
-        std::ofstream& out) {
+void printStory(const std::map<std::string, std::vector<double>>& story, std::ofstream& out) {
     for (const auto& item : story) {
         out << item.first << " : " << std::endl;
         for (const auto& value : item.second) {
@@ -91,10 +93,10 @@ void printStory(const std::map<std::string, std::vector<double>>& story,
 }
 
 std::string makeUniqueFileName() {
-    uuid_t tempOut;
-    uuid_generate_random(tempOut);
+    uuid_t generateOut;
+    uuid_generate_random(generateOut);
     char textOut[100];
-    uuid_unparse(tempOut, textOut);
+    uuid_unparse(generateOut, textOut);
     return std::string(textOut);
 }
 

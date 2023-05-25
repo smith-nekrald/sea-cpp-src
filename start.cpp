@@ -254,7 +254,8 @@ sea::ConstInputManagerPtr getInput(std::string dataPath, bool needMemory) {
 }
 
 
-sea::ConstLinksManagerPtr getLinks(const sea::ConstInputManagerPtr& inputManager, bool needMemory) {
+sea::ConstLinksManagerPtr getLinks(
+        const sea::ConstInputManagerPtr& inputManager, bool needMemory) {
     std::string filePath = "links_" + sea::makeUniqueFileName() + ".data";
     sea::ManagerConfig config = {needMemory, filePath, true} ;
     sea::LinksManagerPtr links = std::make_shared<sea::DataManager<sea::InputLinks>>(config);

@@ -5,7 +5,6 @@
 
 #include <jsoncpp/json/json.h>
 
-#include "fix_cppad.h"
 #include "start.h"
 
 namespace json = Json;
