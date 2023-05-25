@@ -1,3 +1,9 @@
+// Implements functions declared in state. 
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include <cassert>
 
 #include "state.h"
@@ -23,4 +29,10 @@ void initState(const InputData& input, State* state) {
     state->estimatedObjective = -INF;
 }
 
+void toNextEvent(TimeParameters* parameters) {
+    parameters->gotPortDecision = false;
+    parameters->doneDecision = false;
+    parameters->doneAction = false;
+    ++parameters->timeEvent;
+}
 } // namespace sea

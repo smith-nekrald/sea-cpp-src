@@ -4,7 +4,6 @@
  * 
  * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
  * @copyright (c) Smith School of Business, 2023
- * 
  */
 #pragma once
 
@@ -31,7 +30,7 @@ public:
      * 
      * @return The name of the algorithm. 
      */
-    virtual std::string getName() = 0;
+    virtual std::string getName() const = 0;
 
     /**
      * @brief Supplies algorithm with an action. Action is essentially the 

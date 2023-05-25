@@ -12,14 +12,6 @@ const ui32 MAX_INDEX = std::numeric_limits<ui32>::max();
 const double INF = std::numeric_limits<double>::max();
 
 namespace sea {
-
-void toNextEvent(TimeParameters* parameters) {
-    parameters->gotPortDecision = false;
-    parameters->doneDecision = false;
-    parameters->doneAction = false;
-    ++parameters->timeEvent;
-}
-
 namespace strategy {
 
 using EventType=InputData::Event::Type;

@@ -1,3 +1,9 @@
+/**
+ * @file state.h
+ * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
+ * @brief State is an entity to store summary about the trajectory prefix in the algorithm.
+ * @copyright (c) Smith School of Business, 2023
+ */
 #pragma once
 
 #include <vector>
@@ -26,28 +32,53 @@ struct TimeParameters {
     bool allotmentsSupplied = false;
 
     /// @brief Index of the considered time event.
-    unsigned int timeEvent = 0;
+    unsigned timeEvent = 0;
 };
 
+/**
+ * @brief Updates TimeParameters to the beginning of the next time period.
+ * This means doneDecison = doneAction = gotPortDecision = false, timeEvent += 1.
+ * 
+ * @param parameters The TimeParameters to update.
+ */
 void toNextEvent(TimeParameters* parameters);
 
 /**
- * @brief State represents
- *
+ * @brief State is an entity to stare parameters of the environment. E.g. amount booked,
+ * amounts shipping, capacity, and containers in ports.
  */
 struct State {
-    std::vector<unsigned int> accumulatedBookings; // b_r
-    std::vector<unsigned int> takenOnRoute; // n_{t,r} + l_{t,r}
+    /// @brief Amount of accumulated bookings, per itinerary. Denoted b_r in the model.
+    std::vector<unsigned> accumulatedBookings;
+    /// @brief Amount of taken and shipped TEU. Denoted n_{t,r} and l_{t,r} in the model.
+    std::vector<unsigned> takenOnRoute; 
+    /// @brief Amount of TEU currently stored in ports.
     std::vector<int> containersInPorts;
+    /// @brief Time parameters structure to track current event.
     TimeParameters timeParameters;
-    std::vector<unsigned int> usedCapacity; // indexed by arcs
-    double estimatedObjective; // up to the end
-
-    std::vector<double> itineraryFutureEstimation; // v_t^r
+    /// @brief Capacity utilization. Indexed by arcs.
+    std::vector<unsigned> usedCapacity; 
+    /// @brief Estimated objective, up to the end of time horizon.
+    double estimatedObjective;
+    /// @brief Estimated decomposed objective, indexed by itinerary. Denoted v_t^r in the model.
+    std::vector<double> itineraryFutureEstimation; 
 };
 
+/**
+ * @brief State initialization.
+ * 
+ * @param[in] input The InputData statistical informatino.
+ * @param[out] state State to initialize.
+ */
 void initState(const InputData& input, State* state);
 
+/**
+ * @brief Prints time parameters into stream.
+ * 
+ * @tparam Writer Type of the stream.
+ * @param[in] timeParameters  Parameters to export.
+ * @param[out] writer Stream to write into.
+ */
 template<typename Writer>
 void printTimeParameters(const TimeParameters& timeParameters, Writer& writer) {
     writer << "\nTimeParameters:\n";
@@ -57,7 +88,13 @@ void printTimeParameters(const TimeParameters& timeParameters, Writer& writer) {
     writer << "allotmentsSupplied = " << timeParameters.allotmentsSupplied << " ";
     writer << "gotPortDecision = " << timeParameters.gotPortDecision << " ";
 }
-
+/**
+ * @brief Prints state into stream.
+ * 
+ * @tparam Writer Type of the stream.
+ * @param[in] state State to export.
+ * @param[out] writer Stream to write into.
+ */
 template<typename Writer>
 void printState(const State& state, Writer& writer) {
     writer << "\nState Information:";
