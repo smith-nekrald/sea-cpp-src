@@ -1,3 +1,9 @@
+// Implements methods defined in logging.h. 
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "logging.h"
 
 namespace logging {
