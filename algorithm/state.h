@@ -16,7 +16,7 @@ struct TimeParameters {
     /// @brief If port decision is received.
     bool gotPortDecision = false;
 
-    /// @brief Boolean flag if decision is received and processed. 
+    /// @brief Boolean flag if decision is received and processed.
     bool doneDecision = false;
 
     /// @brief Boolean flag if action is received and processed.
@@ -24,7 +24,7 @@ struct TimeParameters {
 
     /// @brief Boolean flag if allotments are already supplied.
     bool allotmentsSupplied = false;
-    
+
     /// @brief Index of the considered time event.
     unsigned int timeEvent = 0;
 };
@@ -32,8 +32,8 @@ struct TimeParameters {
 void toNextEvent(TimeParameters* parameters);
 
 /**
- * @brief State represents 
- * 
+ * @brief State represents
+ *
  */
 struct State {
     std::vector<unsigned int> accumulatedBookings; // b_r

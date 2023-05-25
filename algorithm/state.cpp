@@ -3,12 +3,11 @@
 #include "state.h"
 #include "../manager.h"
 
-const ui32 MAX_INDEX = std::numeric_limits<ui32>::max();
-const double INF = std::numeric_limits<double>::max();
 
 namespace sea {
 
 void initState(const InputData& input, State* state) {
+    const double INF = std::numeric_limits<double>::max();
     assert(state != nullptr);
     state->accumulatedBookings.assign(input.itineraries.size(), 0);
     state->accumulatedBookings.shrink_to_fit();
