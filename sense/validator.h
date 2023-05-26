@@ -4,6 +4,7 @@
  * @brief Defines Validator - entity to verify common sense for several implemented policies.
  * @copyright (c) Smith School of Business, 2023
  */
+#pragma once
 #include "../backend/backend_general.h"
 #include "../strategy/general_strategy.h"
 

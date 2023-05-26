@@ -1,3 +1,9 @@
+// This file implements functions defined in start.h.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include <iostream>
 #include <fstream>
 #include <chrono>
@@ -23,11 +29,10 @@ namespace fs = std::filesystem;
 using std::size_t;
 using namespace gm;
 
-
-void fillBackendConfig(json::Value& configRoot, IpoptBackendConfig& config) {
+void fillBackendConfig(const json::Value& configRoot, IpoptBackendConfig& config) {
     auto backendsConfig = configRoot["backends_config"];
     if (!backendsConfig.isMember("ipopt_backend_config")) {
-        logging::getRootLogger().error("No Ipopt Backend configuration in JSON.");
+        logNoIpoptBackendConfiguration();
         return;
     }
     auto ipoptRoot = backendsConfig["ipopt_backend_config"];
@@ -79,12 +84,10 @@ void fillBackendConfig(json::Value& configRoot, IpoptBackendConfig& config) {
     config.path_prefix = ipoptRoot["path_prefix"].asString();
 }
 
-
-void fillBackendConfig(json::Value& configRoot, LagrangianRelaxationBackendConfig& config) {
+void fillBackendConfig(const json::Value& configRoot, LagrangianRelaxationBackendConfig& config) {
     auto backendsConfig = configRoot["backends_config"];
     if (!backendsConfig.isMember("lr_backend_config")) {
-        logging::getRootLogger().warn(
-                "No configuration in JSON for Lagrangian Relaxation Backend.");
+        logNoLagrangianBackendConfiguration();
         return;
     }
     auto lrRoot = backendsConfig["lr_backend_config"];
@@ -191,11 +194,10 @@ void fillBackendConfig(json::Value& configRoot, LagrangianRelaxationBackendConfi
     }
 }
 
-
-void fillBackendConfig(json::Value& configRoot, BendersAllotmentBackendConfig& config) {
+void fillBackendConfig(const json::Value& configRoot, BendersAllotmentBackendConfig& config) {
     auto backendsConfig = configRoot["backends_config"];
     if (!backendsConfig.isMember("benders_backend_config")) {
-        logging::getRootLogger().warn("No configuration for Benders Backend in JSON.");
+        logNoBendersBackendConfiguration();
         return;
     }
     auto bendersRoot = backendsConfig["benders_backend_config"];
@@ -204,11 +206,10 @@ void fillBackendConfig(json::Value& configRoot, BendersAllotmentBackendConfig& c
     config.cbcLogLevel = config.cbcFileLogLevel;
 }
 
-
-void fillBackendConfig(json::Value& configRoot, DetCutPlaneBackendConfig& config) {
+void fillBackendConfig(const json::Value& configRoot, DetCutPlaneBackendConfig& config) {
     auto backendsConfig = configRoot["backends_config"];
     if (!backendsConfig.isMember("det_cut_plane_backend_config")) {
-        logging::getRootLogger().warn("No configuration for DCP backend in JSON.");
+        logNoDCPBackendConfiguration();
         return;
     }
     auto dcpRoot = backendsConfig["det_cut_plane_backend_config"];
@@ -224,7 +225,6 @@ void fillBackendConfig(json::Value& configRoot, DetCutPlaneBackendConfig& config
     config.stopOnInfeasible = dcpRoot["stop_on_infeasible"].asBool();
     config.tolerateConstraints = dcpRoot["tolerate_constraints"].asBool();
 }
-
 
 std::vector<std::string> getMarketDataFiles(std::string dataPath, std::size_t count_limit) {
     std::vector<std::string> market_data_files;
@@ -246,13 +246,11 @@ std::vector<std::string> getMarketDataFiles(std::string dataPath, std::size_t co
     return market_data_files;
 }
 
-
 sea::ConstInputManagerPtr getInput(std::string dataPath, bool needMemory) {
     sea::ManagerConfig config = {needMemory, dataPath, false} ;
     sea::InputManagerPtr input = std::make_shared<sea::DataManager<sea::InputData>>(config);
     return input;
 }
-
 
 sea::ConstLinksManagerPtr getLinks(
         const sea::ConstInputManagerPtr& inputManager, bool needMemory) {
@@ -263,51 +261,25 @@ sea::ConstLinksManagerPtr getLinks(
     return links;
 }
 
-
 std::vector<sea::ConstMarketManagerPtr> getMarketVector(
         const std::vector<std::string>& pathVector, bool needMemory) {
     std::vector<sea::ConstMarketManagerPtr> marketVector;
     for (const auto& dataPath : pathVector) {
         sea::ManagerConfig config = {needMemory, dataPath, false};
-        sea::MarketManagerPtr market = std::make_shared<sea::DataManager<sea::MarketData>>(config);
+        sea::MarketManagerPtr market = std::make_shared<
+            sea::DataManager<sea::MarketData>>(config);
         market->release();
         marketVector.push_back(market);
-        logging::getRootLogger().info("Finished reading market for dataPath: " + dataPath);
+        logFinishedReadingMarket(dataPath);
     }
     return marketVector;
 }
 
-
-void runAll(json::Value& configRoot) {
-    bool doValidation = configRoot["do_validation"].asBool();
-    bool writeEvalStory = configRoot["write_eval_story"].asBool();
-
-    auto pathToLoggingConfig = configRoot["logging_config"]["path_to_config"].asString();
-    logging::configureLogger(pathToLoggingConfig);
-    logging::getRootLogger().info("Started runAll with config: " + pathToLoggingConfig);
-
+void prepareBackendConfigHolder(const json::Value& configRoot,
+        sea::ConstInputManagerPtr inputManager, sea::ConstLinksManagerPtr linksManager,
+        sea::BackendConfigHolder* holderPtr) {
     auto launchConfig = configRoot["launch_config"];
-    bool needMemory = launchConfig["need_memory"].asBool();
     bool debugMode = (launchConfig["launch_mode"].asString() == "debug");
-    std::string dataPath = launchConfig["dataset_path"].asString();
-
-    logging::getRootLogger().info("Regex search for market data files in " + dataPath);
-
-    size_t marketLimit = launchConfig["market_dataset_limit"].asInt();
-    auto marketDataFiles = getMarketDataFiles(dataPath, marketLimit);
-    logging::getRootLogger().info(
-            "Found " + std::to_string(marketDataFiles.size()) +  " market data sets.");
-
-    sea::ConstInputManagerPtr inputManager = getInput(dataPath + "/input.txt", needMemory);
-    logging::getRootLogger().info("Finished reading input.");
-    sea::ConstLinksManagerPtr linksManager = getLinks(inputManager, needMemory);
-    logging::getRootLogger().info("Built links based on input.");
-
-    if (marketDataFiles.size() > marketLimit) {
-        marketDataFiles.resize(marketLimit);
-    }
-    logging::getRootLogger().info("Finished reading market");
-
     IpoptBackendConfig ipoptBackendConfig;
     ipoptBackendConfig.inputManager = inputManager;
     ipoptBackendConfig.linksManager = linksManager;
@@ -331,9 +303,29 @@ void runAll(json::Value& configRoot) {
     dcpBackendConfig.linksManager = linksManager;
     fillBackendConfig(configRoot, dcpBackendConfig);
 
+    sea::BackendConfigHolder& holder = *holderPtr;
+    holder.bendersConfig = bendersBackendConfig;
+    holder.ipoptConfig = ipoptBackendConfig;
+    holder.lrConfig = lrBackendConfig;
+    holder.dcpConfig = dcpBackendConfig;
+}
+
+void prepareSpotStrategies(
+        const json::Value& configRoot, const sea::BackendConfigHolder& holder,
+        sea::ConstInputManagerPtr inputManager, sea::ConstLinksManagerPtr linksManager,
+        sea::StrategyConfigs* strategyConfigsPtr,
+        std::map<std::string, sea::strategy::ISpotMarketStrategyPtr>* spotStrategiesPtr,
+        std::vector<std::string>* spotNamesPtr) {
+
+    sea::StrategyConfigs& strategyConfigs = *strategyConfigsPtr;
+    std::vector<std::string> turnOffSpot;
+    std::map<std::string, sea::strategy::ISpotMarketStrategyPtr>&
+        spotStrategies = *spotStrategiesPtr;
+    std::vector<std::string>& spotNames = *spotNamesPtr;
+
+    auto launchConfig = configRoot["launch_config"];
     auto strategyConfig = configRoot["strategy_config"];
     auto spotStrategyConfig = strategyConfig["spot_strategy_config"];
-    auto allotmentStrategyConfig = strategyConfig["allotment_strategy_config"];
 
     sea::strategy::SpotMarketStrategyConfig commonSpotConfig;
     commonSpotConfig.moveUpdateInterval = spotStrategyConfig["move_update_interval"].asBool();
@@ -343,17 +335,7 @@ void runAll(json::Value& configRoot) {
     commonSpotConfig.inputManager = inputManager;
     commonSpotConfig.linksManager = linksManager;
     commonSpotConfig.updateInterval = spotStrategyConfig["update_interval"].asDouble();
-    std::map<std::string, sea::strategy::ISpotMarketStrategyPtr> spotStrategies;
-    std::vector<std::string> spotNames;
 
-    sea::BackendConfigHolder holder;
-    holder.bendersConfig = bendersBackendConfig;
-    holder.ipoptConfig = ipoptBackendConfig;
-    holder.lrConfig = lrBackendConfig;
-    holder.dcpConfig = dcpBackendConfig;
-
-    sea::StrategyConfigs strategyConfigs;
-    std::vector<std::string> turnOffSpot;
 
     for (std::size_t idx = 0; idx < launchConfig["turn_off_spot"].size(); ++idx) {
         auto name = launchConfig["turn_off_spot"][int(idx)];
@@ -426,11 +408,26 @@ void runAll(json::Value& configRoot) {
         }
         spotNames.push_back(spotName);
     }
+    logCreatedSpotMarketStrategies();
+}
 
-    logging::getRootLogger().info("Spot market strategies created.");
+void prepareAllotmentStrategies(const json::Value& configRoot,
+        const sea::BackendConfigHolder& holder,
+        sea::ConstInputManagerPtr inputManager,
+        sea::ConstLinksManagerPtr linksManager,
+        sea::StrategyConfigs* strategyConfigsPtr,
+        std::map<std::string, sea::strategy::IAllotmentStrategyPtr>* allotmentStrategiesPtr,
+        std::vector<std::string>* allotmentNamesPtr) {
 
-    std::map<std::string, sea::strategy::IAllotmentStrategyPtr> allotmentStrategies;
-    std::vector<std::string> allotmentNames;
+    sea::StrategyConfigs& strategyConfigs = *strategyConfigsPtr;
+    std::map<std::string, sea::strategy::IAllotmentStrategyPtr>&
+        allotmentStrategies = *allotmentStrategiesPtr;
+    std::vector<std::string>& allotmentNames = *allotmentNamesPtr;
+
+    auto launchConfig = configRoot["launch_config"];
+    auto strategyConfig = configRoot["strategy_config"];
+    auto allotmentStrategyConfig = strategyConfig["allotment_strategy_config"];
+
     sea::strategy::AllotmentStrategyConfig commonLongConfig;
     commonLongConfig.storeInitialDecision =
         allotmentStrategyConfig["store_initial_decision"].asBool();
@@ -519,10 +516,16 @@ void runAll(json::Value& configRoot) {
         }
         allotmentNames.push_back(longName);
     }
+    logCreatedAllotmentStrategies();
+}
 
-    logging::getRootLogger().info("Allotment stratetgies created.");
-
-    std::vector<std::pair<std::string, std::string>> configurationPairs;
+void prepareConfigurationPairs(const json::Value& configRoot,
+        const std::vector<std::string>& spotNames,
+        const std::vector<std::string>& allotmentNames,
+        std::vector<std::pair<std::string, std::string>>* configurationPairsPtr) {
+    auto launchConfig = configRoot["launch_config"];
+    std::vector<std::pair<std::string, std::string>>&
+            configurationPairs = * configurationPairsPtr;
     std::vector<std::pair<std::string, std::string>> ignoredPairs;
 
     for (std::size_t idx = 0; idx < launchConfig["ignore_pairs"].size(); ++idx) {
@@ -546,29 +549,30 @@ void runAll(json::Value& configRoot) {
             }
         }
     }
-    std::vector<sea::algo::IAlgorithmPtr> algoVector;
-    for (const auto& conf : configurationPairs) {
-        sea::algo::StrategicAlgorithmConfig config;
-        config.allotmentStrategy = allotmentStrategies[conf.second];
-        config.spotMarketStrategy = spotStrategies[conf.first];
-        auto algo = std::make_shared<sea::algo::StrategicAlgorithm>(config);
-        algoVector.push_back(algo);
-        logging::getRootLogger().info("Created algorithm with name: " + algo->getName());
-    }
-    if (doValidation) {
-        auto marketVector = getMarketVector(marketDataFiles, needMemory);
+}
 
-        sea::ValidatorConfig validatorConfig;
-        validatorConfig.input = inputManager;
-        validatorConfig.links = linksManager;
-        validatorConfig.marketSet = marketVector;
+void startValidation(const std::vector<std::string>& marketDataFiles, bool needMemory,
+    sea::ConstInputManagerPtr inputManager, sea::ConstLinksManagerPtr linksManager,
+    const sea::BackendConfigHolder& holder, const sea::StrategyConfigs& strategyConfigs) {
+    auto marketVector = getMarketVector(marketDataFiles, needMemory);
 
-        sea::Validator validator(validatorConfig, holder, strategyConfigs);
-        validator.bendersCheck();
-        validator.performChecks();
-        exit(0);
-    }
+    sea::ValidatorConfig validatorConfig;
+    validatorConfig.input = inputManager;
+    validatorConfig.links = linksManager;
+    validatorConfig.marketSet = marketVector;
+
+    sea::Validator validator(validatorConfig, holder, strategyConfigs);
+    validator.bendersCheck();
+    validator.performChecks();
+    exit(0);
+}
+
+void startAlgorithms(const json::Value& configRoot,
+        const std::vector<std::string> marketDataFiles, bool needMemory,
+        sea::ConstInputManagerPtr inputManager, sea::ConstLinksManagerPtr linksManager,
+        const std::vector<sea::algo::IAlgorithmPtr>& algoVector) {
     sea::LauncherConfig launcherConfig;
+    bool writeEvalStory = configRoot["write_eval_story"].asBool();
     launcherConfig.writeStory = writeEvalStory;
     launcherConfig.linksManager = linksManager;
     launcherConfig.inputManager = inputManager;
@@ -576,19 +580,85 @@ void runAll(json::Value& configRoot) {
     launcherConfig.algorithms = algoVector;
     launcherConfig.marketDataSetPaths = marketDataFiles;
 
-    logging::getRootLogger().info("Ready to launch.");
+    logReadyToLaunch();
     sea::Launcher launcher(launcherConfig);
     auto launchResult = launcher.doLaunches();
+    logLaunchFinished();
 
-    logging::getRootLogger().info("Launch have finished. Ready to analyze.");
-
+    logReadyToAnalyze();
     sea::Analyzer analyzer;
+    auto launchConfig = configRoot["launch_config"];
     auto preciseFilePath = launchConfig["long_output_file"].asString();
     auto generalFilePath = launchConfig["short_output_file"].asString();
     std::ofstream preciseOut(preciseFilePath), generalOut(generalFilePath);
     analyzer.doAnalysis(launchResult, preciseOut, generalOut);
-
-    logging::getRootLogger().info("Finished analysis");
+    logAnalysisFinished();
 }
 
+void start(const json::Value& configRoot) {
+    auto pathToLoggingConfig = configRoot["logging_config"]["path_to_config"].asString();
+    logging::configureLogger(pathToLoggingConfig);
+    logStartedWithConfig(pathToLoggingConfig);
+
+    auto launchConfig = configRoot["launch_config"];
+    bool needMemory = launchConfig["need_memory"].asBool();
+    std::string dataPath = launchConfig["dataset_path"].asString();
+
+
+    size_t marketLimit = launchConfig["market_dataset_limit"].asInt();
+    auto marketDataFiles = getMarketDataFiles(dataPath, marketLimit);
+    if (marketDataFiles.size() > marketLimit) {
+        marketDataFiles.resize(marketLimit);
+    }
+    logMarketDataSearch(dataPath, marketDataFiles);
+
+    sea::ConstInputManagerPtr inputManager = getInput(dataPath + "/input.txt", needMemory);
+    logDoneReadInput();
+
+    sea::ConstLinksManagerPtr linksManager = getLinks(inputManager, needMemory);
+    logDoneWithLinks();
+
+    // Prepare holder for backend confgs.
+    sea::BackendConfigHolder holder;
+    prepareBackendConfigHolder(configRoot, inputManager, linksManager, &holder);
+
+    // Prepare spot strategies.
+    sea::StrategyConfigs strategyConfigs;
+    std::map<std::string, sea::strategy::ISpotMarketStrategyPtr> spotStrategies;
+    std::vector<std::string> spotNames;
+    prepareSpotStrategies(configRoot, holder, inputManager, linksManager,
+            &strategyConfigs, &spotStrategies, &spotNames);
+
+    // Prepare allotment strategies.
+    std::map<std::string, sea::strategy::IAllotmentStrategyPtr> allotmentStrategies;
+    std::vector<std::string> allotmentNames;
+    prepareAllotmentStrategies(configRoot, holder, inputManager, linksManager,
+            &strategyConfigs, &allotmentStrategies, &allotmentNames);
+
+    // Prepare configuration pairs.
+    std::vector<std::pair<std::string, std::string>> configurationPairs;
+    prepareConfigurationPairs(configRoot, spotNames, allotmentNames, &configurationPairs);
+
+    // Build algorithms.
+    std::vector<sea::algo::IAlgorithmPtr> algoVector;
+    for (const auto& conf : configurationPairs) {
+        sea::algo::StrategicAlgorithmConfig config;
+        config.allotmentStrategy = allotmentStrategies[conf.second];
+        config.spotMarketStrategy = spotStrategies[conf.first];
+        auto algo = std::make_shared<sea::algo::StrategicAlgorithm>(config);
+        algoVector.push_back(algo);
+        logCreatedAlgorithm(algo->getName());
+    }
+
+    // Validation launch, if relevant.
+    bool doValidation = configRoot["do_validation"].asBool();
+    if (doValidation) {
+        startValidation(marketDataFiles, needMemory, inputManager, linksManager,
+                holder, strategyConfigs);
+    // Otherwise, launch algorithms and analyze the results.
+    } else {
+        startAlgorithms(configRoot, marketDataFiles, needMemory,
+                inputManager, linksManager, algoVector);
+    }
+}
 

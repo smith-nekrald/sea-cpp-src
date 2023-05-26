@@ -30,7 +30,7 @@ int main(int argc, char* argv[]) {
 
     std::string logPath = configPath.substr(0, configPath.find_last_of("/\\"));
     std::filesystem::current_path(logPath);
-    runAll(configRoot);
+    start(configRoot);
 }
 
 
