@@ -36,13 +36,11 @@ DualVariables shuffleDuals(
     DualVariables targetDuals = sourceDuals;
     auto& generator = randomPack->generator;
     for (std::size_t idx = 0;
-            idx < targetDuals.lambdaVariables.size() +
-            targetDuals.muVariables.size(); ++idx) {
+            idx < targetDuals.lambdaVariables.size() + targetDuals.muVariables.size(); ++idx) {
         if (!changeMu && idx >= targetDuals.lambdaVariables.size()) {
             continue;
         }
-        if (!changeLambda &&
-                idx < targetDuals.lambdaVariables.size()) {
+        if (!changeLambda && idx < targetDuals.lambdaVariables.size()) {
             continue;
         }
         auto& item = (idx < targetDuals.lambdaVariables.size())
@@ -61,7 +59,6 @@ DualVariables shuffleDuals(
     return targetDuals;
 }
 
-
 bool checkIfFeasible(
         const DualVariables& variables,
         const std::vector<double>& boundLower,
@@ -70,19 +67,7 @@ bool checkIfFeasible(
         const ConstInputManagerPtr& inputManager,
         const ConstLRIndexManagerPtr& indexManager,
         const LagrangianRelaxationBackendConfig& configIter) {
-    auto& logger = logging::getBackendSubLogger(BackendType::LR);
-    logger.debug("Entered checkIfFeasible.");
-
-
-    logger.debug("Received duals: ");
-    printDualsToBackendLog(variables, BackendType::LR);
-
-    logger.debug("BoundLower: ");
-    printArrayToBackendLog(boundLower, BackendType::LR);
-    logger.debug("BoundUpper: ");
-    printArrayToBackendLog(boundUpper, BackendType::LR);
-    logger.debug("lhs: ");
-    printArrayToBackendLog(lhs, BackendType::LR);
+    logEntranceToCheckIfFeasible(variables, boundLower, boundUpper, lhs);
 
     const double FACTOR = 2.;
     const double LOCAL_EPS = FACTOR * configIter.globalPrecision.value();
@@ -102,19 +87,15 @@ bool checkIfFeasible(
                 >= boundLower[idItinerary + lambdaCount]);
 
         if (!ok) {
-            logger.notice("Check If feasible. Failure on lower bound inequality");
-            logger.notice("Difference = " + std::to_string(
-                variables.muVariables[idItinerary]
-                - boundLower[idItinerary + lambdaCount]));
+            logLowerBoundFailureInCheckIfFeasible(
+                    variables.muVariables[idItinerary] - boundLower[idItinerary + lambdaCount]);
             break;
         }
         ok = ok && (variables.muVariables[idItinerary]
                 <= LOCAL_EPS + boundUpper[idItinerary + lambdaCount]);
         if (!ok) {
-            logger.notice("Check if feasible. Failure on upper bound inequality.");
-            logger.notice("Difference = " + std::to_string(
-                -variables.muVariables[idItinerary]
-                + boundLower[idItinerary + lambdaCount]));
+            logUpperBoundFailureInCheckIfFeasible(
+                    -variables.muVariables[idItinerary] + boundUpper[idItinerary + lambdaCount]);
             break;
         }
 
@@ -130,14 +111,12 @@ bool checkIfFeasible(
         ok = ok && (sum + LOCAL_EPS >= lhs[itinerary.id]);
         if (!ok) {
             double error = lhs[itinerary.id] - sum;
-            logger.notice("Check If Feasible. Failure on lhs inequality.");
-            logger.notice("Error = " + std::to_string(error));
+            logLhsInequalityFailureInCheckIfFeasible(error);
             break;
         }
     }
-    logger.debug("Leaving check if Feasible. Decision is: ");
     auto value = ok ? "true" : "false";
-    logger.debug(value);
+    logExitFromCheckIfFeasible(value);
     return ok;
 }
 
@@ -231,7 +210,7 @@ DualVariables provideSomeSolution(
             result.lambdaVariables[idLambda] += shift;
         }
     } else {
-        throw std::logic_error("Bad Init Strategy Type");
+        throw std::logic_error("Unknown Init Strategy Type.");
     }
     for (unsigned idLambda = 0; idLambda < result.lambdaVariables.size(); ++idLambda) {
         result.lambdaVariables[idLambda] = std::min(
@@ -401,7 +380,6 @@ void prepareSimplex(
                     std::max(columnLower[targetLambdaCount + itinerary.id], k_r_OS);
                 columnUpper[targetLambdaCount + itinerary.id] =
                     std::min(columnUpper[targetLambdaCount + itinerary.id], -k_r_HS);
-
             }
         }
     }
@@ -555,14 +533,14 @@ std::pair<double, DualVariables> initializeCuttingPlane(
 size_t computeTrueCount(const vector<bool>& hitVector) {
     size_t count = 0;
     for (auto hit : hitVector) {
-        if (hit) ++count;
+        if (hit) {
+            ++count;
+        }
     }
     return count;
 }
 
-size_t computeHitDiff(
-        const vector<bool>& prevVector,
-        const vector<bool>& newVector) {
+size_t computeHitDiff(const vector<bool>& prevVector, const vector<bool>& newVector) {
     assert(prevVector.size() == newVector.size());
     size_t count = 0;
     for (size_t idx = 0; idx < prevVector.size(); ++idx) {
@@ -573,16 +551,14 @@ size_t computeHitDiff(
     return count;
 }
 
-pair<size_t, size_t> computeHitStats(
-        const DualTemplate<bool>& currentHit) {
+pair<size_t, size_t> computeHitStats(const DualTemplate<bool>& currentHit) {
     size_t hitLambda = computeTrueCount(currentHit.lambdaVariables),
            hitMu = computeTrueCount(currentHit.muVariables);
     return {hitLambda, hitMu};
 }
 
 pair<size_t, size_t> computeHitChange(
-        const DualTemplate<bool>& prevHit,
-        const DualTemplate<bool>& newHit) {
+        const DualTemplate<bool>& prevHit, const DualTemplate<bool>& newHit) {
     size_t changeLambda = computeHitDiff(prevHit.lambdaVariables,
                 newHit.lambdaVariables),
            changeMu = computeHitDiff(prevHit.muVariables,
@@ -594,13 +570,10 @@ void computeBoundHit(
         const vector<double>& bound,
         const DualVariables& dualVariables,
         DualTemplate<bool>* hitMap) {
-    auto& logger = logging::getBackendSubLogger(BackendType::LR);
     const double EPS = 1e-3;
     assert(hitMap != nullptr);
-    size_t targetLambdaCount =
-        dualVariables.lambdaVariables.size();
-    size_t targetMuCount =
-        dualVariables.muVariables.size();
+    size_t targetLambdaCount = dualVariables.lambdaVariables.size();
+    size_t targetMuCount = dualVariables.muVariables.size();
     if (hitMap->lambdaVariables.size() != targetLambdaCount) {
         hitMap->lambdaVariables.assign(targetLambdaCount, false);
     }
@@ -626,18 +599,7 @@ void computeBoundHit(
             hitMap->muVariables[idx] = false;
         }
     }
-    {
-        auto stream = logger.getStream(log4cpp::Priority::NOTICE);
-        stream << "Bound: hitLambda. \n";
-        for (auto& idx : hitLambda) {
-            stream << idx << " ";
-        }
-        stream << "\n Bound: hitMu. \n";
-        for (auto& idx : hitMu) {
-            stream << idx << " ";
-        }
-    }
-
+    logHitMuAndLambda(hitMu, hitLambda);
 }
 
 vector<bool> computePlaneHits(
@@ -646,13 +608,11 @@ vector<bool> computePlaneHits(
         const vector<double>& lhs,
         const DualVariables& variables) {
     vector<int> hitIdx;
-    auto& logger = logging::getBackendSubLogger(BackendType::LR);
     const auto& input = inputManager->getConstData();
     const auto& magicIndex = indexManager->getConstData();
     const double EPS = 1e-3;
     vector<bool> response(input.itineraries.size(), false);
-    for (size_t idItinerary = 0;
-            idItinerary < input.itineraries.size(); ++idItinerary) {
+    for (size_t idItinerary = 0; idItinerary < input.itineraries.size(); ++idItinerary) {
         const auto& itinerary = input.itineraries[idItinerary];
         double sum = variables.muVariables[idItinerary];
         for (unsigned idArc : itinerary.orderedArcs) {
@@ -667,30 +627,24 @@ vector<bool> computePlaneHits(
             hitIdx.push_back(itinerary.id);
         }
     }
-    {
-        auto stream = logger.getStream(log4cpp::Priority::NOTICE);
-        stream << "Plane intersection itineraries:";
-        for (auto& idx : hitIdx) {
-            stream << " " << idx;
-        }
-    }
+    logPlaneIntersectionItineraries(hitIdx);
     return response;
 }
 
 void doCuttingPlaneOptimization(
-    const ConstInputManagerPtr& inputManager,
-    const ConstLinksManagerPtr& linksManager,
-    const ConstLRIndexManagerPtr& indexManager,
-    const LagrangianRelaxationBackendConfig& configIter,
-    const State& state,
-    DecisionManagerPtr& decisionManager,
-    RandomPack* randomPack,
-    DualVariables* dualPtr,
-    std::deque<DualDequeInfo>* dualHistory,
-    double* estimatedObjective,
-    UCoefficients* uCoeff,
-    bool ignoreSpot,
-    DualVariables mean) {
+        const ConstInputManagerPtr& inputManager,
+        const ConstLinksManagerPtr& linksManager,
+        const ConstLRIndexManagerPtr& indexManager,
+        const LagrangianRelaxationBackendConfig& configIter,
+        const State& state,
+        DecisionManagerPtr& decisionManager,
+        RandomPack* randomPack,
+        DualVariables* dualPtr,
+        std::deque<DualDequeInfo>* dualHistory,
+        double* estimatedObjective,
+        UCoefficients* uCoeff,
+        bool ignoreSpot,
+        DualVariables mean) {
 
     const double LOCAL_INF = COIN_DBL_MAX;
     const double LOCAL_EPS = configIter.globalPrecision.value();
@@ -698,15 +652,8 @@ void doCuttingPlaneOptimization(
     size_t targetLambdaCount = dualVariables.lambdaVariables.size();
     size_t targetMuCount = dualVariables.muVariables.size();
 
+    logStartCuttingPlaneOptimization(state, dualPtr);
     auto& logger = logging::getBackendSubLogger(BackendType::LR);
-    logger.notice("Started CuttingPlaneOptimization.");
-    {
-        auto debugStream = logger.getStream(
-                log4cpp::Priority::DEBUG);
-        printState(state, debugStream);
-        debugStream << "\npointer to dualVariables equals: "
-            << dualPtr << "should be non-zero \n";
-    }
 
     ClpSimplex simplexBase;
 
@@ -731,9 +678,9 @@ void doCuttingPlaneOptimization(
 
     for (unsigned iter = 0;
             iter < configIter.maxSubgradientIterations.value(); ++iter) {
-        logger.noticeStream() << "Started Iteration: " << iter;
         ClpSimplex simplexFinal(simplexBase);
 
+        // Optimization in a separate block to ensure correct logging to clp.log.
         {
             int fd; fpos_t pos;
             fflush(stdout);
@@ -774,17 +721,11 @@ void doCuttingPlaneOptimization(
             dualVariables.muVariables[idMu] = primal[targetLambdaCount + idMu];
         }
         double cuttingPlaneObjective = simplexFinal.getObjValue();
-        {
-            logger.debug("New obtained dual variables (will be checked to be feasible): ");
-            printDualsToBackendLog(dualVariables, BackendType::LR);
-            logger.debug("Next call addDualsToSimplex with duals.");
-        }
         bool feasible = checkIfFeasible(dualVariables, columnLower,
                 columnUpper, lhsArray,
                 inputManager, indexManager, configIter);
-        if (!feasible) {
-            logger.error("Infeasible solution obtained with CBC cutting plane!");
-        }
+        logCuttingPlaneIterationDuals(iter, dualVariables, feasible);
+
         double regObjectiveValue = -1e100;
         double trueObjectiveValue = -1e100;
         addDualsToSimplex(
@@ -808,20 +749,14 @@ void doCuttingPlaneOptimization(
             }
             dualHistory->pop_front();
         }
-        logger.noticeStream() << "Size of dualHistory = " << dualHistory->size();
+        logDualHistorySize(dualHistory->size());
 
         bool canStopShift = false, canStopIter = false;
         canStopIter = (iter >= configIter.minSubgradientIterations.value());
-        double absObjectiveDiff = fabsl(
-                cuttingPlaneObjective - lastObjective);
+        double absObjectiveDiff = fabsl(cuttingPlaneObjective - lastObjective);
 
-        logger.noticeStream() << "cutting_plane_objective = " << cuttingPlaneObjective;
-        logger.noticeStream() << "reg_cppad_objective = " << regObjectiveValue;
-        logger.noticeStream() << " L2 norm of duals = " << dualL2Norm(dualVariables);
-        logger.noticeStream() << " L1 norm of duals = " << dualL1Norm(dualVariables);
-        logger.noticeStream() << " L1 norm of subsequent " << "difference = " << dualAbsDiffSum(
-                    prevDuals, dualVariables) ;
-
+        logObjectiveAndDualNorms(
+                cuttingPlaneObjective, regObjectiveValue, dualVariables, prevDuals);
         auto currentLowerBoundHit = prevLowerBoundHit;
         auto currentUpperBoundHit = prevUpperBoundHit;
         computeBoundHit(columnLower, dualVariables, &currentLowerBoundHit);
@@ -883,8 +818,7 @@ void doCuttingPlaneOptimization(
             if (!configIter.singleRestart || !restartCount) {
                 assert(configIter.deque_size.value()
                         >= configIter.restartPeriod.value() / 3.);
-                logger.noticeStream() <<
-                    "Restarting simplex from deque.";
+                logger.noticeStream() << "Restarting simplex from deque.";
                 ClpSimplex newSimplexBase;
                 prepareSimplex(inputManager, indexManager, configIter,
                         dualPtr, &newSimplexBase, &columnLower,
@@ -902,29 +836,15 @@ void doCuttingPlaneOptimization(
                 restartCount += 1;
             }
         }
-        logger.noticeStream() << "Finished Iteration: " << iter << " obj_diff: "
-            << absObjectiveDiff << " abs_shift_diff: " << absShiftDiff
-            << " rel_shift_diff: " << relShiftDiff;
+        logFinishedCuttingPlaneIteration(iter, absObjectiveDiff, absShiftDiff, relShiftDiff);
     }
     dualVariables = bestPoint.second;
     auto current = computeSubgradientInPoint(
             dualVariables, state, linksManager,
             inputManager, indexManager, decisionManager,
             uCoeff, ignoreSpot, configIter.coeffReg.value(), mean);
-    {
-        auto localDebugStream = logger.debugStream();
-        localDebugStream << "Final subgradient equals: \n";
-        localDebugStream << "muSubgradient: \n";
-        for (const auto& item : current.muSubgradient) {
-            localDebugStream << item << " ";
-        }
-        localDebugStream << "lambdaSubgradient: \n";
-        for (const auto& item : current.lambdaSubgradient) {
-            localDebugStream << item << " ";
-        }
-        localDebugStream << "algo -- functionValue: ";
-        localDebugStream << current.functionValue;
-    }
+    logSubgradient(current);
+
     if (estimatedObjective != nullptr) {
         *estimatedObjective = current.functionValue;
     }

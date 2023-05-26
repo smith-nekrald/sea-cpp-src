@@ -4,8 +4,6 @@
 #include "index.h"
 #include "lr_cppad.h"
 
-#include "../../logging/logging.h"
-
 #include <stdexcept>
 #include <cppad/cppad.hpp>
 #include <cppad/core/value.hpp>

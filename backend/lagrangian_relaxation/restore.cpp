@@ -1,7 +1,5 @@
 #include "functions.h"
 
-#include "../../logging/logging.h"
-
 #include <limits>
 #include <filesystem>
 #include <cmath>
@@ -18,7 +16,6 @@ namespace backend {
 using EventType=InputData::Event::Type;
 using ArcType=InputData::Arc::Type;
 
-
 void byItineraryRestore(
         const InputData::Event& event,
         const ConstInputManagerPtr& inputManager,
@@ -28,15 +25,7 @@ void byItineraryRestore(
         const DualVariables& dualVariables,
         State* state,
         DecisionManagerPtr decisionManager) {
-
-    auto& logger = logging::getBackendSubLogger(BackendType::LR);
-
-    {
-        logger.infoStream() << "Entered byItineraryRestore. \n " <<
-            "Relative time = " << event.relativeTime;
-        logger.debug("Duals to backend log: ");
-        printDualsToBackendLog(dualVariables, BackendType::LR);
-    }
+    logEnteredByItineraryRestore(event, dualVariables);
 
     assert(event.type == EventType::cutoff);
     const auto& input = inputManager->getConstData();
@@ -54,8 +43,6 @@ void byItineraryRestore(
                 return input.itineraries[lhs].declineCost > input.itineraries[rhs].declineCost;
             });
     for(auto itineraryId : interestingItineraries) {
-        logger.debug("By itinerary restore. Processing itinerary with id"
-                + std::to_string(itineraryId));
 
         vector<double> objective;
         vector<int> correspondingAllotments;
@@ -66,7 +53,6 @@ void byItineraryRestore(
         const auto& itinerary = input.itineraries[itineraryId];
         unsigned F_r = decision->nonEmptyContainersQ[itinerary.id]
             + decision->emptyContainersZ[itinerary.id];
-        logger.debugStream() << "byItineraryRestore: " << "F_r = " << F_r;
 
         double lambdaSum = 0.;
         for (unsigned idArc : itinerary.orderedArcs) {
@@ -75,7 +61,6 @@ void byItineraryRestore(
                 lambdaSum += dualVariables.lambdaVariables[lrIndex.arcToLambdaIndex[idArc]];
             }
         }
-        logger.debugStream() << "byItineraryRestore: " <<  "Lambda Sum = " << lambdaSum;
 
         double qr = 0, zr = 0;
         qr -= lambdaSum;
@@ -86,7 +71,7 @@ void byItineraryRestore(
         qr -= event.duration * input.ports[input.nodes[basedArc.fromNode].portId].storageCost;
         zr -= event.duration * input.ports[input.nodes[basedArc.fromNode].portId].storageCost;
 
-        logger.debugStream() << "byItineraryRestore: " << "qr = " << qr << " zr = " << zr;
+        logProcessingItineraryInByItineraryRestore(itineraryId, lambdaSum, qr, zr);
 
         objective.push_back(qr);
         correspondingAllotments.push_back(-1);
@@ -162,24 +147,7 @@ void byItineraryRestore(
             }
         }
 
-        {
-            auto debugStream  = logger.getStream(log4cpp::Priority::DEBUG);
-            debugStream << " Objective: \n";
-            for (const auto& val : objective) {
-                debugStream << val << " ";
-            }
-            debugStream << "\n Objective variables: \n";
-            debugStream << "qr zr yrhs yros ...\n";
-            debugStream << "ColumnLower: " << "\n";
-            for (const auto& vl : columnLower) {
-                debugStream << vl << " ";
-            }
-            debugStream << "\nColumnUpper: " << "\n";
-            for (const auto& vu: columnUpper) {
-                debugStream << vu << " ";
-            }
-
-        }
+        logObjectiveAndBoundsInByItineraryRestore(objective, columnLower, columnUpper);
 
         CoinPackedMatrix byRow(false,               //row ordered
                                objective.size(),    //number of columns
@@ -210,7 +178,7 @@ void byItineraryRestore(
         rowLower[1] = 0;
         rowUpper[1] = minCapacityArc;
 
-        logger.debugStream() << "minCapacityArc = " << minCapacityArc << "\n";
+        logMinCapacityArc(minCapacityArc);
 
         ClpSimplex solver;
         solver.setOptimizationDirection(-1);    // -> max
@@ -259,8 +227,8 @@ void byItineraryRestore(
         decision->nonEmptyContainersQ[itinerary.id] = static_cast<unsigned>(nonEmptySpotCount);
         takenSum += static_cast<unsigned>(nonEmptySpotCount);
 
-        logger.debugStream() << "restore.cpp : itinerary = " << itinerary.id;
-        logger.debugStream() << "restore.cpp : Q = " << decision->nonEmptyContainersQ[itinerary.id];
+        logNonEmptyQInByItineraryRestore(
+                itinerary.id, decision->nonEmptyContainersQ[itinerary.id]);
 
         for (unsigned ind = 0; ind < objective.size(); ++ind) {
             // Otherwise, this entry in the solution is irrelevant for allotments.

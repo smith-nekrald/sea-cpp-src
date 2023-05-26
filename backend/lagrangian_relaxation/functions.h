@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lr_cppad.h"
+#include "log.hpp"
 
 #include <random>
 #include <memory>
@@ -107,16 +108,6 @@ void byItineraryRestore(
 
 void printDualsToBackendLog(const DualVariables& duals, BackendType type);
 
-template<typename T>
-void printArrayToBackendLog(const std::vector<T> array,
-        BackendType type) {
-    auto stream = logging::getBackendSubLogger(type) << log4cpp::Priority::DEBUG;
-    stream << " Array: ";
-    for (const auto& value : array) {
-        stream << value << " ";
-    }
-}
-
 std::pair<double, DualVariables> initializeCuttingPlane(
     const ConstInputManagerPtr& inputManager,
     const ConstLinksManagerPtr& linksManager,
@@ -144,6 +135,49 @@ void prepareSimplex(
         vector<double>* columnUpperPtr,
         vector<double>* lhsArrayPtr,
         unsigned* ncolsPtr);
+
+size_t computeTrueCount(const vector<bool>& hitVector);
+size_t computeHitDiff(const vector<bool>& prevVector, const vector<bool>& newVector);
+pair<size_t, size_t> computeHitStats(const DualTemplate<bool>& currentHit);
+pair<size_t, size_t> computeHitChange(
+        const DualTemplate<bool>& prevHit, const DualTemplate<bool>& newHit);
+void computeBoundHit(const vector<double>& bound,
+        const DualVariables& dualVariables, DualTemplate<bool>* hitMap);
+
+// Logging methods.
+void logNonEmptyQInByItineraryRestore(unsigned itineraryId, double nonEmptyQ);
+void logEnteredByItineraryRestore(
+        const InputData::Event& event, const DualVariables& dualVariables);
+void logProcessingItineraryInByItineraryRestore(
+        unsigned itineraryId, double lambdaSum, double qr, double zr);
+void logObjectiveAndBoundsInByItineraryRestore(const vector<double>& objective,
+        const vector<double>& columnLower, const vector<double>& columnUpper);
+void logMinCapacityArc(double minCapacityArc);
+
+void logEntranceToCheckIfFeasible(
+        const DualVariables& variables,
+        const std::vector<double>& boundLower,
+        const std::vector<double>& boundUpper,
+        const std::vector<double>& lhs);
+void logLowerBoundFailureInCheckIfFeasible(double difference);
+void logUpperBoundFailureInCheckIfFeasible(double difference);
+void logLhsInequalityFailureInCheckIfFeasible(double error);
+void logExitFromCheckIfFeasible(const std::string& value);
+
+void logSubgradient(const SubgradientOptimizationParameters& current);
+
+void logHitMuAndLambda(const vector<int>& hitMu, const vector<int>& hitLambda);
+
+void logPlaneIntersectionItineraries(const vector<int>& hitIdx);
+
+void logStartCuttingPlaneOptimization(const State& state, DualVariables* dualPtr);
+void logCuttingPlaneIterationDuals(
+        unsigned iter, const DualVariables& dualVariables, bool feasible);
+void logDualHistorySize(std::size_t historySize);
+void logObjectiveAndDualNorms(double cuttingPlaneObjective, double regObjectiveValue,
+        const DualVariables& dualVariables, const DualVariables& prevDuals);
+void logFinishedCuttingPlaneIteration(unsigned iter, double absObjectiveDiff,
+        double absShiftDiff, double relShiftDiff);
 
 } // namespace backend
 } // namespace sea

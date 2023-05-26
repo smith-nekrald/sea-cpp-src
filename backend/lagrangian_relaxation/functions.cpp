@@ -1,5 +1,4 @@
 #include "functions.h"
-#include "../../logging/logging.h"
 
 namespace sea {
 namespace backend {
@@ -40,7 +39,8 @@ double dualL1Norm(const DualVariables& duals) {
     return norm;
 }
 
-unsigned countNonZeroElements(const SubgradientOptimizationParameters& parameters, const double EPS) {
+unsigned countNonZeroElements(
+        const SubgradientOptimizationParameters& parameters, const double EPS) {
     unsigned result = 0;
     for (unsigned idLambda = 0; idLambda < parameters.lambdaSubgradient.size(); ++idLambda) {
         if (fabs(parameters.lambdaSubgradient[idLambda]) > EPS) {
@@ -54,23 +54,6 @@ unsigned countNonZeroElements(const SubgradientOptimizationParameters& parameter
     }
     return result;
 }
-
-void printDualsToBackendLog(const DualVariables& duals, BackendType type) {
-    auto& logger = logging::getBackendSubLogger(type);
-    std::string muOutput = "MuVariables : ";
-    for (const auto& mu: duals.muVariables) {
-        muOutput += std::to_string(mu);
-        muOutput += " ";
-    }
-    logger.debug(muOutput);
-    std::string lambdaOutput = "LambdaVariables : ";
-    for (const auto& lambda : duals.lambdaVariables) {
-        lambdaOutput += std::to_string(lambda);
-        lambdaOutput += " ";
-    }
-    logger.debug(lambdaOutput);
-}
-
 
 
 } // namespace backend

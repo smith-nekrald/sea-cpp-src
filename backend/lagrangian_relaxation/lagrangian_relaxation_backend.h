@@ -111,6 +111,7 @@ struct DualDequeInfo {
 };
 
 class LagrangianRelaxationBackend {
+
 public:
     LagrangianRelaxationBackend(
             const LagrangianRelaxationBackendConfig& config);
@@ -131,10 +132,8 @@ public:
     void provideIpoptDuals(const DualVariables& duals) {
         DualDequeInfo info;
         info.duals = duals;
-        assert(
-                duals.muVariables.size()
-                    == config.inputManager->getConstData().itineraries.size()
-        );
+        assert(duals.muVariables.size()
+                    == config.inputManager->getConstData().itineraries.size());
         assert(duals.lambdaVariables.size());
         info.immortal = true;
         info.checked = false;
@@ -156,6 +155,12 @@ public:
         }
         dualHistory.push_back(info);
     }
+
+private:
+    void logLRConstruction() const;
+    void logProvideDuals(
+            ConstDecisionManagerPtr decisionManger, const DualVariables& duals) const;
+    void logMakeCutoffDecisionWithDuals(const DualVariables& duals) const;
 
 private:
     LagrangianRelaxationBackendConfig config;

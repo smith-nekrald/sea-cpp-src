@@ -3,7 +3,6 @@
 
 #include "../lr_cppad.hpp"
 #include "../lagrangian_relaxation_backend.h"
-#include "../../../logging/logging.h"
 #include "../functions.h"
 
 #include "gm_src/gm_interfaces.h"
