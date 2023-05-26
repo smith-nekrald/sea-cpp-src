@@ -1,7 +1,7 @@
 #include "abstract_allotment_strategy.h"
 
 namespace sea {
-namespace strategy  {
+namespace strategy {
 
 AbstractAllotmentStrategy::AbstractAllotmentStrategy(
             const AllotmentStrategyConfig& aConfig,
@@ -10,17 +10,13 @@ AbstractAllotmentStrategy::AbstractAllotmentStrategy(
         : backendConfigs(aBackendConfigs)
         , config(aConfig)
         , name(aName) {
-    logging::getAllotmentStrategyLogger(config.type.value()).info(
-            "AbstractAllotmentStrategy created.");
     utilizationRatio = config.defaultUtilizationRatio.value();
     valueEstimation = 0;
+    logCreatedAbstractAllotmentStrategy();
 }
 
 void AbstractAllotmentStrategy::hardReset() {
-
-    logging::getAllotmentStrategyLogger(config.type.value()).debug(
-            "AbstractAllotmentStrategy::hardReset() is called.");
-
+    logHardResetInAbstractAllotmentStrategy();
     backends.ipoptBackend = nullptr;
     backends.lrBackend = nullptr;
     backends.dcpBackend = nullptr;
@@ -28,7 +24,6 @@ void AbstractAllotmentStrategy::hardReset() {
 
     decisionCopy.clear();
     valueEstimation = 0;
-
     reset();
 }
 

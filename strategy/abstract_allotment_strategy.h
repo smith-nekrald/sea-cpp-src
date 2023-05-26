@@ -54,6 +54,10 @@ public:
 
     virtual ~AbstractAllotmentStrategy() {};
 
+private:
+    void logCreatedAbstractAllotmentStrategy() const;
+    void logHardResetInAbstractAllotmentStrategy() const;
+
 protected:
     const BackendConfigHolder backendConfigs;
     const AllotmentStrategyConfig config;

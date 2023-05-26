@@ -5,15 +5,8 @@ namespace sea {
 namespace strategy {
 
 void IpoptSpotMarketStrategy::updateParams(const InputData::Event& event) {
-
-    logging::getSpotStrategyLogger(sea::SpotStrategyType::IPOPT).debugStream()
-            << "Entered IpoptSpot:: updateParams.";
-
     bool needUpdate = (event.realTime - lastUpdate) > config.updateInterval;
-
-    logging::getSpotStrategyLogger(sea::SpotStrategyType::IPOPT).debugStream()
-            << "If update is required? " << needUpdate;
-
+    logEnteredUpdateParams(needUpdate);
     if (needUpdate) {
         double futureValue = 0;
         backends.ipoptBackend->moveDecisionToTime(
@@ -27,9 +20,7 @@ void IpoptSpotMarketStrategy::updateParams(const InputData::Event& event) {
             story["ipopt_future_value"].push_back(futureValue);
         }
     }
-
-    logging::getSpotStrategyLogger(sea::SpotStrategyType::IPOPT).debugStream()
-            << "Left updateParams.";
+    logLeftUpdateParams();
 }
 
 void IpoptSpotMarketStrategy::processCutoff(const InputData::Event& event) {

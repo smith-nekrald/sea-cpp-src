@@ -9,13 +9,7 @@ DecisionManagerPtr DetCutPlaneAllotmentStrategy::provideAllotments() {
         return decisionCopy[utilizationRatio]->deepCopy();
     }
     auto decision = backends.dcpBackend->provideAllotments(&valueEstimation);
-
-    {
-        auto& logger = logging::getAllotmentStrategyLogger(config.type.value());
-        auto stream = logger.getStream(log4cpp::Priority::DEBUG);
-        stream << "DetCutPlaneAllotmentStrategy:: print answer. \n";
-        stream << decision->getConstData();
-    }
+    logPrintAnswerInProvideAllotments(decision);
 
     if (config.storeInitialDecision) {
         decisionCopy[utilizationRatio] = decision->deepCopy();

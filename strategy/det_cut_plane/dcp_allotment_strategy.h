@@ -26,15 +26,15 @@ public:
     }
 
     virtual DecisionManagerPtr provideAllotments() override;
-
     virtual void reset() override;
-
     virtual ~DetCutPlaneAllotmentStrategy() {}
+
+private:
+    void logPrintAnswerInProvideAllotments(ConstDecisionManagerPtr decision) const;
 
 private:
     const DCPInnerConfig innerConfig;
 };
-
 
 } // namespace strategy
 } // namespace sea

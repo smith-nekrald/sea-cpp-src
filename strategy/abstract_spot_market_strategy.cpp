@@ -20,19 +20,16 @@ AbstractSpotMarketStrategy::AbstractSpotMarketStrategy(
         const SpotMarketStrategyConfig& aConfig,
         const BackendConfigHolder& aBackendConfigs,
         const std::string aName)
-    : backendConfigs(aBackendConfigs)
-    , config(aConfig)
-    , name(aName)
-    , keepStory(false) {
+            : backendConfigs(aBackendConfigs)
+            , config(aConfig)
+            , name(aName)
+            , keepStory(false) {
     initialize();
-    logging::getSpotStrategyLogger(config.type.value()).info(
-            "Created AbstractSpotMarketStrategy.");
+    logCreated();
 }
 
 ConstDecisionManagerPtr AbstractSpotMarketStrategy::makeDecision() {
-    logging::getSpotStrategyLogger(config.type.value()).debug(
-            "AbstractSpotMarketStrategy::makeDecision is called.");
-
+    logCalledMakeDecision();
     auto* decision = decisionManager->get();
     const auto& input = config.inputManager->getConstData();
     const auto& links = config.linksManager->getConstData();
@@ -68,9 +65,11 @@ ConstDecisionManagerPtr AbstractSpotMarketStrategy::makeDecision() {
                 for (unsigned contractId = 0; contractId < input.allotments.size(); ++contractId) {
                     if (links.allotmentItineraryToPlace[contractId].find(routeId) !=
                             links.allotmentItineraryToPlace[contractId].end()) {
-                        unsigned placeIndex = links.allotmentItineraryToPlace[contractId].at(routeId);
+                        unsigned placeIndex = links.allotmentItineraryToPlace[
+                            contractId].at(routeId);
                         assert(placeIndex != MAX_INDEX);
-                        assert(routeId == decision->allotmentContainersQ[contractId][placeIndex].first);
+                        assert(routeId == decision->allotmentContainersQ[
+                                contractId][placeIndex].first);
                         auto Q = decision->allotmentContainersQ[contractId][placeIndex].second;
                         state.takenOnRoute[routeId] += Q;
                     }
@@ -94,8 +93,7 @@ ConstDecisionManagerPtr AbstractSpotMarketStrategy::makeDecision() {
     } else {
         throw std::logic_error("This event type is not supported");
     }
-    logging::getSpotStrategyLogger(config.type.value()).debug(
-            "AbstractSpotMarketStrategy::makeDecision finished.");
+    logFinishedMakeDecision();
     return decisionManager;
 }
 
@@ -156,11 +154,11 @@ void AbstractSpotMarketStrategy::processArrival(const InputData::Event& event) {
         for (unsigned allotmentId : links.allotmentsWithItinerary[itineraryId]) {
             if (decision->allotmentAccepted[allotmentId]) {
                 unsigned place = links.allotmentItineraryToPlace[allotmentId].at(itineraryId);
-                containersInPorts[port.id] += decision->allotmentContainersQ[allotmentId][place].second;
+                containersInPorts[port.id] += decision->allotmentContainersQ[
+                    allotmentId][place].second;
             }
         }
     }
-
 }
 
 void AbstractSpotMarketStrategy::processOffhiring(const InputData::Event& event) {

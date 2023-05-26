@@ -11,13 +11,10 @@ namespace strategy {
 struct LRCuttingPlaneSpotMarketStrategyConfig {
     SpotMarketStrategyConfig abstractConfig;
     BackendConfigHolder backendConfigs;
-
     bool doHardUpdate = true;
     double softUpdatePeriod = 56.0;
-
     bool askIpoptDuals = true;
 };
-
 class LRCuttingPlaneSpotMarketStrategy : public AbstractSpotMarketStrategy {
 
 public:
@@ -42,6 +39,9 @@ public:
 protected:
     virtual void processCutoff(const InputData::Event& event) override;
     virtual void updateParams(const InputData::Event& event) override;
+
+private:
+    void logDualsInUpdateParams(const InputData::Event& event) const;
 
 private:
     bool doHardUpdate;

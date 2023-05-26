@@ -1,0 +1,25 @@
+#include "lr_cutting_plane_spot_market_strategy.h"
+
+namespace sea {
+namespace strategy {
+
+void LRCuttingPlaneSpotMarketStrategy::logDualsInUpdateParams(
+        const InputData::Event& event) const {
+    logging::getOutTestLogger().debugStream() << "Updated_Duals at realTime = "
+        << event.realTime << " relativeTime =  "  << event.relativeTime;
+    auto dualWriter = logging::getOutTestLogger().getStream(log4cpp::Priority::DEBUG);
+    dualWriter << "\n";
+    dualWriter << "LambdaVariables: ";
+    for (const auto& lambdaV : duals.lambdaVariables) {
+        dualWriter << lambdaV << " ";
+    }
+    dualWriter << "\n";
+    dualWriter << "MuVariables: ";
+    for (const auto& muV : duals.muVariables) {
+        dualWriter << muV << " ";
+    }
+    dualWriter << "\n";
+}
+
+} // namespace strategy
+} // namespace sea

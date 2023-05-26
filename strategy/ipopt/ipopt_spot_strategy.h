@@ -34,6 +34,10 @@ public:
 
 protected:
     virtual void processCutoff(const InputData::Event& event) override;
+
+private:
+    void logEnteredUpdateParams(bool needUpdate) const;
+    void logLeftUpdateParams() const;
 };
 
 } // namespace strategy

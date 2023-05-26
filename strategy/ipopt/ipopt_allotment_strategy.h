@@ -50,12 +50,15 @@ public:
     virtual ~IpoptAllotmentStrategy() {};
 
 private:
+    void logAllotmentSelection(const vector<bool>& selection) const;
+    void logUpdatedDecision(ConstDecisionManagerPtr result) const;
+
+private:
     vector<bool> memorizedSelection;
     vector<bool> forcedAllotments;
 
     IpoptInnerConfig innerConfig;
 };
-
 
 } // namespace strategy
 } // namespace sea

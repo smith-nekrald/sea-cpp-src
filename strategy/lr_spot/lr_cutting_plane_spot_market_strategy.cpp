@@ -33,22 +33,7 @@ void LRCuttingPlaneSpotMarketStrategy::updateParams(const Event& event) {
             story["event_time"].push_back(event.realTime);
             story["future_value"].push_back(futureValue);
         }
-        {
-            logging::getOutTestLogger().debugStream() << "Updated_Duals at realTime = "
-                << event.realTime << " relativeTime =  "  << event.relativeTime;
-            auto dualWriter = logging::getOutTestLogger().getStream(log4cpp::Priority::DEBUG);
-            dualWriter << "\n";
-            dualWriter << "LambdaVariables: ";
-            for (const auto& lambdaV : duals.lambdaVariables) {
-                dualWriter << lambdaV << " ";
-            }
-            dualWriter << "\n";
-            dualWriter << "MuVariables: ";
-            for (const auto& muV : duals.muVariables) {
-                dualWriter << muV << " ";
-            }
-            dualWriter << "\n";
-        }
+        logDualsInUpdateParams(event);
     }
 }
 
@@ -61,7 +46,8 @@ void LRCuttingPlaneSpotMarketStrategy::processCutoff(const Event& event) {
 void LRCuttingPlaneSpotMarketStrategy::reset() {
     initialize();
     initBackend(backends.lrBackend, backendConfigs.lrConfig);
-    initBackend(backends.ipoptBackend, backendConfigs.ipoptConfig, config.utilizationRatio.value());
+    initBackend(
+            backends.ipoptBackend, backendConfigs.ipoptConfig, config.utilizationRatio.value());
     backends.bendersBackend = nullptr;
     backends.dcpBackend = nullptr;
     lastUpdate = -1e100;

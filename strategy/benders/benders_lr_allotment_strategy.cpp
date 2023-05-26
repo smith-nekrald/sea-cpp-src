@@ -1,24 +1,15 @@
 #include "benders_lr_allotment_strategy.h"
 #include "../../algorithm/state.h"
 
-#include <limits>
 
 namespace sea {
 namespace strategy {
 
-const double INF = std::numeric_limits<double>::max();
 
-double objectiveBlending(double deterministicObjective, double magicObjective, double weight = 1.0) {
-    return weight * magicObjective + (1.0 - weight) * deterministicObjective;
+double objectiveBlending(
+        double deterministicObjective, double methodObjective, double weight) {
+    return weight * methodObjective + (1.0 - weight) * deterministicObjective;
 }
-
-struct VariableGroup {
-    double blendedObjective = -INF;
-    double ipoptObjective = -INF;
-    double lrObjective = -INF;
-
-    vector<bool> allotmentSelection;
-};
 
 bool operator<(const VariableGroup& lhs, const VariableGroup& rhs) {
     return lhs.blendedObjective < rhs.blendedObjective;
@@ -35,7 +26,9 @@ BendersLRAllotmentStrategy::BendersLRAllotmentStrategy(
 }
 
 DecisionManagerPtr BendersLRAllotmentStrategy::provideAllotments() {
-    if (decisionCopy.find(utilizationRatio) != decisionCopy.end()) { return decisionCopy[utilizationRatio]->deepCopy(); }
+    if (decisionCopy.find(utilizationRatio) != decisionCopy.end()) {
+        return decisionCopy[utilizationRatio]->deepCopy();
+    }
     State state;
     initState(config.inputManager->getConstData(), &state);
     vector<bool> allotments;
@@ -43,7 +36,8 @@ DecisionManagerPtr BendersLRAllotmentStrategy::provideAllotments() {
         allotments.assign(config.inputManager->getConstData().allotments.size(), 0);
     } else if (innerConfig.initType == InitializationType::IPOPT_ALLOTMENTS) {
         allotments = backends.ipoptBackend->provideAllotments();
-    } else if (innerConfig.initType == InitializationType::DETERMINISTIC_CUTTING_PLANE_ALLOTMENTS) {
+    } else if (innerConfig.initType ==
+            InitializationType::DETERMINISTIC_CUTTING_PLANE_ALLOTMENTS) {
         throw std::runtime_error("DETERMINISTIC_CUTTING_PLANE_ALLOTMENTS is not implemented yet");
     } else {
         throw std::logic_error("Unknown initType!");
@@ -60,37 +54,27 @@ DecisionManagerPtr BendersLRAllotmentStrategy::provideAllotments() {
             &lastGroup.ipoptObjective,
             &ipoptDuals);
     backends.lrBackend->provideIpoptDuals(ipoptDuals);
-    auto duals = backends.lrBackend->provideDuals(state, decisionManager, nullptr, &lastGroup.lrObjective);
+    auto duals = backends.lrBackend->provideDuals(
+            state, decisionManager, nullptr, &lastGroup.lrObjective);
     VariableGroup currentGroup, bestGroup = lastGroup;
 
     for (std::size_t iterId = 0; iterId < innerConfig.iterationCount; ++iterId) {
 
         backends.bendersBackend->addDuals(duals);
         currentGroup.allotmentSelection = backends.bendersBackend->makeAllotments(decisionManager);
-        decisionManager = backends.ipoptBackend->bendersQuery(currentGroup.allotmentSelection, &currentGroup.ipoptObjective, &ipoptDuals);
+        decisionManager = backends.ipoptBackend->bendersQuery(
+                currentGroup.allotmentSelection, &currentGroup.ipoptObjective, &ipoptDuals);
         backends.lrBackend->provideIpoptDuals(ipoptDuals);
         duals = backends.lrBackend->provideDuals(
                 state, decisionManager, nullptr, &currentGroup.lrObjective);
 
-        currentGroup.blendedObjective = objectiveBlending(currentGroup.ipoptObjective, currentGroup.lrObjective, innerConfig.objectiveBlending);
-        {
-            auto& logger = logging::getAllotmentStrategyLogger(config.type.value());
-            auto stream = logger.getStream(log4cpp::Priority::DEBUG);
-            stream << "Benders allotment strategy: iteration " << iterId << "\n";
-            stream << "lrObjective = " << currentGroup.lrObjective << "\n";
-            stream << "ipoptObjective = " << currentGroup.ipoptObjective << "\n";
-            stream << "blendedObjective = " << currentGroup.blendedObjective << "\n";
-        }
+        currentGroup.blendedObjective = objectiveBlending(currentGroup.ipoptObjective,
+                currentGroup.lrObjective, innerConfig.objectiveBlending);
+        logIteration(iterId, currentGroup.lrObjective,
+                currentGroup.ipoptObjective, currentGroup.blendedObjective);
         if (bestGroup < currentGroup) {
             bestGroup = currentGroup;
-            {
-                auto& logger = logging::getAllotmentStrategyLogger(config.type.value());
-                auto stream = logger.getStream(log4cpp::Priority::DEBUG);
-                stream << "Changing bestGroup into currentGroup" << "\n";
-                stream << "Best blended objective now: " << bestGroup.blendedObjective << "\n";
-                stream << "Best ipopt objective now: " << bestGroup.ipoptObjective << "\n";
-                stream << "Best lr objective now: " << bestGroup.lrObjective << "\n";
-            }
+            logUpdateGroup(bestGroup);
         }
         bool stopObjective = !useObjDiff, stopVariables = !useVariableDiff;
         if (useObjDiff &&
@@ -110,11 +94,7 @@ DecisionManagerPtr BendersLRAllotmentStrategy::provideAllotments() {
             }
         }
         if (stopObjective && stopVariables) {
-            {
-                auto& logger = logging::getAllotmentStrategyLogger(config.type.value());
-                auto stream = logger.getStream(log4cpp::Priority::DEBUG);
-                stream << "Stopping iterations of benders -- solution is found" << "\n";
-            }
+            logStopIterations();
             break;
         }
         lastGroup = currentGroup;
@@ -131,16 +111,9 @@ DecisionManagerPtr BendersLRAllotmentStrategy::provideAllotments() {
 }
 
 void BendersLRAllotmentStrategy::reset() {
-    initBackend(
-        backends.ipoptBackend,
-        backendConfigs.ipoptConfig,
-        utilizationRatio);
-    initBackend(
-        backends.lrBackend,
-        backendConfigs.lrConfig);
-    initBackend(
-        backends.bendersBackend,
-        backendConfigs.bendersConfig);
+    initBackend(backends.ipoptBackend, backendConfigs.ipoptConfig, utilizationRatio);
+    initBackend(backends.lrBackend, backendConfigs.lrConfig);
+    initBackend(backends.bendersBackend, backendConfigs.bendersConfig);
     backends.dcpBackend = nullptr;
 }
 

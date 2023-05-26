@@ -82,6 +82,11 @@ protected:
 
     virtual void updateParams(const InputData::Event& event) = 0;
 
+private:
+    void logCreated() const;
+    void logCalledMakeDecision() const;
+    void logFinishedMakeDecision() const;
+
 protected:
     BackendHolder backends;
     BackendConfigHolder backendConfigs;
@@ -97,7 +102,6 @@ protected:
 
     bool keepStory;
     std::map<std::string, std::vector<double>> story;
-
 };
 
 } // namespace strategy
