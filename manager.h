@@ -1,3 +1,10 @@
+/**
+ * @file manager.h
+ * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
+ * @brief Implements DataProxy and DataManager. DataProxy is an entity for manual RAM memory
+ * control by dumping structures when RAM-instensive computations are ongoing.
+ * @copyright (c) Smith School of Business, 2023
+ */
 #pragma once
 
 #include <memory>
@@ -16,38 +23,45 @@
 
 namespace sea {
 
+/**
+ * @brief Structure for manual memory consumption manager.
+ * Allows to dump structures to file when big RAM amounts are consumed.
+ *
+ * @tparam DataType Type of the incapsulated object.
+ */
 template<typename DataType>
 class DataProxy {
 public:
-    DataProxy(std::string aFilePath,
-            bool leaveEmpty = false,
-            bool useTemporaryFileVal = true)
-
-        : filePath(aFilePath)
-        , useTemporaryFile(useTemporaryFileVal)
-        , isDumped(!useTemporaryFileVal)
-        , isValid(true) {
-
-        logging::getMemoryLogger().debug("DataProxy.Constructor is called.");
+    /**
+     * @brief Proxy Constructor.
+     *
+     * @param aFilePath Permanent storate file path, if relevant. Empty string otherwise.
+     * @param leaveEmpty Whether to load the data or not.
+     * @param useTemporaryFileVal If true, temporary file is used for dumping-undumping.
+     */
+    DataProxy(std::string aFilePath, bool leaveEmpty = false, bool useTemporaryFileVal = true)
+            : filePath(aFilePath)
+            , useTemporaryFile(useTemporaryFileVal)
+            , isDumped(!useTemporaryFileVal)
+            , isValid(true) {
         if (leaveEmpty) {
             assert(!useTemporaryFile);
-            logging::getMemoryLogger().debug("DataProxy. Leaving empty.");
-            logging::getMemoryLogger().debug("DataProxy.Constructor has finished.");
             return;
         }
         if (!useTemporaryFile) {
             loadData();
         } else {
             data = std::make_unique<DataType>();
-            logging::getMemoryLogger().debug("DataProxy. Created new data.");
         }
         isEmpty = false;
-        logging::getMemoryLogger().debug("DataProxy.Constructor has finished.");
-
     }
+    /**
+     * @brief Copy constructor.
+     *
+     * @param proxy The DataProxy to copy.
+     */
     DataProxy(const DataProxy& proxy)
             : useTemporaryFile(proxy.useTemporaryFile) {
-        logging::getMemoryLogger().debug("DataProxy.CopyConstructor is called.");
         assert(proxy.isValid);
         isValid = proxy.isValid;
         isEmpty = proxy.isEmpty;
@@ -66,31 +80,38 @@ public:
                 std::experimental::filesystem::copy(proxy.filePath, filePath);
             }
         }
-        logging::getMemoryLogger().debug("DataProxy.CopyConstructor has finished.");
     }
-
+    /**
+     * @brief Getter for the editable reference to the encapsulated Data object.
+     *
+     * @return Editable reference to the encapculated object.
+     */
     DataType& getData() {
-        logging::getMemoryLogger().debug("DataProxy.getData() is called.");
         assert(isValid && !isEmpty);
-        logging::getMemoryLogger().debug("DataProxy.getData() has finished.");
         return *data;
     }
+    /**
+     * @brief Getter for the editable pointer to the encapsulated Data object.
+     *
+     * @return Editable pointer to the encapculated object.
+     */
     DataType* get() {
-        logging::getMemoryLogger().debug("DataProxy.get() is called.");
         assert(isValid && !isEmpty);
-        logging::getMemoryLogger().debug("DataProxy.get() has finished.");
         return data.get();
     }
-
+    /**
+     * @brief Getter for the constant reference to the encapsulated Data object.
+     *
+     * @return Constant reference to the encapculated object.
+     */
     const DataType& getConstData() const {
-        logging::getMemoryLogger().debug("DataProxy.getConstData() is called.");
         assert(isValid && !isEmpty);
-        logging::getMemoryLogger().debug("DataProxy.getConstData() has finished.");
         return *data;
     }
-
+    /**
+     * @brief Method to release allocated RAM.
+     */
     void releaseMemory() {
-        logging::getMemoryLogger().debug("DataProxy.releaseMemory() is called.");
         assert(isValid && !isEmpty);
         if (!isDumped) {
             dumpData();
@@ -98,22 +119,22 @@ public:
         assert(isDumped);
         data.reset();
         isEmpty = true;
-        logging::getMemoryLogger().debug("DataProxy.releaseMemory() has finished.");
     }
-
+    /**
+     * @brief Dumps data to file.
+     */
     void dumpData() {
-        logging::getMemoryLogger().debug("DataProxy.dumpData() is called.");
         assert(isValid && !isEmpty && !isDumped);
         if (useTemporaryFile) {
             writeToFile(filePath, *data);
             isDumped = true;
         }
         assert(isDumped);
-        logging::getMemoryLogger().debug("DataProxy.dumpData() has finished");
     }
-
+    /**
+     * @brief Loads data from file.
+     */
     void loadData() {
-        logging::getMemoryLogger().debug("DataProxy. Called loadData()");
         assert(isValid && isDumped && isEmpty);
         data = std::make_unique<DataType>();
         DataType* rawPointer = data.get();
@@ -123,195 +144,267 @@ public:
             isDumped = false;
         }
         isEmpty = false;
-        logging::getMemoryLogger().debug("DataProxy.loadData() has finished.");
     }
-
-
-
+    /**
+     * @brief Removes temporary file.
+     */
     void removeTemporaryFile() {
-        logging::getMemoryLogger().debug("DataProxy. Called removeTemporaryFile()");
         assert(useTemporaryFile);
         if (std::experimental::filesystem::is_regular_file(filePath)) {
             std::experimental::filesystem::remove(filePath);
         }
-        logging::getMemoryLogger().debug("DataProxy.removeTemporaryFile() has finished.");
     }
-
+    /**
+     * @brief Resets to non-initialized state. However, preserves type and permanent location.
+     * I.e. InputData or MarketData would load the same, however those with temporary file
+     * dumping reset completely.
+     */
     void invalidate() {
-        logging::getMemoryLogger().debug("DataProxy.invalidate() is called.");
         if (useTemporaryFile) {
             removeTemporaryFile();
         }
         data.reset();
         isValid = false;
-        logging::getMemoryLogger().debug("DataProxy.invalidate() has finished.");
     }
-
+    /**
+     * @brief Check if the data pointer is set somewhere.
+     *
+     * @return True if pointer is unset, False otherwise.
+     */
     bool empty() {
-        logging::getMemoryLogger().debug("DataProxy.empty() is called.");
         assert(isValid);
-        logging::getMemoryLogger().debug("DataProxy.empty() has finished.");
         return isEmpty;
     }
-
+    /**
+     * @brief Check if dumped.
+     *
+     * @return True if dumped, False otherwise.
+     */
     bool dumped() {
-        logging::getMemoryLogger().debug("DataProxy.dumped() is called.");
         assert(isValid);
-        logging::getMemoryLogger().debug("DataProxy.dumped() has finished.");
         return isDumped;
     }
-
+    /**
+     * @brief Check if the object is valid.
+     *
+     * @return True if the object is valid, False otherwise.
+     */
     bool valid() {
-        logging::getMemoryLogger().debug("DataProxy.valid() is called.");
-        logging::getMemoryLogger().debug("DataProxy.valid() has finished.");
         return isValid;
     }
-
-    ~DataProxy() {
-        logging::getMemoryLogger().debug("DataProxy.destructor() is called.");
+    /**
+     * @brief Destructor the Data Proxy object.
+     * Temporary file is removed only if the dump location is non-permanent.
+     */
+    virtual ~DataProxy() {
         if (useTemporaryFile) {
             removeTemporaryFile();
         }
-        logging::getMemoryLogger().debug("DataProxy.destructor() has finished.");
     }
 
-
 private:
+    /// @brief The path to dumped file.
     std::string filePath;
+    /// @brief If true, temporary storage file is used.
     const bool useTemporaryFile;
 
+    /// @brief The pointer to the encapsulated data.
     std::unique_ptr<DataType> data;
+    /// @brief Whether the object is empty.
     bool isEmpty = true;
+    /// @brief Whether the object is dumped.
     bool isDumped;
-
+    /// @brief Whether the object is valid.
     bool isValid = true;
 };
 
+/**
+ * @brief Configures data Manager.
+ */
 struct ManagerConfig {
+    /// @brief If true, memory tricks are applied. Otherwise, not applied.
     bool needMemory;
+    /// @brief The path to permanent file with stored object.
     std::string filePath;
+    /// @brief If to use temporary file for dumping-undumping object.
     bool useTemporaryFile;
 };
 
+/**
+ * @brief Data Manager is a wrapper around Data Proxy. The extended functionality is as follows.
+ * If needMemory flag is set to false, releases and loads are not performed. The data is always
+ * loaded and ready to use. Another extension corresponds to locking. If locked, load-release are
+ * not performed. If unlocked, everything works as usual.
+ *
+ * @tparam DataType The type of encapsulated object.
+ */
 template<typename DataType>
 class DataManager {
 
 public:
+    /**
+     * @brief Flag-based constructor for a new Data Manager. Data proxy is set to nullptr.
+     *
+     * @param memoryNeed If true, memory management tricks are performed in the same style as
+     * data proxy. If false, memory management tricks are ignored.
+     */
     DataManager(bool memoryNeed = false)
             : needMemory(memoryNeed) {
         dataProxy = nullptr;
-        logging::getMemoryLogger().debug("Empty data manager created.");
     }
-
+    /**
+     * @brief Construct a new Data Manager object from config.
+     *
+     * @param config The Configuration for Data Manager.
+     */
     DataManager(const ManagerConfig& config)
             : needMemory(config.needMemory) {
         if (!config.useTemporaryFile && config.needMemory) {
             dataProxy = std::make_shared<DataProxy<DataType>>(config.filePath, true, false);
         } else {
-            dataProxy = std::make_shared<DataProxy<DataType>>(config.filePath, false, config.useTemporaryFile);
+            dataProxy = std::make_shared<DataProxy<DataType>>(
+                config.filePath, false, config.useTemporaryFile);
         }
-        logging::getMemoryLogger().debug("DataManager for filename " + config.filePath + " created");
-        logging::getMemoryLogger().debug("NeedMemory: " + std::to_string(config.needMemory));
-        logging::getMemoryLogger().debug("UseTempFileParameter: " + std::to_string(config.useTemporaryFile));
     }
-
+    /**
+     * @brief Deep copy method. Creates new dataProxy by copy constructor
+     * and replicates the lock state.
+     *
+     * @return A pointer to a new data manager.
+     */
     std::shared_ptr<DataManager<DataType>> deepCopy() const {
-        logging::getMemoryLogger().debug("DeepCopy is called.");
         std::shared_ptr<DataManager<DataType>> result =
             std::make_shared<DataManager<DataType>>(needMemory);
         result->locked = locked;
         result->dataProxy = std::make_shared<DataProxy<DataType>>(*dataProxy);
-        logging::getMemoryLogger().debug("DeepCopy has finished.");
         return result;
     }
-
+    /**
+     * @brief Method for non-locked object. If memory management is turned on, releases
+     * memory in data proxy.
+     */
     void release() const {
-        logging::getMemoryLogger().debug("Manager.release() is called.");
         assert(!locked);
         if (needMemory && !dataProxy->empty()) {
             dataProxy->releaseMemory();
         }
-        logging::getMemoryLogger().debug("Manager.release() has finished.");
     }
-
+    /**
+     * @brief Loads data proxy in case the proxy is released.
+     */
     void load() const {
-        logging::getMemoryLogger().debug("Manager.load() is called.");
         if (dataProxy->empty()) {
             dataProxy->loadData();
         }
-        logging::getMemoryLogger().debug("Manager.load() has finished.");
     }
-
+    /**
+     * @brief Resets to the non-initialized state.
+     */
     void invalidate() {
-        logging::getMemoryLogger().debug("Manager.invalidate() is called.");
         assert(!locked);
         dataProxy->invalidate();
-        logging::getMemoryLogger().debug("Manager.invalidate() has finished.");
     }
-
+    /**
+     * @brief Constant reference getter for an incapsulated object.
+     *
+     * @return Constant reference to the object.
+     */
     const DataType& getConstData() const {
-        logging::getMemoryLogger().debug("Manager.getConstData() is called.");
         load();
-        logging::getMemoryLogger().debug("Manager.getConstData() has finished.");
         return dataProxy->getConstData();
     }
-
+    /**
+     * @brief Editable reference getter for an incapculated object.
+     *
+     * @return Editable reference to the object.
+     */
     DataType& getData() {
-        logging::getMemoryLogger().debug("Manager.getData() is called.");
         load();
-        logging::getMemoryLogger().debug("Manager.getData() has finished.");
         return dataProxy->getData();
     }
-
+    /**
+     * @brief Editable pointer getter for an incapsulated object.
+     *
+     * @return Editable pointer to the object.
+     */
     DataType* get() {
-        logging::getMemoryLogger().debug("Manager.get() is called.");
         load();
-        logging::getMemoryLogger().debug("Manager.get() has finished.");
         return dataProxy->get();
     }
-
+    /**
+     * @brief  Constant pointer getter for an incapsulated object.
+     *
+     * @return Constant pointer to the object.
+     */
     const DataType* get() const {
-        logging::getMemoryLogger().debug("Manager.get() is called.");
         load();
-        logging::getMemoryLogger().debug("Manager.get() has finished.");
         return dataProxy->get();
     }
-
+    /**
+     * @brief Locks the manager.
+     */
     void lock() const {
-        logging::getMemoryLogger().debug("Manager.lock() is called.");
         locked = true;
-        logging::getMemoryLogger().debug("Manager.lock() has finished.");
     }
+    /**
+     * @brief Unlocks the manager.
+     */
     void unlock() const {
-        logging::getMemoryLogger().debug("Manager.unlock() is called.");
         locked = false;
-        logging::getMemoryLogger().debug("Manager.unlock() has finished.");
     }
 
 private:
+    /// @brief Simplified type name for a shared pointer to the data proxy.
     using DataProxyPtr=std::shared_ptr<DataProxy<DataType>>;
 
 private:
+    /// @brief Proxy with encapsulated object.
     DataProxyPtr dataProxy;
+    /// @brief If memory management is needed.
     const bool needMemory;
+    /// @brief Flag to account for the locked-unlocked state.
     mutable bool locked = false;
 };
 
+/// @brief Simpified type name for shared pointer to the constant Decision Manager.
 using ConstDecisionManagerPtr=std::shared_ptr<const DataManager<Decision>>;
+/// @brief Simplified type name for shared pointer to Decision Manager.
 using DecisionManagerPtr=std::shared_ptr<DataManager<Decision>>;
+
+/// @brief Simplified type name for shared pointer to constant Action Manager.
 using ConstActionManagerPtr=std::shared_ptr<const DataManager<Action>>;
+/// @brief Simplified type name for shared pointer to Action Manager.
 using ActionManagerPtr=std::shared_ptr<DataManager<Action>>;
+
+/// @brief Simplified type name for shared pointer to constant Input Data Manager.
 using ConstInputManagerPtr=std::shared_ptr<const DataManager<InputData>>;
+/// @brief Simplified type name for shared pointer to Input Data Manager.
 using InputManagerPtr=std::shared_ptr<DataManager<InputData>>;
+
+/// @brief Simplified type name for shared pointer to constant Input Links Manager.
 using ConstLinksManagerPtr=std::shared_ptr<const DataManager<InputLinks>>;
+/// @brief Simplified type name for shared pointer to Input Links Manager.
 using LinksManagerPtr=std::shared_ptr<DataManager<InputLinks>>;
+
+/// @brief Simplified type name for shared pointer to constant Market Data Manager.
 using ConstMarketManagerPtr=std::shared_ptr<const DataManager<MarketData>>;
+/// @brief Simplified type name for shared pointer to Market Data Manager.
 using MarketManagerPtr=std::shared_ptr<DataManager<MarketData>>;
-using IpoptIndexManagerPtr=std::shared_ptr<DataManager<backend::IpoptIndexMap>>;
+
+/// @brief Simplified type name for shared pointer to constant IpoptIndexMap Manager.
 using ConstIpoptIndexManagerPtr=std::shared_ptr<const DataManager<backend::IpoptIndexMap>>;
-using DcpIndexManagerPtr=std::shared_ptr<DataManager<backend::DcpIndexMap>>;
+/// @brief Simplified type name for shared pointer to constant IpoptIndexMap Manager.
+using IpoptIndexManagerPtr=std::shared_ptr<DataManager<backend::IpoptIndexMap>>;
+
+/// @brief Simplified type name for shared pointer to constant DcpIndexMap Manager.
 using ConstDcpIndexManagerPtr=std::shared_ptr<const DataManager<backend::DcpIndexMap>>;
+/// @brief Simplified type name for shared pointer to DcpIndexMap Manager.
+using DcpIndexManagerPtr=std::shared_ptr<DataManager<backend::DcpIndexMap>>;
+
+/// @brief Simplified type name for shared pointer to constant LR Index Manager.
+using ConstLRIndexManagerPtr=std::shared_ptr<
+    const DataManager<backend::LagrangianRelaxationIndex>>;
+/// @brief Simplified type name for shared pointer to LR Index Manager.
 using LRIndexManagerPtr=std::shared_ptr<DataManager<backend::LagrangianRelaxationIndex>>;
-using ConstLRIndexManagerPtr=std::shared_ptr<const DataManager<backend::LagrangianRelaxationIndex>>;
 
 } // namespace sea

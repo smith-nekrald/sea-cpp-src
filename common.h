@@ -6,7 +6,6 @@
  */
 #pragma once
 
-#include "types.h"
 #include "input/input_data.h"
 
 #include <memory>
@@ -54,27 +53,27 @@ enum class BackendType {
 
 /**
  * @brief Retrieves RAM memory usage by the executable.
- * 
+ *
  * @return Amount of RAM used (in bytes).
  */
 std::size_t getMemUsage();
 /**
  * @brief Writes the current time and amount of RAM used (in MB).
- * 
+ *
  * @param[out] Stream to write the information into.
  */
 void printTimeMemNow(std::ostream& ostream);
 
 /**
  * @brief Creates unique string filename.
- * 
+ *
  * @return The created filename.
  */
 std::string makeUniqueFileName();
 
 /**
  * @brief Prints algorithm execution story.
- * 
+ *
  * @param story Story object, maps measurement name into a vector of measurements.
  * @param dirNamePrefix Prefix path to the directory for creating file with export.
  * @param algoId Name of the algorithm.
@@ -83,7 +82,7 @@ void printStory(const std::map<std::string, std::vector<double>>& story,
         std::string dirNamePrefix, std::string algoId);
 /**
  * @brief Prints algorithm execution story into stream.
- * 
+ *
  * @param[in] story Story to print.
  * @param[out] out Stream for printing.
  */
@@ -92,7 +91,7 @@ void printStory(const std::map<std::string, std::vector<double>>& story, std::of
 /**
  * @brief Counts the number of elements in the vector, and the number of elements which are
  * not equal to MAX_INDEX.
- * 
+ *
  * @param The vector to process.
  * @return Pair with two elements. First element is the number of elements not equal to MAX_INDEX,
  * the second element is the total number of elements in vector.
@@ -101,7 +100,7 @@ std::pair<unsigned, unsigned> getUsefulIndexCount(const std::vector<unsigned>& t
 /**
  * @brief Counts the number of elements in the 2d-vector, and the number of elements which are
  * not equal to MAX_INDEX.
- * 
+ *
  * @param The 2d-vector to process.
  * @return Pair with two elements. First element is the number of elements not equal to MAX_INDEX,
  * the second element is the total number of elements in 2d-vector.

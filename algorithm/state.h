@@ -8,7 +8,6 @@
 
 #include <vector>
 
-#include "../types.h"
 #include "../input/input_data.h"
 
 namespace sea {
@@ -38,7 +37,7 @@ struct TimeParameters {
 /**
  * @brief Updates TimeParameters to the beginning of the next time period.
  * This means doneDecison = doneAction = gotPortDecision = false, timeEvent += 1.
- * 
+ *
  * @param parameters The TimeParameters to update.
  */
 void toNextEvent(TimeParameters* parameters);
@@ -51,22 +50,22 @@ struct State {
     /// @brief Amount of accumulated bookings, per itinerary. Denoted b_r in the model.
     std::vector<unsigned> accumulatedBookings;
     /// @brief Amount of taken and shipped TEU. Denoted n_{t,r} and l_{t,r} in the model.
-    std::vector<unsigned> takenOnRoute; 
+    std::vector<unsigned> takenOnRoute;
     /// @brief Amount of TEU currently stored in ports.
     std::vector<int> containersInPorts;
     /// @brief Time parameters structure to track current event.
     TimeParameters timeParameters;
     /// @brief Capacity utilization. Indexed by arcs.
-    std::vector<unsigned> usedCapacity; 
+    std::vector<unsigned> usedCapacity;
     /// @brief Estimated objective, up to the end of time horizon.
     double estimatedObjective;
     /// @brief Estimated decomposed objective, indexed by itinerary. Denoted v_t^r in the model.
-    std::vector<double> itineraryFutureEstimation; 
+    std::vector<double> itineraryFutureEstimation;
 };
 
 /**
  * @brief State initialization.
- * 
+ *
  * @param[in] input The InputData statistical informatino.
  * @param[out] state State to initialize.
  */
@@ -74,7 +73,7 @@ void initState(const InputData& input, State* state);
 
 /**
  * @brief Prints time parameters into stream.
- * 
+ *
  * @tparam Writer Type of the stream.
  * @param[in] timeParameters  Parameters to export.
  * @param[out] writer Stream to write into.
@@ -90,7 +89,7 @@ void printTimeParameters(const TimeParameters& timeParameters, Writer& writer) {
 }
 /**
  * @brief Prints state into stream.
- * 
+ *
  * @tparam Writer Type of the stream.
  * @param[in] state State to export.
  * @param[out] writer Stream to write into.

@@ -62,7 +62,7 @@ DualVariables provideSomeSolution(
 
 void addDualsToSimplex(
         const DualVariables& point,
-        ui32 ncols,
+        unsigned ncols,
         const LagrangianRelaxationBackendConfig& configIter,
         const State& state,
         const ConstLinksManagerPtr& linksManager,
@@ -89,7 +89,7 @@ void doCuttingPlaneOptimization(
     bool ignoreSpot = false,
     DualVariables mean = DualVariables());
 
-ui32 countNonZeroElements(const SubgradientOptimizationParameters& parameters, const double EPS);
+unsigned countNonZeroElements(const SubgradientOptimizationParameters& parameters, const double EPS);
 
 double dualAbsDiffSum(const DualVariables& lhs, const DualVariables& rhs);
 
@@ -126,7 +126,7 @@ std::pair<double, DualVariables> initializeCuttingPlane(
     const vector<double>& columnLower,
     const vector<double>& columnUpper,
     const vector<double>& lhsArray,
-    ui32 ncols,
+    unsigned ncols,
     RandomPack* randomPack,
     std::deque<DualDequeInfo>* dualHistory,
     ClpSimplex& simplexBase,
@@ -143,7 +143,7 @@ void prepareSimplex(
         vector<double>* columnLowerPtr,
         vector<double>* columnUpperPtr,
         vector<double>* lhsArrayPtr,
-        ui32* ncolsPtr);
+        unsigned* ncolsPtr);
 
 } // namespace backend
 } // namespace sea

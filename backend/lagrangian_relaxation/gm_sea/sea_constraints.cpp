@@ -24,7 +24,7 @@ void SeaQDescriptor::initBoundsLR(
 
     columnLower.assign(ncols, -LOCAL_INF);
     columnUpper.assign(ncols, LOCAL_INF);
-    for (ui32 colId = 0; colId < ncols; ++colId) {
+    for (unsigned colId = 0; colId < ncols; ++colId) {
         columnLower[colId] = -LOCAL_INF;
         columnUpper[colId] = LOCAL_INF;
         if (colId < targetLambdaCount) {
@@ -35,7 +35,7 @@ void SeaQDescriptor::initBoundsLR(
 
     for (const auto& event : input.events) {
         if (event.type == EventType::cutoff) {
-            for (ui32 idItinerary : event.relatedItineraryIds) {
+            for (unsigned idItinerary : event.relatedItineraryIds) {
                 const auto& itinerary = input.itineraries[idItinerary];
 
                 const auto& firstArc = input.arcs[itinerary.orderedArcs.front()];
@@ -65,10 +65,10 @@ void SeaQDescriptor::initConstraintsLR(
     size_t nrows = input.itineraries.size();
     rowLower.assign(nrows, -LOCAL_INF);
     rowUpper.assign(nrows, LOCAL_INF);
-    ui32 equationId = 0;
+    unsigned equationId = 0;
     for (const auto& event : input.events) {
         if (event.type == EventType::cutoff) {
-            for (ui32 idItinerary : event.relatedItineraryIds) {
+            for (unsigned idItinerary : event.relatedItineraryIds) {
                 const auto& itinerary = input.itineraries[idItinerary];
                 equationId += 1;
                 const auto& firstArc = input.arcs[itinerary.orderedArcs.front()];

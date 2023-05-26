@@ -7,8 +7,6 @@
  */
 #pragma once
 
-#include "../types.h"
-
 #include <vector>
 #include <set>
 #include <memory>
@@ -111,7 +109,7 @@ struct InputData {
 
     /**
      * @brief Describes vessels and related information.
-     * Briefly, velocity, capacity and trajectory. 
+     * Briefly, velocity, capacity and trajectory.
      */
     struct Vessel {
         /// @brief Indentifier of the vessel.Also serves as index.
@@ -130,7 +128,7 @@ struct InputData {
      */
     struct Arc {
         /**
-         * @brief Enumerates arc types. 
+         * @brief Enumerates arc types.
          */
         enum class Type {
             reload, ///< Reload arc represents moving from one vessel to another.
@@ -138,7 +136,7 @@ struct InputData {
             travel  ///< Travel arc represents transporting on a particular vessel.
         };
         /// @brief Arc identifier. Also serves as arc index.
-        unsigned id;        
+        unsigned id;
         /// @brief The origin node index.
         unsigned fromNode;
         /// @brief The destination node index.
@@ -158,8 +156,8 @@ struct InputData {
         /// @brief The return price. Paid if a client no-shows.
         double returnPrice;
         /// @brief Capacity allocated for the itinerary. This is an approximate value,
-        /// the real capacity utilization may get higher, but is bounded by the capacity of 
-        /// vessels corresponding to travel arcs. 
+        /// the real capacity utilization may get higher, but is bounded by the capacity of
+        /// vessels corresponding to travel arcs.
         double preparedCapacity;
         /// @brief The cost of transporting one non-empty TEU.
         double cost;
@@ -175,12 +173,12 @@ struct InputData {
 
     /**
      * @brief Describes allotment entry. Allotment entry is a part of allotment,
-     * long-term arrangement for a particular itinerary. 
+     * long-term arrangement for a particular itinerary.
      */
     struct AllotmentEntry {
         /// @brief Identifier of allotment entry. Also serves as index.
         unsigned id;
-        /// @brief Identifier of corresponding itinerary. 
+        /// @brief Identifier of corresponding itinerary.
         unsigned itinerary;
         /// @brief Amount of product to transport.
         unsigned productAmount;
@@ -256,13 +254,13 @@ struct InputData {
 
 /**
  * @brief Prints InputData fields.
- * 
+ *
  * @param data The data to print.
  */
 void printInputDataStats(const InputData& data);
 /**
  * @brief Converts event type to human-readable string.
- * 
+ *
  * @param type The type of event.
  * @return Human-readable description of the event type.
  */

@@ -1,3 +1,9 @@
+// Entry point to the program.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include <iostream>
 #include <fstream>
 #include <cassert>
@@ -14,7 +20,7 @@ namespace json = Json;
  * @brief Entry point. Expected application: ./<executable> <path-to-json-with-config>.
  *
  * @param argc The number of arguments in CLI.
- * @param argv The array with CLI arguments
+ * @param argv The array with CLI arguments.
  * @return The program exit code.
  */
 int main(int argc, char* argv[]) {
@@ -24,8 +30,10 @@ int main(int argc, char* argv[]) {
     json::Value configRoot;
     configStream >> configRoot;
 
-    if (configPath[0] != '/') {
-        configPath = std::string("./") + configPath;
+    const char directorySeparator = '/';
+    if (configPath[0] != directorySeparator) {
+        const std::string relativePathPrefix = "./";
+        configPath = relativePathPrefix + configPath;
     }
 
     std::string logPath = configPath.substr(0, configPath.find_last_of("/\\"));

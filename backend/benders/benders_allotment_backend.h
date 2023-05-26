@@ -16,8 +16,8 @@ using CoefficientUInfo = std::pair<UCoefficients, DualVariables>;
 struct BendersAllotmentBackendConfig {
     ConstInputManagerPtr inputManager;
     ConstLinksManagerPtr linksManager;
-    ui32 cbcLogLevel;
-    ui32 cbcFileLogLevel;
+    unsigned cbcLogLevel;
+    unsigned cbcFileLogLevel;
 
     bool needMemory = false;
     double globalPrecision = 1e-5;

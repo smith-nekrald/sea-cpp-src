@@ -48,14 +48,14 @@ SubgradientOptimizationParameters estimateSubgradientWithCppAD(
         bool ignoreSpot,
         double l2RegConstant,
         DualVariables mean) {
-    ui32 dualCount = point.muVariables.size() + point.lambdaVariables.size();
+    unsigned dualCount = point.muVariables.size() + point.lambdaVariables.size();
     vector<double> domain(dualCount);
     vector<AD<double>> dualVector(dualCount);
-    for (ui32 i = 0; i < point.lambdaVariables.size(); ++i) {
+    for (unsigned i = 0; i < point.lambdaVariables.size(); ++i) {
         domain[i] = point.lambdaVariables[i];
         dualVector[i] = point.lambdaVariables[i];
     }
-    for (ui32 i = 0; i < point.muVariables.size(); ++i) {
+    for (unsigned i = 0; i < point.muVariables.size(); ++i) {
         domain[i + point.lambdaVariables.size()] = point.muVariables[i];
         dualVector[i + point.lambdaVariables.size()] = point.muVariables[i];
     }

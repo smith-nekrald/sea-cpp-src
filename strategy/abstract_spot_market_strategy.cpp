@@ -8,7 +8,7 @@
 #include <iostream>
 #include <limits>
 
-const ui32 MAX_INDEX = std::numeric_limits<ui32>::max();
+const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
 const double INF = std::numeric_limits<double>::max();
 
 namespace sea {
@@ -61,14 +61,14 @@ ConstDecisionManagerPtr AbstractSpotMarketStrategy::makeDecision() {
             processCutoff(eventNow);
             timeParameters.doneDecision = true;
             // update state
-            for (ui32 routeId : eventNow.relatedItineraryIds) {
+            for (unsigned routeId : eventNow.relatedItineraryIds) {
                 assert(state.takenOnRoute[routeId] == 0);
                 state.takenOnRoute[routeId] += decision->nonEmptyContainersQ[routeId];
                 state.takenOnRoute[routeId] += decision->emptyContainersZ[routeId];
-                for (ui32 contractId = 0; contractId < input.allotments.size(); ++contractId) {
+                for (unsigned contractId = 0; contractId < input.allotments.size(); ++contractId) {
                     if (links.allotmentItineraryToPlace[contractId].find(routeId) !=
                             links.allotmentItineraryToPlace[contractId].end()) {
-                        ui32 placeIndex = links.allotmentItineraryToPlace[contractId].at(routeId);
+                        unsigned placeIndex = links.allotmentItineraryToPlace[contractId].at(routeId);
                         assert(placeIndex != MAX_INDEX);
                         assert(routeId == decision->allotmentContainersQ[contractId][placeIndex].first);
                         auto Q = decision->allotmentContainersQ[contractId][placeIndex].second;
@@ -128,7 +128,7 @@ void AbstractSpotMarketStrategy::submitAction(ConstActionManagerPtr newActionMan
         assert(!timeParameters.gotPortDecision);
         timeParameters.doneAction = true;
         // update bookings in state
-        for (ui32 i = 0; i < action->bookingsB[eventNow.relativeTime].size(); ++i) {
+        for (unsigned i = 0; i < action->bookingsB[eventNow.relativeTime].size(); ++i) {
             state.accumulatedBookings[i] += action->bookingsB[eventNow.relativeTime][i];
         }
     } else {
@@ -150,12 +150,12 @@ void AbstractSpotMarketStrategy::processArrival(const InputData::Event& event) {
     auto* decision = &decisionManager->getConstData();
     auto& containersInPorts = state.containersInPorts;
     const auto& links = config.linksManager->getConstData();
-    for (ui32 itineraryId : event.relatedItineraryIds) {
+    for (unsigned itineraryId : event.relatedItineraryIds) {
         containersInPorts[port.id] += decision->emptyContainersZ[itineraryId];
         containersInPorts[port.id] += decision->nonEmptyContainersQ[itineraryId];
-        for (ui32 allotmentId : links.allotmentsWithItinerary[itineraryId]) {
+        for (unsigned allotmentId : links.allotmentsWithItinerary[itineraryId]) {
             if (decision->allotmentAccepted[allotmentId]) {
-                ui32 place = links.allotmentItineraryToPlace[allotmentId].at(itineraryId);
+                unsigned place = links.allotmentItineraryToPlace[allotmentId].at(itineraryId);
                 containersInPorts[port.id] += decision->allotmentContainersQ[allotmentId][place].second;
             }
         }
@@ -165,11 +165,11 @@ void AbstractSpotMarketStrategy::processArrival(const InputData::Event& event) {
 
 void AbstractSpotMarketStrategy::processOffhiring(const InputData::Event& event) {
     updateParams(event);
-    ui32 eventTime = event.relativeTime;
+    unsigned eventTime = event.relativeTime;
     auto* decision = decisionManager->get();
     auto& containersInPorts = state.containersInPorts;
     const auto& input = config.inputManager->getConstData();
-    for (ui32 idPort = 0; idPort < input.ports.size(); ++idPort)  {
+    for (unsigned idPort = 0; idPort < input.ports.size(); ++idPort)  {
         if (int(decision->offHiredInPortS[eventTime][idPort]) > containersInPorts[idPort]) {
             decision->offHiredInPortS[eventTime][idPort] = containersInPorts[idPort];
         }

@@ -26,7 +26,7 @@ void serialize(Archive& ar, sea::backend::DcpIndexMap& indexMap)
 namespace sea {
 namespace backend {
 
-const ui32 MAX_INDEX = std::numeric_limits<ui32>::max();
+const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
 
 void dcpCreateIndexMap(const InputData& input, DcpIndexMap& indexMap) {
     initIndexMapWithMaxIndex(input, &indexMap);
@@ -39,9 +39,9 @@ void dcpCreateIndexMap(const InputData& input, DcpIndexMap& indexMap) {
     }
 
     for (const auto& event : input.events) {
-        ui32 relativeTime = event.relativeTime;
+        unsigned relativeTime = event.relativeTime;
         if (event.type == InputData::Event::Type::pricing) {
-            for (ui32 idItinerary : event.relatedItineraryIds) {
+            for (unsigned idItinerary : event.relatedItineraryIds) {
                 indexMap.timeItineraryToZi[relativeTime][idItinerary] = indexMap.demandZCount++;
                 indexMap.variableCount++; // First demandZCount variables are z_i
             }

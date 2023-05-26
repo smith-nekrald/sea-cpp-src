@@ -26,12 +26,12 @@ DecisionManagerPtr NullAllotmentStrategy::provideAllotments() {
 
     auto& decision = result->getData();
     fillZero<bool>(decision.allotmentAccepted);
-    fillZero<ui32>(decision.hiredY);
-    fillZero<ui32>(decision.nonEmptyContainersQ);
+    fillZero<unsigned>(decision.hiredY);
+    fillZero<unsigned>(decision.nonEmptyContainersQ);
     for (auto& subvector : decision.offHiredInPortS) {
-        fillZero<ui32>(subvector);
+        fillZero<unsigned>(subvector);
     }
-    fillZero<ui32>(decision.emptyContainersZ);
+    fillZero<unsigned>(decision.emptyContainersZ);
 
     for (auto& subvector : decision.prices) {
         for (auto& entry : subvector) {

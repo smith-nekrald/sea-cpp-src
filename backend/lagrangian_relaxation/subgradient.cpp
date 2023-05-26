@@ -34,10 +34,10 @@ SubgradientOptimizationParameters computeSubgradientInPoint(
             if (event.type == EventType::cutoff) {
                 if (event.relativeTime >= timeParameters.timeEvent) {
                     const auto& basedArc = input.arcs[event.basedArc.value()];
-                    for (ui32 itineraryId : event.relatedItineraryIds) {
+                    for (unsigned itineraryId : event.relatedItineraryIds) {
                         const auto& itinerary = input.itineraries[itineraryId];
                         double lambdaSum = 0.;
-                        for (ui32 idArc : itinerary.orderedArcs) {
+                        for (unsigned idArc : itinerary.orderedArcs) {
                             const auto& arc = input.arcs[idArc];
                             if (arc.type == ArcType::travel) {
                                 lambdaSum += point.lambdaVariables[
@@ -57,10 +57,10 @@ SubgradientOptimizationParameters computeSubgradientInPoint(
 
                         double mu_r = point.muVariables[itinerary.id];
 
-                        for (ui32 allotmentId : links.allotmentsWithItinerary[itinerary.id]) {
+                        for (unsigned allotmentId : links.allotmentsWithItinerary[itinerary.id]) {
                             if (coeffU != nullptr || decision->allotmentAccepted[allotmentId]) {
                                 const auto& allotment = input.allotments[allotmentId];
-                                ui32 placeIndex = links.allotmentItineraryToPlace.at(
+                                unsigned placeIndex = links.allotmentItineraryToPlace.at(
                                         allotment.id).at(itinerary.id);
                                 assert(decision->allotmentContainersQ[
                                         allotmentId][placeIndex].first == itinerary.id);
@@ -69,7 +69,7 @@ SubgradientOptimizationParameters computeSubgradientInPoint(
                                 assert(decision->allotmentAccepted[allotmentId]
                                         || !decision->allotmentContainersQ[
                                         allotmentId][placeIndex].second);
-                                ui32 F_r_i = decision->allotmentContainersQ[
+                                unsigned F_r_i = decision->allotmentContainersQ[
                                     allotmentId][placeIndex].second;
                                 double qri = qr;
                                 const auto& entry = input.allotmentEntries[
@@ -94,7 +94,7 @@ SubgradientOptimizationParameters computeSubgradientInPoint(
         }
 
         coeffU->freeMember = answer.functionValue;
-        for (ui32 idAllotment = 0; idAllotment < decision->allotmentAccepted.size(); ++idAllotment) {
+        for (unsigned idAllotment = 0; idAllotment < decision->allotmentAccepted.size(); ++idAllotment) {
             if (decision->allotmentAccepted[idAllotment]) {
                 coeffU->freeMember -= coeffU->coefficients[idAllotment];
             }

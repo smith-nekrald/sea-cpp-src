@@ -43,11 +43,11 @@ void BendersAllotmentBackend::addDuals(const DualVariables& duals) {
 }
 
 inline void prepareBestUSolution(const vector<CoefficientUInfo>& duals,
-    double* lastSolution, ui32 size, double precision = 1e-5) {
+    double* lastSolution, unsigned size, double precision = 1e-5) {
     double y = COIN_DBL_MAX;
     for (const auto & coeffUInfo : duals) {
         double rhs = 0;
-        for (ui32 u = 0; u < coeffUInfo.first.coefficients.size(); ++u) {
+        for (unsigned u = 0; u < coeffUInfo.first.coefficients.size(); ++u) {
             rhs += lastSolution[u] * coeffUInfo.first.coefficients[u];
         }
         rhs += coeffUInfo.first.freeMember;
@@ -96,16 +96,16 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
     vector<int> indices(matrixElementsCount);
     vector<double> matrix(matrixElementsCount);   // for constraints
 
-    ui32 matrixPos = 0;
+    unsigned matrixPos = 0;
     // assign u coeffs
-    for (ui32 u = 0; u < input.allotments.size(); ++u) {
+    for (unsigned u = 0; u < input.allotments.size(); ++u) {
         starts[u] = matrixPos;
 
-        for (ui32 i = 0; i < preparedDuals.size(); ++i) {
+        for (unsigned i = 0; i < preparedDuals.size(); ++i) {
             indices[matrixPos] = i;
             matrix[matrixPos++] = -preparedDuals[i].first.coefficients[u];
         }
-        for (ui32 groupId : links.allotmentToGroups[u]) {
+        for (unsigned groupId : links.allotmentToGroups[u]) {
             indices[matrixPos] = preparedDuals.size() + groupId;
             matrix[matrixPos++] = 1;
         }
@@ -113,7 +113,7 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
 
     // assign y coeffs
     starts[variablesCount - 1] = matrixPos;
-    for (ui32 i = 0; i < preparedDuals.size(); ++i) {
+    for (unsigned i = 0; i < preparedDuals.size(); ++i) {
         indices[matrixPos] = i;
         matrix[matrixPos++] = 1;
     }
@@ -125,11 +125,11 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
     vector<double> constraintLowerBound(constraintsCount);
 
     //assign constraints
-    for (ui32 i = 0; i < preparedDuals.size(); ++i) {
+    for (unsigned i = 0; i < preparedDuals.size(); ++i) {
         constraintLowerBound[i] = -COIN_DBL_MAX;
         constraintUpperBound[i] = preparedDuals[i].first.freeMember;
     }
-    for (ui32 i = 0; i < input.allotmentGroups.size(); ++i) {
+    for (unsigned i = 0; i < input.allotmentGroups.size(); ++i) {
         constraintLowerBound[preparedDuals.size() + i] = 0;
         constraintUpperBound[preparedDuals.size() + i] = 1;
     }
@@ -138,7 +138,7 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
     vector<double> varLowerBound(variablesCount);
 
     // u
-    for (ui32 u = 0; u < input.allotments.size(); ++u) {
+    for (unsigned u = 0; u < input.allotments.size(); ++u) {
         varLowerBound[u] = 0;
         varUpperBound[u] = 1;
     }
@@ -148,7 +148,7 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
 
     vector<double> objective(variablesCount);
     // u
-    for (ui32 u = 0; u < input.allotments.size(); ++u) {
+    for (unsigned u = 0; u < input.allotments.size(); ++u) {
         objective[u] = 0;
     }
     // y -> max
@@ -164,14 +164,14 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
 
     solver.setObjSense(-1); // -> max
 
-    for (ui32 u = 0; u < input.allotments.size(); ++u) {
+    for (unsigned u = 0; u < input.allotments.size(); ++u) {
         solver.setInteger(u);
     }
 
     // get model
     // Previously was (seems bad -- gives exception):    auto model = solver.getModelPtr();
     CbcModel model(solver);
-    ui32 cbcLogLevel = config.cbcLogLevel;
+    unsigned cbcLogLevel = config.cbcLogLevel;
     model.setLogLevel(cbcLogLevel);
 
     // set previous solution
@@ -214,9 +214,9 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
     // save solution
     CoinDisjointCopyN(solution, variablesCount, lastSolution.data());
     vector<bool> response(input.allotments.size(), false);
-    for (ui32 u = 0; u < input.allotments.size(); ++u) {
-        lastSolution[u] =  ui32(round(solution[u]));
-        response[u] = ui32(round(solution[u]));
+    for (unsigned u = 0; u < input.allotments.size(); ++u) {
+        lastSolution[u] =  unsigned(round(solution[u]));
+        response[u] = unsigned(round(solution[u]));
     }
     return response;
 }

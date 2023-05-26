@@ -7,7 +7,7 @@ namespace backend {
 double vectorAbsDiffSum(const std::vector<double>& lhs, const std::vector<double>& rhs) {
     assert(lhs.size() == rhs.size());
     double result = 0;
-    for (ui32 index = 0; index < lhs.size(); ++index) {
+    for (unsigned index = 0; index < lhs.size(); ++index) {
         result += fabsl(lhs[index] - rhs[index]);
     }
     return result;
@@ -40,14 +40,14 @@ double dualL1Norm(const DualVariables& duals) {
     return norm;
 }
 
-ui32 countNonZeroElements(const SubgradientOptimizationParameters& parameters, const double EPS) {
-    ui32 result = 0;
-    for (ui32 idLambda = 0; idLambda < parameters.lambdaSubgradient.size(); ++idLambda) {
+unsigned countNonZeroElements(const SubgradientOptimizationParameters& parameters, const double EPS) {
+    unsigned result = 0;
+    for (unsigned idLambda = 0; idLambda < parameters.lambdaSubgradient.size(); ++idLambda) {
         if (fabs(parameters.lambdaSubgradient[idLambda]) > EPS) {
             ++result;
         }
     }
-    for (ui32 idMu = 0; idMu < parameters.muSubgradient.size(); ++idMu) {
+    for (unsigned idMu = 0; idMu < parameters.muSubgradient.size(); ++idMu) {
         if (fabs(parameters.muSubgradient[idMu]) > EPS) {
             ++result;
         }

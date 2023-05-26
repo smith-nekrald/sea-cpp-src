@@ -100,7 +100,7 @@ DecisionManagerPtr BendersLRAllotmentStrategy::provideAllotments() {
         }
         if (useVariableDiff) {
             stopVariables = true;
-            for (ui32 allotmentId = 0;
+            for (unsigned allotmentId = 0;
                     allotmentId < lastGroup.allotmentSelection.size(); ++allotmentId) {
                 if (lastGroup.allotmentSelection[allotmentId] !=
                         currentGroup.allotmentSelection[allotmentId]) {

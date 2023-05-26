@@ -43,10 +43,10 @@ void IpoptSpotMarketStrategy::processCutoff(const InputData::Event& event) {
 
     const auto& arc = input.arcs[event.basedArc.value()];
 
-    ui32 portId = input.nodes[arc.fromNode].portId;
-    for (ui32 idItinerary : event.relatedItineraryIds) {
+    unsigned portId = input.nodes[arc.fromNode].portId;
+    for (unsigned idItinerary : event.relatedItineraryIds) {
         // Processing Q_r
-        ui32 shownCountSpot = action->spotMarketDemandN[idItinerary];
+        unsigned shownCountSpot = action->spotMarketDemandN[idItinerary];
         auto& Q_value = decision->nonEmptyContainersQ[idItinerary];
         Q_value = std::min(Q_value, shownCountSpot);
         state.containersInPorts[portId] -= Q_value;
@@ -55,10 +55,10 @@ void IpoptSpotMarketStrategy::processCutoff(const InputData::Event& event) {
         state.containersInPorts[portId] -= Z_value;
 
         // Processing allotments
-        for (ui32 idAllotment : links.allotmentsWithItinerary[idItinerary]) {
+        for (unsigned idAllotment : links.allotmentsWithItinerary[idItinerary]) {
             if (decision->allotmentAccepted[idAllotment]) {
-                ui32 placeIndex = links.allotmentItineraryToPlace.at(idAllotment).at(idItinerary);
-                ui32 shownAllotment = action->allotmentDemandN[idAllotment][placeIndex].second;
+                unsigned placeIndex = links.allotmentItineraryToPlace.at(idAllotment).at(idItinerary);
+                unsigned shownAllotment = action->allotmentDemandN[idAllotment][placeIndex].second;
                 assert(action->allotmentDemandN[idAllotment][placeIndex].first == idItinerary);
                 assert(decision->allotmentContainersQ[idAllotment][placeIndex].first
                         == idItinerary);

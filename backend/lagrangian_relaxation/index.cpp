@@ -25,7 +25,7 @@ void serialize(Archive& ar, sea::backend::LagrangianRelaxationIndex& index)
 } // namespace cereal
 
 
-const ui32 MAX_INDEX = std::numeric_limits<ui32>::max();
+const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
 const double INF = std::numeric_limits<double>::max();
 
 
@@ -38,7 +38,7 @@ using ArcType = InputData::Arc::Type;
 void initLagrangianRelaxationIndex(const InputLinks& links,
         const InputData& input,
         LagrangianRelaxationIndex* index) {
-    ui32 arcCount = input.arcs.size();
+    unsigned arcCount = input.arcs.size();
     index->lambdaCount = 0;
     index->muCount = links.allotmentsWithItinerary.size();
     index->arcToLambdaIndex.resize(arcCount, MAX_INDEX);

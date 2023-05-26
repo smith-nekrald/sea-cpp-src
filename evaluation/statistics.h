@@ -7,7 +7,6 @@
  */
 #pragma once
 
-#include "../types.h"
 #include "estimator.h"
 
 #include <fstream>
@@ -41,17 +40,17 @@ struct Statistics {
     /// @brief The number of times an allotment TEU was transported over some itinerary.
     unsigned allotmentContainerCount = 0;
 
-    /// @brief Profit over the trajectory. 
+    /// @brief Profit over the trajectory.
     /// fullProfit = spotProfit + allotmentProfit + containerProfit + emptyContainerProfit
-    double fullProfit = 0.0; 
+    double fullProfit = 0.0;
 
-    /// @brief Estimation for the profit upper bound. 
+    /// @brief Estimation for the profit upper bound.
     RevenueEstimate estimation = {0, 0};
 };
 
 /**
- * @brief Prints statistics into a stream. 
- * 
+ * @brief Prints statistics into a stream.
+ *
  * @param[in] stats Statistics to print.
  * @param[out] out Stream to write the statistics into.
  */

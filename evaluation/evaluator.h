@@ -11,7 +11,6 @@
 #include "../algorithm/ialgorithm.h"
 #include "../manager.h"
 #include "../common.h"
-#include "../types.h"
 
 namespace sea {
 
@@ -24,7 +23,7 @@ struct EvaluatorConfig {
     /// @brief Manager with InputLinks structure.
     ConstLinksManagerPtr linksManager;
     /// @brief If True, memory management tricks are needed.
-    std::experimental::optional<bool> needMemory; 
+    std::experimental::optional<bool> needMemory;
     /// @brief If True, Evaluator is configured to keep evaluation history.
     std::experimental::optional<bool> keepStory;
 };
@@ -37,22 +36,22 @@ class Evaluator {
 public:
     /**
      * @brief Constructor for a new Evaluator.
-     * 
+     *
      * @param config Evaluator configuration.
      */
     explicit Evaluator(const EvaluatorConfig& config);
     /**
      * @brief Calculates profit obtained by algorithm algo on a trajectory market.
-     * 
+     *
      * @param algo The algorithm to calculate.
      * @param market The market realization trajectory to process.
      * @return Evaluation statistics.
      */
     Statistics calc(algo::IAlgorithmPtr algo, ConstMarketManagerPtr market);
     /**
-     * @brief Getter for algorithm story - the history of measurements filled by the algorithm. 
+     * @brief Getter for algorithm story - the history of measurements filled by the algorithm.
      * This history is sometimes partially filled by evaluator, e.g. with current events.
-     * 
+     *
      * @return The algorithm information history.
      */
     std::map<std::string, std::vector<double>> getAlgoStory() const {
@@ -60,7 +59,7 @@ public:
     }
     /**
      * @brief Getter for the evaluation history - the history of measurements filled by evaluator.
-     * 
+     *
      * @return The evaluation history.
      */
     std::map<std::string, std::vector<double>> getEvalStory() const {
@@ -74,20 +73,20 @@ private:
     void processAllotmentDecision();
     /**
      * @brief Processes cutoff decision (after the algorithm makes that decision).
-     * 
+     *
      * @param event The corresponding current cutoff event.
      */
     void processCutoffDecision(const InputData::Event& event);
     /**
      * @brief Processes arrival event.
-     * 
+     *
      * @param event The corresponding current arrival event.
      */
     void processArrival(const InputData::Event& event);
     /**
      * @brief Updates amount of containers in ports, which changes due to hiring or off-hiring.
      * Accounts for corresponding hiring/offhiring/storage costs in ports.
-     * 
+     *
      * @param durationToNextPeriod The duration to store before the next event is considered.
      */
     void updateContainersInPorts(double durationToNextPeriod);
@@ -99,15 +98,15 @@ private:
 
     /**
      * @brief Computes pricing action when pricing event happens.
-     * Pricing action is a response in demand for the pricing decision, etc. 
-     * 
+     * Pricing action is a response in demand for the pricing decision, etc.
+     *
      * @param event The corresponding pricing event.
      */
     void makePricingAction(const InputData::Event& event);
     /**
      * @brief Computes cutoff action, when cutoff event happens. This action informs
      * on show counts and configuration.
-     * 
+     *
      * @param event The corresponding cutoff event.
      */
     void makeCutoffAction(const InputData::Event& event);
@@ -121,7 +120,7 @@ private:
 private:
     /**
      * @brief Logs that evaluator started processing event.
-     * 
+     *
      * @param event The event that gets processed.
      */
     void logEvaluatorLaunched(const InputData::Event& event) const;
@@ -131,7 +130,7 @@ private:
     void logAllotmentDecision() const;
     /**
      * @brief Logs profits (spot profit, allotment profit, full profit). Called after
-     * the evaluation is finished. 
+     * the evaluation is finished.
      */
     void logProfits() const;
     /**
@@ -140,7 +139,7 @@ private:
     void logUsedCapacity() const;
     /**
      * @brief Logs spot profit.
-     * 
+     *
      * @param event The current event.
      */
     void logSpotProfitAfterLastEvent(const InputData::Event& event) const;
@@ -163,13 +162,13 @@ private:
 
     /**
      * @brief Logs that evaluator has started making pricing action.
-     * 
+     *
      * @param event The corresponding pricing event.
      */
     void logAboutMakingPricingActionForEvent(const InputData::Event& event) const;
     /**
      * @brief Logs bookings and revenue when processing pricing.
-     * 
+     *
      * @param itinerary The corresponding itinerary.
      * @param price The set price.
      * @param bookings The collected bookings.
@@ -178,19 +177,19 @@ private:
 
     /**
      * @brief Logs that evaluator have entered makeCutoffAction method, and some stats.
-     * 
+     *
      * @param event The corresponding cutoff event.
      */
     void logStartMakeCutoffAction(const InputData::Event& event) const;
     /**
      * @brief Logs per-itinerary information while executing makeCutoffAction.
-     * 
+     *
      * @param itineraryId The itinerary index.
      */
     void logItineraryInfoInMakeCutoffAction(unsigned itineraryId) const;
     /**
      * @brief Logs per-allotment information while executing makeCutoffAction.
-     * 
+     *
      * @param showAmountN The amount shown per corresponding allotment entry.
      * @param productAmount The amount booked per corresponding allotment entry.
      */
@@ -202,7 +201,7 @@ private:
 
     /**
      * @brief Logs that evaluator has started executing processCutoffDecision, and some stats.
-     * 
+     *
      * @param event The corresponding cutoff event.
      * @param hiredAmount The amount TEU hired in the corresponding port.
      * @param paidForHiring The amount paid for hiring.
@@ -211,7 +210,7 @@ private:
             double paidForHiring) const;
     /**
      * @brief Logs spot-itinerary information during executing processCutoffDecision.
-     * 
+     *
      * @param itineraryId The considered itinerary index.
      * @param takenContainers Amount of taken containers.
      * @param emptyContainers Amount of emtpy containers.
@@ -238,7 +237,7 @@ private:
     /// @brief The set of selected allotments.
     vector<bool> selectedAllotments;
 
-    /// @brief Itineraries that end in particular arc. 
+    /// @brief Itineraries that end in particular arc.
     /// Indexation:[arc-id] -> vector with ids of itineraries that end in this arc.
     std::map<unsigned, std::vector<unsigned>> itinerariesEndInArc;
 

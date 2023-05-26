@@ -55,12 +55,12 @@ inline Type computeFunctionValue(const InputData& input,
     // Adding lambda * W_b to objective.
     Type scaledCapacitySum = 0.;
     const auto& theNextEvent = input.events[timeParameters.timeEvent];
-    for (ui32 idArc = 0; idArc < input.arcs.size(); ++idArc) {
+    for (unsigned idArc = 0; idArc < input.arcs.size(); ++idArc) {
         const auto& arc = input.arcs[idArc];
         Type arcFromStartTime = input.nodes[arc.fromNode].realTime;
         if (arc.type == ArcType::travel && arcFromStartTime >= theNextEvent.realTime) {
             const auto& vessel = input.vessels[arc.vesselId.value()];
-            ui32 place = magicIndex.arcToLambdaIndex.at(idArc);
+            unsigned place = magicIndex.arcToLambdaIndex.at(idArc);
             Type scaledCapacity = vessel.capacity * point.lambdaVariables[place];
             scaledCapacitySum += scaledCapacity;
         }
@@ -70,15 +70,15 @@ inline Type computeFunctionValue(const InputData& input,
         if (event.type == EventType::cutoff) {
             // Scenario on events that have already passed.
             if (event.relativeTime < timeParameters.timeEvent) {
-                for (ui32 itineraryId : event.relatedItineraryIds) {
+                for (unsigned itineraryId : event.relatedItineraryIds) {
                     const auto& itinerary = input.itineraries[itineraryId];
-                    for (ui32 idArc : itinerary.orderedArcs) {
+                    for (unsigned idArc : itinerary.orderedArcs) {
                         const auto& arc = input.arcs[idArc];
                         if (arc.type == ArcType::travel) {
                             const auto& arcNode = input.nodes[arc.fromNode];
                             double timeArc = arcNode.realTime;
                             if (timeArc >= theNextEvent.realTime) {
-                                ui32 place = magicIndex.arcToLambdaIndex.at(idArc);
+                                unsigned place = magicIndex.arcToLambdaIndex.at(idArc);
                                 Type taken = state.takenOnRoute[itinerary.id];
                                 functionValue -= taken * point.lambdaVariables[place];
                             }
@@ -88,11 +88,11 @@ inline Type computeFunctionValue(const InputData& input,
             // Scenario for cutoffs that have not happened yet.
             } else {
                 const auto& basedArc = input.arcs[event.basedArc.value()];
-                for (ui32 itineraryId : event.relatedItineraryIds) {
+                for (unsigned itineraryId : event.relatedItineraryIds) {
                     const auto& itinerary = input.itineraries[itineraryId];
-                    ui32 F_r = decision->nonEmptyContainersQ[itinerary.id] + decision->emptyContainersZ[itinerary.id];
+                    unsigned F_r = decision->nonEmptyContainersQ[itinerary.id] + decision->emptyContainersZ[itinerary.id];
                     Type lambdaSum = 0.;
-                    for (ui32 idArc : itinerary.orderedArcs) {
+                    for (unsigned idArc : itinerary.orderedArcs) {
                         const auto& arc = input.arcs[idArc];
                         if (arc.type == ArcType::travel) {
                             lambdaSum += point.lambdaVariables[magicIndex.arcToLambdaIndex.at(idArc)];
@@ -117,8 +117,8 @@ inline Type computeFunctionValue(const InputData& input,
                     functionValue += yr * state.accumulatedBookings[itinerary.id];
 
                     const auto& demandPlaces = links.demandTimesForItinerary[itinerary.id];
-                    pair<ui32, ui32> targetPair = std::make_pair(
-                            timeParameters.timeEvent, ui32(0));
+                    pair<unsigned, unsigned> targetPair = std::make_pair(
+                            timeParameters.timeEvent, unsigned(0));
                     const auto& placeBegin = std::lower_bound(
                             demandPlaces.begin(), demandPlaces.end(), targetPair);
 
@@ -180,10 +180,10 @@ inline Type computeFunctionValue(const InputData& input,
 
                     functionValue += F_r * mu_r;
 
-                    for (ui32 allotmentId : links.allotmentsWithItinerary[itinerary.id]) {
+                    for (unsigned allotmentId : links.allotmentsWithItinerary[itinerary.id]) {
                         if (decision->allotmentAccepted[allotmentId]) {
                             const auto& allotment = input.allotments[allotmentId];
-                            ui32 placeIndex = links.allotmentItineraryToPlace.at(
+                            unsigned placeIndex = links.allotmentItineraryToPlace.at(
                                     allotment.id).at(itinerary.id);
                             assert(decision->allotmentContainersQ[
                                     allotmentId][placeIndex].first == itinerary.id);
@@ -192,7 +192,7 @@ inline Type computeFunctionValue(const InputData& input,
                             assert(decision->allotmentAccepted[allotmentId]
                                     || !decision->allotmentContainersQ[
                                     allotmentId][placeIndex].second);
-                            ui32 F_r_i = decision->allotmentContainersQ[
+                            unsigned F_r_i = decision->allotmentContainersQ[
                                 allotmentId][placeIndex].second;
                             Type qri = qr;
                             const auto& entry = input.allotmentEntries[
@@ -230,15 +230,15 @@ inline Type computeFunctionValue(const InputData& input,
             if (event.relativeTime >= timeParameters.timeEvent) {
                 paidForContainers += port.hiringCost * decision->hiredY[arc.id];
             }
-            for (ui32 idItinerary : event.relatedItineraryIds) {
+            for (unsigned idItinerary : event.relatedItineraryIds) {
                 const auto& itinerary = input.itineraries[idItinerary];
                 const auto& lastArc = input.arcs[itinerary.orderedArcs.back()];
-                ui32 takenOnItinerary = 0;
+                unsigned takenOnItinerary = 0;
                 takenOnItinerary += decision->nonEmptyContainersQ[itinerary.id];
                 takenOnItinerary += decision->emptyContainersZ[itinerary.id];
-                for (ui32 idAllotment : links.allotmentsWithItinerary[itinerary.id]) {
+                for (unsigned idAllotment : links.allotmentsWithItinerary[itinerary.id]) {
                     if (decision->allotmentAccepted[idAllotment]) {
-                        ui32 place = links.allotmentItineraryToPlace.at(
+                        unsigned place = links.allotmentItineraryToPlace.at(
                                 idAllotment).at(itinerary.id);
                         takenOnItinerary += decision->allotmentContainersQ[
                             idAllotment][place].second;
@@ -259,7 +259,7 @@ inline Type computeFunctionValue(const InputData& input,
             const auto& node = input.nodes[event.basedNode.value()];
             const auto& port = input.ports[node.portId];
             localContainersInPorts[node.portId] += backByArc[event.basedArc.value()];
-            ui32 amount = decision->offHiredInPortS.at(event.relativeTime).at(port.id);
+            unsigned amount = decision->offHiredInPortS.at(event.relativeTime).at(port.id);
             if (localContainersInPorts[node.portId] < int(amount)) {
                 amount = localContainersInPorts[node.portId];
             }

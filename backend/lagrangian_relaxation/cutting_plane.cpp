@@ -9,7 +9,7 @@
 namespace sea {
 namespace backend {
 
-const ui32 MAX_INDEX = std::numeric_limits<ui32>::max();
+const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
 
 using ArcType=InputData::Arc::Type;
 using EventType=InputData::Event::Type;
@@ -90,14 +90,14 @@ bool checkIfFeasible(
     assert(variables.muVariables.size() == input.itineraries.size());
     const auto& magicIndex = indexManager->getConstData();
 
-    ui32 lambdaCount = variables.lambdaVariables.size();
+    unsigned lambdaCount = variables.lambdaVariables.size();
     bool ok = true;
-    for (ui32 idLambda = 0; ok && (idLambda < lambdaCount); ++idLambda) {
+    for (unsigned idLambda = 0; ok && (idLambda < lambdaCount); ++idLambda) {
         auto lambdaValue = variables.lambdaVariables[idLambda];
         ok = ok && (lambdaValue + LOCAL_EPS >= boundLower[idLambda])
             && (lambdaValue <= LOCAL_EPS + boundUpper[idLambda]);
     }
-    for (ui32 idItinerary = 0; ok && (idItinerary < input.itineraries.size()); ++idItinerary) {
+    for (unsigned idItinerary = 0; ok && (idItinerary < input.itineraries.size()); ++idItinerary) {
         ok = ok && (variables.muVariables[idItinerary] + LOCAL_EPS
                 >= boundLower[idItinerary + lambdaCount]);
 
@@ -120,10 +120,10 @@ bool checkIfFeasible(
 
         const auto& itinerary = input.itineraries[idItinerary];
         double sum = variables.muVariables[idItinerary];
-        for (ui32 idArc : itinerary.orderedArcs) {
+        for (unsigned idArc : itinerary.orderedArcs) {
             const auto& arc = input.arcs[idArc];
             if (arc.type == ArcType::travel) {
-                ui32 place = magicIndex.arcToLambdaIndex[idArc];
+                unsigned place = magicIndex.arcToLambdaIndex[idArc];
                 sum += variables.lambdaVariables[place];
             }
         }
@@ -145,8 +145,8 @@ void processMinValue(const std::vector<double> lower,
                      const std::vector<double> upper,
                      DualVariables* target) {
     double minLowerValue = COIN_DBL_MAX;
-    for (ui32 idMu = 0; idMu < target->muVariables.size(); ++idMu) {
-        ui32 place = idMu + target->lambdaVariables.size();
+    for (unsigned idMu = 0; idMu < target->muVariables.size(); ++idMu) {
+        unsigned place = idMu + target->lambdaVariables.size();
         minLowerValue = std::min(minLowerValue, lower[place]);
         target->muVariables[idMu] = lower[place];
     }
@@ -160,8 +160,8 @@ void processAvgValue(
         const std::vector<double> upper,
         DualVariables* target) {
     double minAvgValue = COIN_DBL_MAX;
-    for (ui32 idMu = 0; idMu < target->muVariables.size(); ++idMu) {
-        ui32 place = idMu + target->lambdaVariables.size();
+    for (unsigned idMu = 0; idMu < target->muVariables.size(); ++idMu) {
+        unsigned place = idMu + target->lambdaVariables.size();
         minAvgValue = std::min(minAvgValue, 0.5 * (lower[place] + upper[place]));
         target->muVariables[idMu] = lower[place];
     }
@@ -207,33 +207,33 @@ DualVariables provideSomeSolution(
     transformAdd(bernoullyDist, generator, lambdaAdd, &result);
 
     if (initType == RandomInitType::RANDOM_NORMAL) {
-        for (ui32 idMu = 0; idMu < result.muVariables.size(); ++idMu) {
-            ui32 place = idMu + result.lambdaVariables.size();
+        for (unsigned idMu = 0; idMu < result.muVariables.size(); ++idMu) {
+            unsigned place = idMu + result.lambdaVariables.size();
             double shift = fabsl(normalDist(generator));
             result.muVariables[idMu] += shift;
             result.muVariables[idMu] = std::min(result.muVariables[idMu], boundUpper[place]);
         }
-        for (ui32 idLambda = 0; idLambda < result.lambdaVariables.size(); ++idLambda) {
+        for (unsigned idLambda = 0; idLambda < result.lambdaVariables.size(); ++idLambda) {
             double shift = fabsl(normalDist(generator));
             result.lambdaVariables[idLambda] += shift;
         }
 
     } else if (initType == RandomInitType::RANDOM_UNIFORM) {
-        for (ui32 idMu = 0; idMu < result.muVariables.size(); ++idMu) {
-            ui32 place = idMu + result.lambdaVariables.size();
+        for (unsigned idMu = 0; idMu < result.muVariables.size(); ++idMu) {
+            unsigned place = idMu + result.lambdaVariables.size();
             double shift = fabsl(uniformDist(generator));
             result.muVariables[idMu] += shift;
             result.muVariables[idMu] = std::min(result.muVariables[idMu], boundUpper[place]);
             result.muVariables[idMu] = std::max(result.muVariables[idMu], boundLower[place]);
         }
-        for (ui32 idLambda = 0; idLambda < result.lambdaVariables.size(); ++idLambda) {
+        for (unsigned idLambda = 0; idLambda < result.lambdaVariables.size(); ++idLambda) {
             double shift = fabsl(uniformDist(generator));
             result.lambdaVariables[idLambda] += shift;
         }
     } else {
         throw std::logic_error("Bad Init Strategy Type");
     }
-    for (ui32 idLambda = 0; idLambda < result.lambdaVariables.size(); ++idLambda) {
+    for (unsigned idLambda = 0; idLambda < result.lambdaVariables.size(); ++idLambda) {
         result.lambdaVariables[idLambda] = std::min(
                 boundUpper[idLambda], result.lambdaVariables[idLambda]);
         result.lambdaVariables[idLambda] = std::max(
@@ -245,7 +245,7 @@ DualVariables provideSomeSolution(
 
 void addDualsToSimplex(
         const DualVariables& point,
-        ui32 ncols,
+        unsigned ncols,
         const LagrangianRelaxationBackendConfig& configIter,
         const State& state,
         const ConstLinksManagerPtr& linksManager,
@@ -260,8 +260,8 @@ void addDualsToSimplex(
     const double LOCAL_INF = COIN_DBL_MAX;
     const double LOCAL_EPS = configIter.zeroIgnorePrecision.value();
 
-    ui32 targetLambdaCount = point.lambdaVariables.size();
-    ui32 targetMuCount = point.muVariables.size();
+    unsigned targetLambdaCount = point.lambdaVariables.size();
+    unsigned targetMuCount = point.muVariables.size();
 
     auto current = computeSubgradientInPoint(point, state,
             linksManager, inputManager, indexManager,
@@ -269,12 +269,12 @@ void addDualsToSimplex(
     if (regObjectiveValue != nullptr) {
         *regObjectiveValue = current.functionValue;
     }
-    ui32 rowSize = countNonZeroElements(current, LOCAL_EPS) + 1;
+    unsigned rowSize = countNonZeroElements(current, LOCAL_EPS) + 1;
     vector<int> rowIndex(rowSize, 0);
     vector<double> rowValue(rowSize, 0);
-    ui32 nextPlace = 0;
+    unsigned nextPlace = 0;
     double rowLower = -LOCAL_INF, rowUpper = -current.functionValue;
-    for (ui32 idLambda = 0; idLambda < targetLambdaCount; ++idLambda) {
+    for (unsigned idLambda = 0; idLambda < targetLambdaCount; ++idLambda) {
         if (fabs(current.lambdaSubgradient[idLambda]) > LOCAL_EPS) {
             rowIndex[nextPlace] = idLambda;
             rowValue[nextPlace++] = current.lambdaSubgradient[idLambda];
@@ -282,7 +282,7 @@ void addDualsToSimplex(
                 point.lambdaVariables[idLambda];
         }
     }
-    for (ui32 idMu = 0; idMu < targetMuCount; ++idMu) {
+    for (unsigned idMu = 0; idMu < targetMuCount; ++idMu) {
         if (fabs(current.muSubgradient[idMu]) > LOCAL_EPS) {
             rowIndex[nextPlace] = targetLambdaCount + idMu;
             rowValue[nextPlace++] = current.muSubgradient[idMu];
@@ -311,7 +311,7 @@ void prepareSimplex(
         vector<double>* columnLowerPtr,
         vector<double>* columnUpperPtr,
         vector<double>* lhsArrayPtr,
-        ui32* ncolsPtr) {
+        unsigned* ncolsPtr) {
 
     auto& dualVariables = *dualPtr;
     auto& simplexBase =*simplexBasePtr;
@@ -324,13 +324,13 @@ void prepareSimplex(
 
     // Initialize variables required to solver.
     // Convention: first go lambdaVariables, then muVariables, then artificial variable.
-    ui32 targetLambdaCount = dualVariables.lambdaVariables.size();
-    ui32 targetMuCount = dualVariables.muVariables.size();
+    unsigned targetLambdaCount = dualVariables.lambdaVariables.size();
+    unsigned targetMuCount = dualVariables.muVariables.size();
 
     assert(targetMuCount == input.itineraries.size());
-    ui32& ncols = *ncolsPtr;
+    unsigned& ncols = *ncolsPtr;
     ncols = targetLambdaCount + targetMuCount + 1;
-    ui32 nrows = input.itineraries.size();
+    unsigned nrows = input.itineraries.size();
 
     vector<double> objective(ncols);
     auto& columnLower = *columnLowerPtr;
@@ -338,7 +338,7 @@ void prepareSimplex(
     columnLower.assign(ncols, -LOCAL_INF);
     columnUpper.assign(ncols, LOCAL_INF);
 
-    for (ui32 colId = 0; colId < ncols; ++colId) {
+    for (unsigned colId = 0; colId < ncols; ++colId) {
         objective[colId] = 0.;
         columnLower[colId] = -LOCAL_INF;
         columnUpper[colId] = LOCAL_INF;
@@ -359,22 +359,22 @@ void prepareSimplex(
     auto& lhsArray = *lhsArrayPtr;
     lhsArray.assign(input.itineraries.size(), 0);
 
-    ui32 rowPlace = 0;
-    ui32 equationId = 0;
+    unsigned rowPlace = 0;
+    unsigned equationId = 0;
 
     for (const auto& event : input.events) {
         if (event.type == EventType::cutoff) {
-            for (ui32 idItinerary : event.relatedItineraryIds) {
+            for (unsigned idItinerary : event.relatedItineraryIds) {
                 const auto& itinerary = input.itineraries[idItinerary];
                 rowStart[equationId++] = rowPlace;
 
                 const auto& firstArc = input.arcs[itinerary.orderedArcs.front()];
                 const auto& lastArc  = input.arcs[itinerary.orderedArcs.back()];
 
-                for (ui32 idArc : itinerary.orderedArcs) {
+                for (unsigned idArc : itinerary.orderedArcs) {
                     const auto& arc = input.arcs[idArc];
                     if (arc.type == ArcType::travel) {
-                        ui32 place = magicIndex.arcToLambdaIndex[idArc];
+                        unsigned place = magicIndex.arcToLambdaIndex[idArc];
                         assert(place != MAX_INDEX);
                         double value = 1.0;
                         elementByRow.push_back(value);
@@ -425,7 +425,7 @@ std::pair<double, DualVariables> initializeCuttingPlane(
         const vector<double>& columnLower,
         const vector<double>& columnUpper,
         const vector<double>& lhsArray,
-        ui32 ncols,
+        unsigned ncols,
         RandomPack* randomPack,
         std::deque<DualDequeInfo>* dualHistory,
         ClpSimplex& simplexBase,
@@ -441,7 +441,7 @@ std::pair<double, DualVariables> initializeCuttingPlane(
 
     const vector<bool> flagVals = {true, false};
     const vector<double> shiftVals = {0, UPPER_SHIFT};
-    for (ui32 idPoint = 0; idPoint < configIter.initPointCount.value(); ++idPoint) {
+    for (unsigned idPoint = 0; idPoint < configIter.initPointCount.value(); ++idPoint) {
         DualVariables point;
         vector<RandomInitType> initTypes;
         if (configIter.initStrategy == RandomInitType::RANDOM_BOTH
@@ -655,10 +655,10 @@ vector<bool> computePlaneHits(
             idItinerary < input.itineraries.size(); ++idItinerary) {
         const auto& itinerary = input.itineraries[idItinerary];
         double sum = variables.muVariables[idItinerary];
-        for (ui32 idArc : itinerary.orderedArcs) {
+        for (unsigned idArc : itinerary.orderedArcs) {
             const auto& arc = input.arcs[idArc];
             if (arc.type == ArcType::travel) {
-                ui32 place = magicIndex.arcToLambdaIndex[idArc];
+                unsigned place = magicIndex.arcToLambdaIndex[idArc];
                 sum += variables.lambdaVariables[place];
             }
         }
@@ -711,7 +711,7 @@ void doCuttingPlaneOptimization(
     ClpSimplex simplexBase;
 
     vector<double> columnLower, columnUpper, lhsArray;
-    ui32 ncols = 0;
+    unsigned ncols = 0;
     prepareSimplex(inputManager, indexManager, configIter, dualPtr,
         &simplexBase, &columnLower, &columnUpper, &lhsArray, &ncols);
     auto bestPoint = initializeCuttingPlane(
@@ -729,7 +729,7 @@ void doCuttingPlaneOptimization(
     vector<bool> prevPlaneHits;
     prevPlaneHits = computePlaneHits(inputManager, indexManager, lhsArray, prevDuals);
 
-    for (ui32 iter = 0;
+    for (unsigned iter = 0;
             iter < configIter.maxSubgradientIterations.value(); ++iter) {
         logger.noticeStream() << "Started Iteration: " << iter;
         ClpSimplex simplexFinal(simplexBase);
@@ -767,10 +767,10 @@ void doCuttingPlaneOptimization(
         // This is the way to get dual solution:
         // double *dual = simplexFinal.dualRowSolution();
 
-        for (ui32 idLambda = 0; idLambda < targetLambdaCount; ++idLambda) {
+        for (unsigned idLambda = 0; idLambda < targetLambdaCount; ++idLambda) {
             dualVariables.lambdaVariables[idLambda] = primal[idLambda];
         }
-        for (ui32 idMu = 0; idMu < targetMuCount; ++idMu) {
+        for (unsigned idMu = 0; idMu < targetMuCount; ++idMu) {
             dualVariables.muVariables[idMu] = primal[targetLambdaCount + idMu];
         }
         double cuttingPlaneObjective = simplexFinal.getObjValue();

@@ -15,12 +15,12 @@ struct DetCutPlaneBackendConfig {
     ConstLinksManagerPtr linksManager;
 
     // These values must be equal!
-    ui32 cbcLogLevel = 3;
-    ui32 cbcFileLogLevel = 3;
+    unsigned cbcLogLevel = 3;
+    unsigned cbcFileLogLevel = 3;
 
-    ui32 seed = 124124;
-    ui32 iterations = 100;
-    ui32 initialPlanes = 30;
+    unsigned seed = 124124;
+    unsigned iterations = 100;
+    unsigned initialPlanes = 30;
 
     double needError = 0.01;
 

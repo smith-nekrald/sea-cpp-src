@@ -38,7 +38,7 @@ const double EPS = 1e-3;
 // Useful functions.
 void addMultiVarConstraint(const vector<CoefIndex>& vars,
                            double coef,
-                           ui32 constraintId,
+                           unsigned constraintId,
                            vector<vector<CoefIndex>>& constraints) {
     for (auto varIndex : vars) {
         if (constraints[varIndex.index].empty()
@@ -50,8 +50,8 @@ void addMultiVarConstraint(const vector<CoefIndex>& vars,
     }
 }
 
-void addMultiVarConstraint(const vector<ui32>& vars,
-                           double coef, ui32 constraintId,
+void addMultiVarConstraint(const vector<unsigned>& vars,
+                           double coef, unsigned constraintId,
                            vector<vector<CoefIndex>>& constraints) {
     for (auto varIndex : vars) {
         if (constraints[varIndex].empty() || constraints[varIndex].back().index != constraintId) {
@@ -67,7 +67,7 @@ void addMultiVarObjective(const vector<CoefIndex>& vars, double coef, vector<dou
     }
 }
 
-void addMultiVarObjective(const vector<ui32>& vars, double coef, vector<double>& objective) {
+void addMultiVarObjective(const vector<unsigned>& vars, double coef, vector<double>& objective) {
     for (auto varIndex : vars) {
         objective[varIndex] += coef;
     }
@@ -128,12 +128,12 @@ void DetCutPlaneBackend::setupMainProblem() {
     initConstraintsLR(&cbcLastProblem.glower, &cbcLastProblem.gupper);
     initBoundsLR(&cbcLastProblem.vlower, &cbcLastProblem.vupper);
 
-    vector<vector<ui32>> bookings(input.itineraries.size());
-    vector<vector<ui32>> takens(input.itineraries.size());
+    vector<vector<unsigned>> bookings(input.itineraries.size());
+    vector<vector<unsigned>> takens(input.itineraries.size());
     vector<vector<CoefIndex>> containers(input.ports.size());
 
     auto debugStream = logger.getStream(log4cpp::Priority::DEBUG);
-    for (ui32 timeNow = 0; timeNow < input.events.size(); ++timeNow) {
+    for (unsigned timeNow = 0; timeNow < input.events.size(); ++timeNow) {
         debugStream << "Considering time = " << timeNow << "\n";
         const InputData::Event& event = input.events[timeNow];
         double timeDelta = 0.0;
@@ -147,16 +147,16 @@ void DetCutPlaneBackend::setupMainProblem() {
         if (event.type == InputData::Event::Type::pricing) {
             debugStream << "Considering pricing event." << "\n";
             debugStream << "Will now iterate over event.relatedItineraryIds.\n";
-            for (ui32 relatedIndex = 0; relatedIndex < event.relatedItineraryIds.size();
+            for (unsigned relatedIndex = 0; relatedIndex < event.relatedItineraryIds.size();
                     ++relatedIndex) {
 
-                ui32 idItinerary = event.relatedItineraryIds[relatedIndex];
+                unsigned idItinerary = event.relatedItineraryIds[relatedIndex];
                 debugStream << "Related idItinerary is " << idItinerary << "\n";
 
-                ui32 demandIndex = indexMap.timeItineraryToDemandIndex[timeNow][idItinerary];
+                unsigned demandIndex = indexMap.timeItineraryToDemandIndex[timeNow][idItinerary];
                 debugStream << "Calculated demandIndex from indexMap as " << demandIndex << "\n";
 
-                ui32 zi = indexMap.timeItineraryToZi[timeNow][idItinerary];
+                unsigned zi = indexMap.timeItineraryToZi[timeNow][idItinerary];
 
                 debugStream << "Adding demandVar to bookings.\n";
                 // bookings[idItinerary] += demandVar;
@@ -166,7 +166,7 @@ void DetCutPlaneBackend::setupMainProblem() {
         } else {
             debugStream << "Considering non-pricing event.\n";
 
-            ui32 idBasedArc = event.basedArc.value();
+            unsigned idBasedArc = event.basedArc.value();
             const auto& arc = input.arcs[idBasedArc];
 
             debugStream << "Computed based arc.\n";
@@ -175,17 +175,17 @@ void DetCutPlaneBackend::setupMainProblem() {
 
                 debugStream << "Considering cut-off event.\n";
 
-                ui32 idNode = arc.fromNode;
+                unsigned idNode = arc.fromNode;
                 debugStream << "Arc.fromNode = " << idNode << "\n";
 
                 const auto& node = input.nodes[idNode];
 
-                ui32 idPort = node.portId;
+                unsigned idPort = node.portId;
                 debugStream << "Node.portid = " << idPort << "\n";
 
                 const auto& port = input.ports[idPort];
 
-                ui32 hireIndex = indexMap.arcToHired[idBasedArc];
+                unsigned hireIndex = indexMap.arcToHired[idBasedArc];
 
                 // containers[idPort] += hired; // TODO deal with containers
                 containers[idPort].push_back({+1, hireIndex});
@@ -195,16 +195,16 @@ void DetCutPlaneBackend::setupMainProblem() {
                 cbcLastProblem.objective[hireIndex] -= port.hiringCost;
 
                 debugStream << "For loop over links.itinerariesFromArc[idBasedArc] \n";
-                for (ui32 idItinerary : links.itinerariesFromArc[idBasedArc]) {
+                for (unsigned idItinerary : links.itinerariesFromArc[idBasedArc]) {
                     debugStream << "Considering itinerary with id = " << idItinerary << "\n";
 
                     const auto& itinerary = input.itineraries[idItinerary];
-                    ui32 qSpotIndex = indexMap.idItineraryToQIndex[idItinerary];
+                    unsigned qSpotIndex = indexMap.idItineraryToQIndex[idItinerary];
                     debugStream << "Computing "
-                        << "ui32 qSpotIndex = indexMap.idItineraryToQIndex[idItinerary]" << "\n";
+                        << "unsigned qSpotIndex = indexMap.idItineraryToQIndex[idItinerary]" << "\n";
                     debugStream << "qSpotIndex = " << qSpotIndex << "\n";
 
-                    ui32 zIndex = indexMap.idItineraryToZIndex[idItinerary];
+                    unsigned zIndex = indexMap.idItineraryToZIndex[idItinerary];
                     debugStream << "zIndex = " << zIndex << "\n";
 
                     // const AD<double>& qSpot = variables[qSpotIndex];
@@ -219,7 +219,7 @@ void DetCutPlaneBackend::setupMainProblem() {
                     containers[idPort].push_back({-1, zIndex}); // containers[idPort] -= zEmpty;
                     debugStream << "Subtracting qSpot and zEmpty from containers[idPort]\n";
 
-                    ui32 qIdConstraint = indexMap.spotQNConstraints[idItinerary];
+                    unsigned qIdConstraint = indexMap.spotQNConstraints[idItinerary];
                     debugStream << "Taking qIdConstraint" <<
                         " as indexMap.spotQNConstraints[idItinerary]" << "\n";
 
@@ -253,13 +253,13 @@ void DetCutPlaneBackend::setupMainProblem() {
                     debugStream << "removing zEmpty * itinerary.emptyCost" << "\n";
 
                     debugStream << "running cycle by allotmentsWithItinerary for itinerary " << idItinerary <<  "\n";
-                    for (ui32 idAllotment : links.allotmentsWithItinerary[idItinerary]) {
+                    for (unsigned idAllotment : links.allotmentsWithItinerary[idItinerary]) {
                         debugStream << "idAllotment = " << idAllotment << "\n";
 
-                        ui32 qAllotmentIndex = indexMap.allotmentItineraryToQIndex[idAllotment][idItinerary];
+                        unsigned qAllotmentIndex = indexMap.allotmentItineraryToQIndex[idAllotment][idItinerary];
                         debugStream << "qAllotmentIndex = " << qAllotmentIndex << "\n";
 
-                        ui32 uAllotmentIndex = indexMap.allotmentToUIndex[idAllotment];
+                        unsigned uAllotmentIndex = indexMap.allotmentToUIndex[idAllotment];
                         debugStream << "uAllotmentIndex = " << uAllotmentIndex << "\n";
 
                         takens[idItinerary].push_back(qAllotmentIndex); // takens[idItinerary] += qAllotment
@@ -287,7 +287,7 @@ void DetCutPlaneBackend::setupMainProblem() {
                         // objective += uAllotment * cancellationPrice;
                         cbcLastProblem.objective[uAllotmentIndex] += cancellationPrice;
 
-                        ui32 itineraryAllotmentQConstraintIndex = indexMap.allotmentItineraryQConstraints[idItinerary][idAllotment];
+                        unsigned itineraryAllotmentQConstraintIndex = indexMap.allotmentItineraryQConstraints[idItinerary][idAllotment];
                         debugStream << "itineraryAllotmentQConstraintIndex = " << itineraryAllotmentQConstraintIndex << "\n";
                         // auto& itineraryAllotmentQConstraint = functions[itineraryAllotmentQConstraintIndex];
                         // itineraryAllotmentQConstraint = qAllotment - uAllotment * expectedAllotmentShow; // -inf <= itineraryAllotmentQConstraint <= 0
@@ -297,12 +297,12 @@ void DetCutPlaneBackend::setupMainProblem() {
                 }
 
                 // Containers constraint on cutoff
-                ui32 cutoffPortConstraintIndex = indexMap.portPositiveCutoffArcConstraints[idBasedArc];
+                unsigned cutoffPortConstraintIndex = indexMap.portPositiveCutoffArcConstraints[idBasedArc];
                 // auto& cutoffPortConstraint = functions[cutoffPortConstraintIndex];
                 // cutoffPortConstraint = containers[idPort]; // inf >= cutoffPortConstraint >= 0
                 addMultiVarConstraint(containers[idPort], 1, cutoffPortConstraintIndex, cbcLastProblem.coefByVar);
             } else if (event.type == InputData::Event::Type::arrival) {
-                ui32 idNode = arc.toNode;
+                unsigned idNode = arc.toNode;
                 const auto& node = input.nodes[idNode];
                 const auto& port = input.ports[node.portId];
                 auto offhiredIndex = indexMap.timeToSIndex[event.relativeTime];
@@ -312,7 +312,7 @@ void DetCutPlaneBackend::setupMainProblem() {
 
                 // containers[port.id] -= offhired;
                 containers[port.id].push_back({-1, offhiredIndex});
-                for (ui32 idItinerary : links.itinerariesToArc[idBasedArc]) {
+                for (unsigned idItinerary : links.itinerariesToArc[idBasedArc]) {
                     // containers[port.id] += takens[idItinerary];
                     for (auto varIndex : takens[idItinerary]) {
                         containers[port.id].push_back({1, varIndex});
@@ -320,14 +320,14 @@ void DetCutPlaneBackend::setupMainProblem() {
                 }
 
                 // Containers constraint on arrival
-                ui32 arrivalPortConstraintIndex = indexMap.portPositiveArrivalArcConstraints[idBasedArc];
+                unsigned arrivalPortConstraintIndex = indexMap.portPositiveArrivalArcConstraints[idBasedArc];
                 // auto& arrivalPortConstraint = functions[arrivalPortConstraintIndex];
                 // arrivalPortConstraint = containers[port.id]; // inf >= arrivalPortConstraint >= 0
                 addMultiVarConstraint(containers[port.id], 1, arrivalPortConstraintIndex, cbcLastProblem.coefByVar);
             }
         }
         // Common recalculation.
-        for (ui32 idPort = 0; idPort < input.ports.size(); ++idPort) {
+        for (unsigned idPort = 0; idPort < input.ports.size(); ++idPort) {
             const auto& port = input.ports[idPort];
             // objective -= (containers[idPort] * timeDelta) * port.storageCost;
             addMultiVarObjective(containers[idPort], -1 * timeDelta * port.storageCost, cbcLastProblem.objective);
@@ -335,16 +335,16 @@ void DetCutPlaneBackend::setupMainProblem() {
     }
 
     // Capacity constraints
-    for (ui32 idArc = 0; idArc < input.arcs.size(); ++idArc) {
+    for (unsigned idArc = 0; idArc < input.arcs.size(); ++idArc) {
         const auto& arc = input.arcs[idArc];
         if (arc.type == InputData::Arc::Type::travel) {
             // AD<double> inside_arc = 0.0;
-            vector<ui32> inside_arc_indices;
-            for (ui32 idItinerary : links.itinerariesWithArc[idArc]) {
+            vector<unsigned> inside_arc_indices;
+            for (unsigned idItinerary : links.itinerariesWithArc[idArc]) {
                 // inside_arc += takens[idItinerary];
                 std::copy(takens[idItinerary].begin(), takens[idItinerary].end(), std::back_inserter(inside_arc_indices));
             }
-            ui32 constraintIndex = indexMap.arcCapacityConstraints[idArc];
+            unsigned constraintIndex = indexMap.arcCapacityConstraints[idArc];
             // AD<double>& constraint = functions[constraintIndex];
             // constraint = inside_arc - input.vessels[arc.vesselId.value()].capacity; // -inf <= constraint  <=0
             addMultiVarConstraint(inside_arc_indices, 1, constraintIndex, cbcLastProblem.coefByVar);
@@ -353,9 +353,9 @@ void DetCutPlaneBackend::setupMainProblem() {
     }
 
     // Constraints on final container count
-    for (ui32 idPort = 0; idPort < input.ports.size(); ++idPort) {
+    for (unsigned idPort = 0; idPort < input.ports.size(); ++idPort) {
         // double finalCount = input.ports[idPort].finalContainerCount;
-        ui32 constraintIndex = indexMap.finalContainerConstraints[idPort];
+        unsigned constraintIndex = indexMap.finalContainerConstraints[idPort];
         // AD<double>& constraint = functions[indexMap.finalContainerConstraints[idPort]];
         // constraint = finalCount - containers[idPort]; // 0 >= constraint >= -INF
         addMultiVarConstraint(containers[idPort], 1, constraintIndex, cbcLastProblem.coefByVar);
@@ -366,13 +366,13 @@ void DetCutPlaneBackend::setupMainProblem() {
     }
 
     // Group constraints
-    for (ui32 idGroup = 0; idGroup < input.allotmentGroups.size(); ++idGroup) {
+    for (unsigned idGroup = 0; idGroup < input.allotmentGroups.size(); ++idGroup) {
         const auto& group = input.allotmentGroups[idGroup];
         auto& constraintIndex = indexMap.groupConstraints[idGroup];
-        vector<ui32> uAllotmentIndices(group.size());
-        std::transform(group.begin(), group.end(), uAllotmentIndices.begin(), [&](ui32 id) { return indexMap.allotmentToUIndex[id]; });
+        vector<unsigned> uAllotmentIndices(group.size());
+        std::transform(group.begin(), group.end(), uAllotmentIndices.begin(), [&](unsigned id) { return indexMap.allotmentToUIndex[id]; });
 
-        // for (ui32 idAllotment : group) {
+        // for (unsigned idAllotment : group) {
         //     const auto& uAllotment = variables[indexMap.allotmentToUIndex[idAllotment]];
         //     constraint += uAllotment;
         // }
@@ -399,7 +399,7 @@ double DetCutPlaneBackend::runCbc() {
 
     CbcModel model(solver);
     model.setIntegerTolerance(config.integerTolerance);
-    ui32 cbcLogLevel = config.cbcLogLevel;
+    unsigned cbcLogLevel = config.cbcLogLevel;
     model.setLogLevel(cbcLogLevel);
 
 
@@ -490,7 +490,7 @@ double DetCutPlaneBackend::runCbc() {
         }
     }
 
-    for (ui32 idPort = 0; idPort < input.ports.size(); ++idPort) {
+    for (unsigned idPort = 0; idPort < input.ports.size(); ++idPort) {
         double finalCount = input.ports[idPort].finalContainerCount;
         objectiveEstimation +=
             finalCount * input.ports[idPort].offHiringCost;
@@ -516,7 +516,7 @@ double DetCutPlaneBackend::runCbc() {
     }
 
     for (const auto& allotment : input.allotments) {
-        ui32 allotmentVarId =
+        unsigned allotmentVarId =
             indexMap.allotmentToUIndex[allotment.id];
         lastSolution[allotmentVarId] =
             round(lastSolution[allotmentVarId]);
@@ -531,7 +531,7 @@ double DetCutPlaneBackend::checkConstraintsAndBounds() {
 
     auto& indexMap = indexManager->getConstData();
     vector<double> constrValues(indexMap.constraintCount);
-    for (ui32 i = 0; i < cbcLastProblem.coefByVar.size(); i++) {
+    for (unsigned i = 0; i < cbcLastProblem.coefByVar.size(); i++) {
         for (const CoefIndex& ci : cbcLastProblem.coefByVar[i]) {
             assert(!std::isnan(ci.coef));
             assert(!std::isnan(lastSolution[i]));
@@ -540,7 +540,7 @@ double DetCutPlaneBackend::checkConstraintsAndBounds() {
     }
 
     auto& logger = logging::getBackendSubLogger(BackendType::DET_CUT_PLANE);
-    for (ui32 i = 0; i < constrValues.size(); i++) {
+    for (unsigned i = 0; i < constrValues.size(); i++) {
         double value = constrValues[i];
         double& lower = cbcLastProblem.glower[i];
         double& upper = cbcLastProblem.gupper[i];
@@ -570,7 +570,7 @@ double DetCutPlaneBackend::checkConstraintsAndBounds() {
         }
     }
 
-    for (ui32 ind = 0; ind < indexMap.variableCount; ++ind) {
+    for (unsigned ind = 0; ind < indexMap.variableCount; ++ind) {
         double lower = cbcLastProblem.vlower[ind];
         double upper = cbcLastProblem.vupper[ind];
         double value = lastSolution[ind];
@@ -599,19 +599,19 @@ double DetCutPlaneBackend::calcError() {
     const auto& indexMap = indexManager->getConstData();
 
     double res = 0;
-    for (ui32 timeNow = 0; timeNow < input.events.size(); ++timeNow) {
+    for (unsigned timeNow = 0; timeNow < input.events.size(); ++timeNow) {
         const auto& event = input.events[timeNow];
         if (event.type == InputData::Event::Type::pricing) {
-            for (ui32 relatedIndex = 0;
+            for (unsigned relatedIndex = 0;
                     relatedIndex < event.relatedItineraryIds.size();
                     ++relatedIndex) {
 
-                ui32 idItinerary = event.relatedItineraryIds[relatedIndex];
+                unsigned idItinerary = event.relatedItineraryIds[relatedIndex];
 
-                ui32 demandIndex =
+                unsigned demandIndex =
                     indexMap.timeItineraryToDemandIndex[timeNow][idItinerary];
 
-                ui32 zi = indexMap.timeItineraryToZi[timeNow][idItinerary];
+                unsigned zi = indexMap.timeItineraryToZi[timeNow][idItinerary];
                 const auto& demand = event.demands[relatedIndex];
 
                 res += fabs(lastSolution[zi] - calcRevenue(
@@ -630,16 +630,16 @@ void DetCutPlaneBackend::addConstraints() {
 
     cbcLastProblem.reserveNewConstraints(indexMap.demandZCount);
 
-    for (ui32 timeNow = 0; timeNow < input.events.size(); ++timeNow) {
+    for (unsigned timeNow = 0; timeNow < input.events.size(); ++timeNow) {
         const auto& event = input.events[timeNow];
         if (event.type == InputData::Event::Type::pricing) {
-            for (ui32 relatedIndex = 0; relatedIndex < event.relatedItineraryIds.size(); ++relatedIndex) {
+            for (unsigned relatedIndex = 0; relatedIndex < event.relatedItineraryIds.size(); ++relatedIndex) {
 
-                ui32 idItinerary = event.relatedItineraryIds[relatedIndex];
+                unsigned idItinerary = event.relatedItineraryIds[relatedIndex];
 
-                ui32 demandIndex = indexMap.timeItineraryToDemandIndex[timeNow][idItinerary];
+                unsigned demandIndex = indexMap.timeItineraryToDemandIndex[timeNow][idItinerary];
 
-                ui32 zi = indexMap.timeItineraryToZi[timeNow][idItinerary];
+                unsigned zi = indexMap.timeItineraryToZi[timeNow][idItinerary];
                 const auto& demand = event.demands[relatedIndex];
 
                 auto demandVal = lastSolution[demandIndex];
@@ -669,17 +669,17 @@ void DetCutPlaneBackend::genRandomSolution() {
     }
 
 
-    for (ui32 timeNow = 0;
+    for (unsigned timeNow = 0;
             timeNow < input.events.size(); ++timeNow) {
         const auto& event = input.events[timeNow];
         if (event.type == InputData::Event::Type::pricing) {
-            for (ui32 relatedIndex = 0;
+            for (unsigned relatedIndex = 0;
                     relatedIndex < event.relatedItineraryIds.size(); ++relatedIndex) {
 
-                ui32 idItinerary = event.relatedItineraryIds[relatedIndex];
+                unsigned idItinerary = event.relatedItineraryIds[relatedIndex];
 
 
-                ui32 demandIndex = indexMap.timeItineraryToDemandIndex[timeNow][idItinerary];
+                unsigned demandIndex = indexMap.timeItineraryToDemandIndex[timeNow][idItinerary];
 
                 const auto& demand = event.demands[relatedIndex];
 
@@ -707,8 +707,8 @@ void DetCutPlaneBackend::fillDecision(Decision* decision) {
 
     // Writing results to decision.
     const auto& solutionValues = lastSolution;
-    for (ui32 nextTime = 0; nextTime < input.events.size(); ++nextTime) {
-        for (ui32 idPort = 0; idPort < input.ports.size(); ++idPort) {
+    for (unsigned nextTime = 0; nextTime < input.events.size(); ++nextTime) {
+        for (unsigned idPort = 0; idPort < input.ports.size(); ++idPort) {
             decision->offHiredInPortS[nextTime][idPort] = 0;
         }
 
@@ -716,22 +716,22 @@ void DetCutPlaneBackend::fillDecision(Decision* decision) {
         if (event.type == EventType::cutoff) {
 
             const auto& arc = input.arcs[event.basedArc.value()];
-            for (ui32 idItinerary : event.relatedItineraryIds) {
+            for (unsigned idItinerary : event.relatedItineraryIds) {
                 // Processing Q_r
-                ui32 takeQIndex = indexMap.idItineraryToQIndex[idItinerary];
+                unsigned takeQIndex = indexMap.idItineraryToQIndex[idItinerary];
                 double valueQ = floor(lastSolution[takeQIndex] + EPS);
-                decision->nonEmptyContainersQ[idItinerary] = ui32(valueQ);
+                decision->nonEmptyContainersQ[idItinerary] = unsigned(valueQ);
 
                 // Processing Z_r (setting decision and bounds)
-                ui32 emptyZIndex = indexMap.idItineraryToZIndex[idItinerary];
+                unsigned emptyZIndex = indexMap.idItineraryToZIndex[idItinerary];
                 double valueZ = floor(lastSolution[emptyZIndex] + EPS);
-                decision->emptyContainersZ[idItinerary] = ui32(valueZ);
+                decision->emptyContainersZ[idItinerary] = unsigned(valueZ);
 
                 // Processing allotments
-                for (ui32 idAllotment : links.allotmentsWithItinerary[idItinerary]) {
-                    ui32 takeIQIndex = indexMap.allotmentItineraryToQIndex[idAllotment][idItinerary];
+                for (unsigned idAllotment : links.allotmentsWithItinerary[idItinerary]) {
+                    unsigned takeIQIndex = indexMap.allotmentItineraryToQIndex[idAllotment][idItinerary];
                     double valueIQ = floor(lastSolution[takeIQIndex] + EPS);
-                    ui32 placeIndex = links.allotmentItineraryToPlace.at(idAllotment).at(idItinerary);
+                    unsigned placeIndex = links.allotmentItineraryToPlace.at(idAllotment).at(idItinerary);
                     assert(decision->allotmentContainersQ[idAllotment][placeIndex].first == idItinerary);
                     if (!decision->allotmentAccepted[idAllotment]) {
                         valueIQ = 0;
@@ -741,15 +741,15 @@ void DetCutPlaneBackend::fillDecision(Decision* decision) {
             }
 
             // tracking variables y_a^H
-            ui32 hireIndex = indexMap.arcToHired[arc.id];
+            unsigned hireIndex = indexMap.arcToHired[arc.id];
             if (lastSolution[hireIndex] > 1e-2) {
                 decision->hiredY[arc.id] = ceil(lastSolution[hireIndex]);
             }
 
         } else if (event.type == EventType::pricing) {
-            for (ui32 index = 0; index < event.relatedItineraryIds.size(); ++index) {
-                ui32 itineraryId = event.relatedItineraryIds[index];
-                ui32 variableId = indexMap.timeItineraryToDemandIndex[nextTime][itineraryId];
+            for (unsigned index = 0; index < event.relatedItineraryIds.size(); ++index) {
+                unsigned itineraryId = event.relatedItineraryIds[index];
+                unsigned variableId = indexMap.timeItineraryToDemandIndex[nextTime][itineraryId];
                 double demandValue = solutionValues[variableId];
                 double realValue = demandValue;
                 const auto& demand = event.demands[index];
@@ -770,7 +770,7 @@ void DetCutPlaneBackend::fillDecision(Decision* decision) {
             const auto& arc = input.arcs[event.basedArc.value()];
             const auto& node = input.nodes[arc.toNode];
             const auto& port = input.ports[node.portId];
-            ui32 variableIndex = indexMap.timeToSIndex[event.relativeTime];
+            unsigned variableIndex = indexMap.timeToSIndex[event.relativeTime];
             double offhired = floor(lastSolution[variableIndex] + EPS);
             decision->offHiredInPortS[nextTime][port.id] = offhired;
         } else {
@@ -802,9 +802,9 @@ DecisionManagerPtr DetCutPlaneBackend::provideAllotments(double* objectiveValue)
 
     auto& indexMap = indexManager->getData();
 
-    ui32 initConstraintCount = indexMap.constraintCount;
+    unsigned initConstraintCount = indexMap.constraintCount;
 
-    ui32 iterCount = 0;
+    unsigned iterCount = 0;
     auto debugStream = logger.getStream(log4cpp::Priority::DEBUG);
 
     double error = 0,
@@ -842,8 +842,8 @@ DecisionManagerPtr DetCutPlaneBackend::provideAllotments(double* objectiveValue)
     const auto& input = config.inputManager->getConstData();
 
     vector<bool> response(input.allotments.size(), false);
-    for (ui32 idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
-        ui32 u = indexMap.allotmentToUIndex[idAllotment];
+    for (unsigned idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
+        unsigned u = indexMap.allotmentToUIndex[idAllotment];
         response[idAllotment] = lastSolution[u];
     }
 
@@ -876,19 +876,19 @@ void DetCutPlaneBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>*
     vlower.shrink_to_fit();
 
     // Q_r, Z_r, Q_ir
-    for (ui32 idItinerary = 0; idItinerary < input.itineraries.size(); ++idItinerary) {
-        ui32 indexQr = indexMap.idItineraryToQIndex[idItinerary];
+    for (unsigned idItinerary = 0; idItinerary < input.itineraries.size(); ++idItinerary) {
+        unsigned indexQr = indexMap.idItineraryToQIndex[idItinerary];
         updateLower(vlower[indexQr], double(0.));
-        ui32 indexZr = indexMap.idItineraryToZIndex[idItinerary];
+        unsigned indexZr = indexMap.idItineraryToZIndex[idItinerary];
         updateLower(vlower[indexZr], double(0.));
-        for (ui32 idAllotment : links.allotmentsWithItinerary[idItinerary]) {
-            ui32 indexQir = indexMap.allotmentItineraryToQIndex[idAllotment][idItinerary];
+        for (unsigned idAllotment : links.allotmentsWithItinerary[idItinerary]) {
+            unsigned indexQir = indexMap.allotmentItineraryToQIndex[idAllotment][idItinerary];
             updateLower(vlower[indexQir], double(0.));
-            ui32 indexEntry = links.allotmentItineraryToEntry.at(idAllotment).at(idItinerary);
+            unsigned indexEntry = links.allotmentItineraryToEntry.at(idAllotment).at(idItinerary);
             const auto& entry = input.allotmentEntries[indexEntry];
             double expectedShow = entry.productAmount * entry.showRate.estimatedProba;
 
-            // ui32 uAllotmentIndex = indexMap.allotmentToUIndex[idAllotment];
+            // unsigned uAllotmentIndex = indexMap.allotmentToUIndex[idAllotment];
             // const AD<double>& uAllotment = variables[uAllotmentIndex];
 
             vupper[indexQir] = expectedShow; //TODO do I need it?
@@ -896,21 +896,21 @@ void DetCutPlaneBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>*
     }
 
     // u_i
-    for (ui32 idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
-        ui32 indexUi = indexMap.allotmentToUIndex[idAllotment];
+    for (unsigned idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
+        unsigned indexUi = indexMap.allotmentToUIndex[idAllotment];
         updateLower(vlower[indexUi], double(0.0));
         updateUpper(vupper[indexUi], double(1.0));
     }
 
     // d_t, s_t, y_a^H
     for (const auto& event : input.events) {
-        ui32 relativeTime = event.relativeTime;
+        unsigned relativeTime = event.relativeTime;
         // d_t
         if (event.type == InputData::Event::Type::pricing) {
-            for (ui32 index = 0; index < event.relatedItineraryIds.size(); ++index) {
-                ui32 idItinerary = event.relatedItineraryIds[index];
+            for (unsigned index = 0; index < event.relatedItineraryIds.size(); ++index) {
+                unsigned idItinerary = event.relatedItineraryIds[index];
                 const auto& demand = event.demands[index];
-                ui32 variableIndex = indexMap.timeItineraryToDemandIndex[relativeTime][idItinerary];
+                unsigned variableIndex = indexMap.timeItineraryToDemandIndex[relativeTime][idItinerary];
                 double& lower = vlower[variableIndex];
                 double& upper = vupper[variableIndex];
 
@@ -928,12 +928,12 @@ void DetCutPlaneBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>*
             }
         // s_t
         } else if (event.type == InputData::Event::Type::arrival) {
-            ui32 variableIndex = indexMap.timeToSIndex[relativeTime];
+            unsigned variableIndex = indexMap.timeToSIndex[relativeTime];
             updateLower(vlower[variableIndex], double(0.));
         // y_a^H
         }  else if (event.type == InputData::Event::Type::cutoff) {
-            ui32 basedArcId = event.basedArc.value();
-            ui32 variableIndex = indexMap.arcToHired[basedArcId];
+            unsigned basedArcId = event.basedArc.value();
+            unsigned variableIndex = indexMap.arcToHired[basedArcId];
             updateLower(vlower[variableIndex], double(0.));
         } else {
             throw std::logic_error("Unsupported event type");
@@ -941,18 +941,18 @@ void DetCutPlaneBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>*
     }
 
     // z_i bounds
-    for (ui32 varIndex = indexMap.variableCount - indexMap.demandZCount; varIndex < indexMap.variableCount; varIndex++) {
+    for (unsigned varIndex = indexMap.variableCount - indexMap.demandZCount; varIndex < indexMap.variableCount; varIndex++) {
         updateLower(vlower[varIndex], double(0.));
     }
 
-    for (ui32 timeNow = 0; timeNow < input.events.size(); ++timeNow) {
+    for (unsigned timeNow = 0; timeNow < input.events.size(); ++timeNow) {
         const auto& event = input.events[timeNow];
         if (event.type == InputData::Event::Type::pricing) {
-            for (ui32 relatedIndex = 0; relatedIndex < event.relatedItineraryIds.size(); ++relatedIndex) {
+            for (unsigned relatedIndex = 0; relatedIndex < event.relatedItineraryIds.size(); ++relatedIndex) {
 
-                ui32 idItinerary = event.relatedItineraryIds[relatedIndex];
+                unsigned idItinerary = event.relatedItineraryIds[relatedIndex];
 
-                ui32 zi = indexMap.timeItineraryToZi[timeNow][idItinerary];
+                unsigned zi = indexMap.timeItineraryToZi[timeNow][idItinerary];
                 const auto& demand = event.demands[relatedIndex];
 
                 if (demand.type == Demand::Type::linear) {
@@ -984,7 +984,7 @@ void DetCutPlaneBackend::initConstraintsLR(vector<double>* glowerPtr, vector<dou
     // arc capacity constraints
     for (const auto& arc : input.arcs) {
         if (arc.type == InputData::Arc::Type::travel) {
-            ui32 constraintIndex = indexMap.arcCapacityConstraints[arc.id];
+            unsigned constraintIndex = indexMap.arcCapacityConstraints[arc.id];
             updateUpper(gupper[constraintIndex], double(input.vessels[arc.vesselId.value()].capacity * utilizationRatio));
         }
     }
@@ -992,33 +992,33 @@ void DetCutPlaneBackend::initConstraintsLR(vector<double>* glowerPtr, vector<dou
     // positive in ports for cutoff and arrival
     for (const auto& event : input.events) {
         if (event.type == InputData::Event::Type::cutoff) {
-            ui32 idBasedArc = event.basedArc.value();
-            ui32 constraintIndex = indexMap.portPositiveCutoffArcConstraints[idBasedArc];
+            unsigned idBasedArc = event.basedArc.value();
+            unsigned constraintIndex = indexMap.portPositiveCutoffArcConstraints[idBasedArc];
             updateLower(glower[constraintIndex], double(0.));
         } else if (event.type == InputData::Event::Type::arrival) {
-            ui32 idBasedArc = event.basedArc.value();
-            ui32 constraintIndex = indexMap.portPositiveArrivalArcConstraints[idBasedArc];
+            unsigned idBasedArc = event.basedArc.value();
+            unsigned constraintIndex = indexMap.portPositiveArrivalArcConstraints[idBasedArc];
             updateLower(glower[constraintIndex], double(0.));
         }
     }
 
     // spotQN constraints
     for (const auto& itinerary : input.itineraries) {
-        ui32 idItinerary = itinerary.id;
-        ui32 constraintIndex = indexMap.spotQNConstraints[idItinerary];
+        unsigned idItinerary = itinerary.id;
+        unsigned constraintIndex = indexMap.spotQNConstraints[idItinerary];
         updateLower(glower[constraintIndex], double(0.));
     }
 
     // final container constraints
-    for (ui32 idPort = 0; idPort < input.ports.size(); ++idPort) {
-        ui32 constraintIndex = indexMap.finalContainerConstraints[idPort];
+    for (unsigned idPort = 0; idPort < input.ports.size(); ++idPort) {
+        unsigned constraintIndex = indexMap.finalContainerConstraints[idPort];
         double finalCount = input.ports[idPort].finalContainerCount;
         updateUpper(gupper[constraintIndex], finalCount);
     }
 
     // group constraints
-    for (ui32 idGroup = 0; idGroup < input.allotmentGroups.size(); ++idGroup) {
-        ui32 constraintIndex = indexMap.groupConstraints[idGroup];
+    for (unsigned idGroup = 0; idGroup < input.allotmentGroups.size(); ++idGroup) {
+        unsigned constraintIndex = indexMap.groupConstraints[idGroup];
         updateLower(glower[constraintIndex], double(0.));
         updateUpper(gupper[constraintIndex], double(1.));
     }

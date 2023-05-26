@@ -6,8 +6,6 @@
  */
 #pragma once
 
-#include "../types.h"
-
 #include <unordered_map>
 #include <memory>
 #include <vector>
@@ -15,8 +13,8 @@
 namespace sea {
 
 /**
- * @brief Represents each client in Spot Market show sample. 
- * Essentially, describes willingness-to-pay and whether the client shows.  
+ * @brief Represents each client in Spot Market show sample.
+ * Essentially, describes willingness-to-pay and whether the client shows.
  */
 struct SpotShow {
     /// @brief Willigness to pay is the maximal price the client is ready to pay for service.
@@ -32,7 +30,7 @@ struct SpotShow {
  * A trajectory of clients with their demands and behaviors.
  */
 struct MarketData {
-    /// @brief Maps pricing event index and itinerary to SpotShow entry 
+    /// @brief Maps pricing event index and itinerary to SpotShow entry
     /// with willingness to pay and show information. Indexation is as follows:
     /// [id_event(pricing)][id_itinerary] -> array of buyers with their willingness to pay, etc.
     std::unordered_map<unsigned, std::unordered_map<unsigned, std::vector<SpotShow>>> idEventToWpay;

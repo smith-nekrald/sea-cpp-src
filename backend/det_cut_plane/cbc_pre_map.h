@@ -16,7 +16,7 @@ namespace backend {
 
 struct CoefIndex {
     double coef;
-    ui32 index;
+    unsigned index;
 };
 
 struct CbcPreMap {
@@ -78,10 +78,10 @@ struct CbcPreMap {
     }
 
     void setupCbcSolver(OsiCbcSolverInterface& solver) {
-        ui32 matrixIndex = 0;
+        unsigned matrixIndex = 0;
         indices.clear();
         matrix.clear();
-        for (ui32 varIndex = 0; varIndex < coefByVar.size(); varIndex++) {
+        for (unsigned varIndex = 0; varIndex < coefByVar.size(); varIndex++) {
             starts[varIndex] = matrixIndex;
             for (auto& coefIndex : coefByVar[varIndex]) {
                 matrix.push_back(coefIndex.coef);
