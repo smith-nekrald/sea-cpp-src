@@ -63,6 +63,10 @@ private:
 
     double checkConstraintsAndBounds();
 
+private:
+    void logIterationInProvideAllotments(
+            unsigned iterCount, double error, double constraintError,
+            double accumulatedConstraintError, double objectiveEstimation) const;
 
 private:
     CbcPreMap cbcLastProblem;
@@ -74,6 +78,7 @@ private:
     double preparedSolutionObjective;
     double utilizationRatio;
 };
+
 
 } // namespace backend
 } // namespace sea

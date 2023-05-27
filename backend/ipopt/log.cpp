@@ -1,4 +1,4 @@
-// Logging methods and string-related API. 
+// Logging methods and string-related API.
 
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
@@ -150,6 +150,12 @@ void logSelectedAllotments(const vector<bool>& acceptedAllotments, BackendType b
     for (auto value : acceptedAllotments) {
         stream << value << " ";
     }
+}
+
+void IpoptBackend::logIndexMapStats() const {
+    auto ipoptLogger = logging::getBackendSubLogger(BackendType::IPOPT)
+        << log4cpp::Priority::DEBUG;
+    printIndexMapStats(ipoptLogger, indexManager->getConstData());
 }
 
 } // namespace backend

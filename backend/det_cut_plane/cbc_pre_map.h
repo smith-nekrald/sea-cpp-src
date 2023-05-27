@@ -2,6 +2,7 @@
 
 #include "../../common.h"
 #include "../lagrangian_relaxation/index.h"
+#include "../ipopt/ipopt_backend.h"
 #include "index_map.h"
 
 #include <coin-or/OsiSolverInterface.hpp>
@@ -39,26 +40,25 @@ struct CbcPreMap {
 
     CbcPreMap() {}
 
-    CbcPreMap(int varCount, int constrCount)
-            : indices(varCount * constrCount)
-            , matrix(varCount * constrCount)
-            , starts(varCount)
-            , objective(varCount)
-            , coefByVar(varCount)
-    {}
+    CbcPreMap(int aVariableCount, int aConstraintCount)
+            : indices(aVariableCount * aConstraintCount)
+            , matrix(aVariableCount * aConstraintCount)
+            , starts(aVariableCount)
+            , objective(aVariableCount)
+            , coefByVar(aVariableCount) {}
 
-    void init(int varCount, int constrCount) {
-        variableCount = varCount;
-        constraintCount = constrCount;
+    void init(int aVariableCount, int aConstraintCount) {
+        variableCount = aVariableCount;
+        constraintCount = aConstraintCount;
 
         glower.clear();
         gupper.clear();
         vlower.clear();
         vupper.clear();
 
-        starts.assign(varCount + 1, 0);
-        objective.assign(varCount, 0);
-        coefByVar.assign(varCount, std::vector<CoefIndex>());
+        starts.assign(aVariableCount + 1, 0);
+        objective.assign(aVariableCount, 0);
+        coefByVar.assign(aVariableCount, std::vector<CoefIndex>());
 
         starts.shrink_to_fit();
         objective.shrink_to_fit();
@@ -81,11 +81,11 @@ struct CbcPreMap {
         unsigned matrixIndex = 0;
         indices.clear();
         matrix.clear();
-        for (unsigned varIndex = 0; varIndex < coefByVar.size(); varIndex++) {
-            starts[varIndex] = matrixIndex;
-            for (auto& coefIndex : coefByVar[varIndex]) {
-                matrix.push_back(coefIndex.coef);
-                indices.push_back(coefIndex.index);
+        for (unsigned variableIndex = 0; variableIndex < coefByVar.size(); variableIndex++) {
+            starts[variableIndex] = matrixIndex;
+            for (auto& coeffIndex : coefByVar[variableIndex]) {
+                matrix.push_back(coeffIndex.coef);
+                indices.push_back(coeffIndex.index);
                 matrixIndex++;
             }
         }
