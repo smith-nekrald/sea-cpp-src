@@ -1,7 +1,7 @@
 /**
  * @file strategic_algorithm.h
  * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
- * @brief Declares Strategic Algorithm - entity that delegates allotment decision to 
+ * @brief Declares Strategic Algorithm - entity that delegates allotment decision to
  * Allotment Strategy and spot decisions to Spot Strategy.
  * @copyright (c) Smith School of Business, 2023
  */
@@ -13,7 +13,6 @@
 #include "state.h"
 #include "../strategy/general_strategy.h"
 #include "../interaction/iinteractor.h"
-#include "../logging/logging.h"
 
 namespace sea {
 namespace algo {
@@ -30,28 +29,28 @@ struct StrategicAlgorithmConfig {
 };
 
 /**
- * @brief Strategic algorithm is an algorithm which delegates allotment decision to 
- * allotment market strategy, and spot market interation to spot market strategy. 
+ * @brief Strategic algorithm is an algorithm which delegates allotment decision to
+ * allotment market strategy, and spot market interation to spot market strategy.
  * Functions makeDecision and submitAction are virtual, but default implementation is provided.
  */
 class StrategicAlgorithm : public IAlgorithm {
 public:
     /**
      * @brief Constructor for a new Strategic Algorithm.
-     * 
+     *
      * @param aConfig Configuration of the algorithm. Specifies spot and allotment behavior.
      */
     explicit StrategicAlgorithm(const StrategicAlgorithmConfig& aConfig);
 
     /**
      * @brief Makes decision depending on the event and stage.
-     * 
+     *
      * @return The decision made.
      */
     virtual ConstDecisionManagerPtr makeDecision() override;
     /**
      * @brief Receives action depending on the event and state.
-     *  
+     *
      * @param action The action with corresponding environment information.
      */
     virtual void submitAction(ConstActionManagerPtr action) override;
@@ -60,12 +59,12 @@ public:
      */
     virtual void reset() override;
     /**
-     * @brief Synchronizes strategies, if needed. 
+     * @brief Synchronizes strategies, if needed.
      */
     virtual void synchronizeStrategies() override;
     /**
      * @brief Makes algorithm name from the name of allotment and spot strategies.
-     * 
+     *
      * @return Formed algorithm name.
      */
     virtual std::string getName() const override {
@@ -74,7 +73,7 @@ public:
     };
     /**
      * @brief Get the progress history.
-     * 
+     *
      * @return Map from measurement ket to the sequence of measurements.
      */
     virtual std::map<std::string, std::vector<double>> getStory() const override {
@@ -93,10 +92,10 @@ private:
     /**
      * @brief Logs that startegic algorithm is created.
      */
-    void logStrategicAlgorithmCreated() const; 
+    void logStrategicAlgorithmCreated() const;
     /**
      * @brief Logs the selected allotments.
-     * 
+     *
      * @param decisionManager The Decision Manager with selected allotments.
      */
     void logSelectedAllotments(ConstDecisionManagerPtr decisionManager) const;

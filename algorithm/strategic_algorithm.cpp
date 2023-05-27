@@ -5,8 +5,6 @@
 // (c) Smith School of Business, 2023
 #include "strategic_algorithm.h"
 
-#include "../logging/logging.h"
-
 namespace sea {
 
 namespace algo {

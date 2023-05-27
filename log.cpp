@@ -76,3 +76,13 @@ void logDoneWithLinks() {
 void logCreatedAlgorithm(const std::string& algoName) {
     logging::getRootLogger().info("Created algorithm with name: " + algoName);
 }
+
+void logIgnoreLong(const std::string& longName) {
+    logging::getRootLogger().info("Ignoring long: " + longName);
+}
+
+void logIgnoreSpot(const std::string& spotName) {
+    logging::getRootLogger().info("Ignoring spot: " + spotName);
+}
+
+

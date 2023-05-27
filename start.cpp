@@ -345,9 +345,9 @@ void prepareSpotStrategies(
     for (std::size_t idx = 0; idx < launchConfig["spot_strategies"].size(); ++idx) {
         auto name = launchConfig["spot_strategies"][int(idx)];
         auto spotName = name.asString();
-        if (std::find(std::begin(turnOffSpot), std::end(turnOffSpot),
-                    spotName) != std::end(turnOffSpot)) {
-            logging::getRootLogger().info("Ignoring spot: " + spotName);
+        if (std::find(std::begin(turnOffSpot),
+                    std::end(turnOffSpot), spotName) != std::end(turnOffSpot)) {
+            logIgnoreSpot(spotName);
             continue;
         }
         if (spotName == "lr" || spotName == "nospot_lr") {
@@ -445,7 +445,7 @@ void prepareAllotmentStrategies(const json::Value& configRoot,
         auto longName = name.asString();
         if (std::find(std::begin(turnOffLong), std::end(turnOffLong),
                     longName) != std::end(turnOffLong)) {
-            logging::getRootLogger().info("Ignoring long: " + longName);
+            logIgnoreLong(longName);
             continue;
         }
         if (longName == "ipopt" || longName == "ipopt_nospot_aware") {

@@ -1,7 +1,7 @@
 /**
  * @file start.h
  * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
- * @brief Implements configuration parsing and related API. 
+ * @brief Implements configuration parsing and related API.
  * The entry point is the function start().
  * @copyright (c) Smith School of Business, 2023
  */
@@ -38,21 +38,21 @@ using sea::backend::DetCutPlaneBackendConfig;
 void fillBackendConfig(const json::Value& configRoot, IpoptBackendConfig& config);
 /**
  * @brief Reads LagrangianRelaxation Backend Config from JSON root.
- * 
+ *
  * @param configRoot The root of JSON configuration.
  * @param config The config to read.
  */
 void fillBackendConfig(const json::Value& configRoot, LagrangianRelaxationBackendConfig& config);
 /**
  * @brief Reads Benders Decomposition Backend Config from JSON root.
- * 
+ *
  * @param configRoot The root of JSON configuration.
  * @param config The config to read.
  */
 void fillBackendConfig(const json::Value& configRoot, BendersAllotmentBackendConfig& config);
 /**
  * @brief Reads DCP backend config from JSON root.
- * 
+ *
  * @param configRoot The root of JSON configuration.
  * @param config The config to read.
  */
@@ -60,7 +60,7 @@ void fillBackendConfig(const json::Value& configRoot, DetCutPlaneBackendConfig& 
 
 /**
  * @brief Looks for market data files in directory dataPath and creates a vector with those.
- * 
+ *
  * @param dataPath The path to the directory to look for Market Data files.
  * @param count_limit Maximal number of files to return. Shrinks the vector if needed.
  * @return Vector with paths to market data files.
@@ -68,7 +68,7 @@ void fillBackendConfig(const json::Value& configRoot, DetCutPlaneBackendConfig& 
 std::vector<std::string> getMarketDataFiles(std::string dataPath, std::size_t count_limit=10000);
 /**
  * @brief Reads InputData object from dataPath.
- * 
+ *
  * @param dataPath The path to read the InputData from.
  * @param needMemory If true, resulting manager is configured for efficient memory management.
  * @return The Manager entity with InputData.
@@ -76,7 +76,7 @@ std::vector<std::string> getMarketDataFiles(std::string dataPath, std::size_t co
 sea::ConstInputManagerPtr getInput(std::string dataPath, bool needMemory);
 /**
  * @brief Creates a Manager with InputLinks from InputData.
- * 
+ *
  * @param inputManager A manager with InputData.
  * @param needMemory If true, resulting manager is configured for efficient memory management.
  * @return The Manager entity with InputLinks.
@@ -85,7 +85,7 @@ sea::ConstLinksManagerPtr getLinks(
         const sea::ConstInputManagerPtr& inputManager, bool needMemory);
 /**
  * @brief Reads all MarketData according to paths specified in pathVector.
- * 
+ *
  * @param pathVector The vector with paths to MarketData files.
  * @param needMemory If true, resulting manager is configured for efficient memory management.
  * @return Vector with Managers for the read Market Data sets.
@@ -143,7 +143,7 @@ void prepareAllotmentStrategies(const json::Value& configRoot,
 
 /**
  * @brief Prepares configuration pairs, i.e. pairs of spot-allotment strategy names.
- * 
+ *
  * @param[in] configRoot The root of JSON configuration.
  * @param[in] spotNames Names of spot market strategies.
  * @param[in] allotmentNames  Names of allotment market strategies.
@@ -156,7 +156,7 @@ void prepareConfigurationPairs(const json::Value& configRoot,
 
 /**
  * @brief Starts the process of validation.
- * 
+ *
  * @param marketDataFiles The MarketData file paths.
  * @param needMemory If true, efficient memory management is executed.
  * @param inputManager Manager with InputData.
@@ -171,7 +171,7 @@ void startValidation(const std::vector<std::string>& marketDataFiles, bool needM
 /**
  * @brief Starts the experiments. Evaluates each algorithm on each market data, and
  * summarizes the performance of the algorithms.
- * 
+ *
  * @param configRoot The root of JSON configuration.
  * @param marketDataFiles The vector with paths to market data files.
  * @param needMemory If true, managers are to use efficient memory management.
@@ -185,7 +185,7 @@ void startAlgorithms(const json::Value& configRoot,
         const std::vector<sea::algo::IAlgorithmPtr>& algoVector);
 /**
  * @brief Entry point. Parses JSON configuration and executes accordingly.
- * 
+ *
  * @param configRoot The root of JSON configuration.
  */
 void start(const json::Value& configRoot);
@@ -207,7 +207,7 @@ void logNoBendersBackendConfiguration();
 void logNoDCPBackendConfiguration();
 /**
  * @brief Logs that MarketData is read from specific path.
- * 
+ *
  * @param dataPath The path the data was read from.
  */
 void logFinishedReadingMarket(const std::string& dataPath);
@@ -237,13 +237,13 @@ void logReadyToAnalyze();
 void logAnalysisFinished();
 /**
  * @brief Logs that the configuration is started with a particular config.
- * 
+ *
  * @param pathToLoggingConfig Path to the JSON config that is parsed.
  */
 void logStartedWithConfig(const std::string& pathToLoggingConfig);
 /**
  * @brief Logs the process of market data search.
- * 
+ *
  * @param dataPath The path to the directory with market data files.
  * @param marketDataFiles The vector with found market data files.
  */
@@ -259,7 +259,17 @@ void logDoneReadInput();
 void logDoneWithLinks();
 /**
  * @brief Logs that algorithm with name algoName is created.
- * 
+ *
  * @param algoName The name of the created algorithm.
  */
 void logCreatedAlgorithm(const std::string& algoName);
+
+/**
+ * @brief Logs that a certain spot strategy is ignored.
+ */
+void logIgnoreSpot(const std::string& spotName);
+/**
+ * @brief Logs that a certain allotment strategy is ignored.
+ */
+void logIgnoreLong(const std::string& longName);
+
