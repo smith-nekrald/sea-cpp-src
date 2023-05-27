@@ -1,6 +1,5 @@
 #include "functions.h"
 #include "lagrangian_relaxation_backend.h"
-#include "../../logging/logging.h"
 
 #include <limits>
 #include<filesystem>
@@ -23,7 +22,6 @@ void updateBest(std::pair<double, DualVariables>& currentBest,
     }
 }
 
-
 DualVariables shuffleDuals(
         const DualVariables& sourceDuals,
         const std::vector<double>& boundLower,
@@ -45,8 +43,7 @@ DualVariables shuffleDuals(
         }
         auto& item = (idx < targetDuals.lambdaVariables.size())
             ? targetDuals.lambdaVariables[idx]
-            : targetDuals.muVariables[idx -
-                targetDuals.lambdaVariables.size()];
+            : targetDuals.muVariables[idx - targetDuals.lambdaVariables.size()];
         if (useUniform) {
             item += randomPack->uniformDist(generator);
         }
@@ -454,14 +451,12 @@ std::pair<double, DualVariables> initializeCuttingPlane(
             }
         }
     }
-
-    auto& logger = logging::getBackendSubLogger(BackendType::LR);
     for (auto& info : *dualHistory) {
         auto& point = info.duals;
         bool checkResult = info.checked;
         bool writeLogOut = false;
         if (info.immortal && !info.checked) {
-            logger.notice("Processing immortal and unchecked item.");
+            logProcessingImmortalUnchecked();
             writeLogOut = true;
         }
         if (!info.checked) {
@@ -489,8 +484,7 @@ std::pair<double, DualVariables> initializeCuttingPlane(
             updateBest(response, point, trueObjectiveHolder);
         }
         if (info.immortal) {
-            logger.noticeStream() << "Immortal L1 norm = " << dualL1Norm(info.duals);
-            logger.noticeStream() << "Immortal L2 norm = " << dualL2Norm(info.duals);
+            logImmortalNorms(info);
             auto boolArray = {true, false};
             for (std::size_t idx = 0;
                     idx < configIter.immortalShuffleCount; ++idx) {
@@ -500,10 +494,9 @@ std::pair<double, DualVariables> initializeCuttingPlane(
                             for (const auto& changeLambda : boolArray) {
                                 auto duals = shuffleDuals(info.duals,
                                         columnLower, columnUpper, randomPack,
-                                        changeMu, changeLambda, useUniform, useNormal) ;
-                                if (checkIfFeasible(duals, columnLower,
-                                            columnUpper, lhsArray, inputManager,
-                                            indexManager, configIter)) {
+                                        changeMu, changeLambda, useUniform, useNormal);
+                                if (checkIfFeasible(duals, columnLower, columnUpper, lhsArray,
+                                            inputManager, indexManager, configIter)) {
                                     addDualsToSimplex(duals, ncols,
                                             configIter, state,
                                             linksManager, inputManager,
@@ -518,14 +511,7 @@ std::pair<double, DualVariables> initializeCuttingPlane(
                 }
             }
         }
-        if (writeLogOut) {
-            logger.notice("This immortal item is processed.");
-            if (info.checked) {
-                logger.notice("Item is now fixed.");
-            } else {
-                logger.notice("Item was not fixed.");
-            }
-        }
+        logImmortalProcessed(writeLogOut, info);
     }
     return response;
 }
@@ -653,7 +639,6 @@ void doCuttingPlaneOptimization(
     size_t targetMuCount = dualVariables.muVariables.size();
 
     logStartCuttingPlaneOptimization(state, dualPtr);
-    auto& logger = logging::getBackendSubLogger(BackendType::LR);
 
     ClpSimplex simplexBase;
 
@@ -771,30 +756,8 @@ void doCuttingPlaneOptimization(
         auto lowerChange = computeHitChange(currentLowerBoundHit, prevLowerBoundHit);
         auto upperChange = computeHitChange(currentUpperBoundHit, prevUpperBoundHit);
 
-        logger.noticeStream() << "Lower bound change! " <<
-            "lambda_variables : " << lowerChange.first <<
-            " mu_variables : " << lowerChange.second <<
-            " of " << targetLambdaCount + targetMuCount;
-        logger.noticeStream() << "Upper bound change! " <<
-            "lambda_variables : " << upperChange.first <<
-            " mu_variables : " << upperChange.second <<
-            " of " << targetLambdaCount + targetMuCount;
-        logger.noticeStream() << "Sum of hit changes: " <<
-            lowerChange.first + lowerChange.second +
-            upperChange.first + upperChange.second <<
-            " of " << targetLambdaCount + targetMuCount;
-        logger.noticeStream() << "Hit stats! " <<
-            "\nupper_lambda: " << upperHitCount.first <<
-            " upper_mu: " << upperHitCount.second <<
-            "\nlower_lambda: " << lowerHitCount.first <<
-            " lower_mu: " << lowerHitCount.second <<
-            "\nsum_of_hits" << upperHitCount.first +
-                upperHitCount.second + lowerHitCount.first +
-                lowerHitCount.second;
-        logger.noticeStream() << "Plane Hits change : " <<
-            computeHitDiff(prevPlaneHits, currentPlaneHits) << " of " << targetMuCount;;
-        logger.noticeStream() << "Count of current plane hits: " <<
-            computeTrueCount(currentPlaneHits) << " of " << targetMuCount;
+        logChangeInCuttingPlane(lowerChange, upperChange, upperHitCount, lowerHitCount,
+                targetMuCount, targetLambdaCount, prevPlaneHits, currentPlaneHits);
 
         prevLowerBoundHit = currentLowerBoundHit;
         prevUpperBoundHit = currentUpperBoundHit;
@@ -806,19 +769,18 @@ void doCuttingPlaneOptimization(
             (0.5 * (fabsl(regObjectiveValue) + fabsl(cuttingPlaneObjective)));
         canStopShift = (relShiftDiff < LOCAL_EPS);
         if (canStopShift && canStopIter) {
-            logger.notice("The last Iteration was: " + std::to_string(iter));
+            logLastCuttingPlaneIteration(iter);
             break;
         }
         lastObjective = cuttingPlaneObjective;
 
-        if (configIter.useEquationsRestart &&
-               (iter > configIter.deque_size.value()) &&
-               (iter % configIter.restartPeriod.value() ==
-               (configIter.restartPeriod.value() - 1))) {
+        if (configIter.useEquationsRestart && (iter > configIter.deque_size.value()) &&
+                (iter % configIter.restartPeriod.value() ==
+                    (configIter.restartPeriod.value() - 1))) {
             if (!configIter.singleRestart || !restartCount) {
                 assert(configIter.deque_size.value()
                         >= configIter.restartPeriod.value() / 3.);
-                logger.noticeStream() << "Restarting simplex from deque.";
+                logRestartSimplexFromDeque();
                 ClpSimplex newSimplexBase;
                 prepareSimplex(inputManager, indexManager, configIter,
                         dualPtr, &newSimplexBase, &columnLower,
@@ -840,8 +802,7 @@ void doCuttingPlaneOptimization(
     }
     dualVariables = bestPoint.second;
     auto current = computeSubgradientInPoint(
-            dualVariables, state, linksManager,
-            inputManager, indexManager, decisionManager,
+            dualVariables, state, linksManager, inputManager, indexManager, decisionManager,
             uCoeff, ignoreSpot, configIter.coeffReg.value(), mean);
     logSubgradient(current);
 

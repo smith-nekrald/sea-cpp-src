@@ -222,6 +222,66 @@ void logFinishedCuttingPlaneIteration(
         << " rel_shift_diff: " << relShiftDiff;
 }
 
+void logChangeInCuttingPlane(
+        const std::pair<size_t, size_t>& lowerChange,
+        const std::pair<size_t, size_t>& upperChange,
+        const std::pair<size_t, size_t>& upperHitCount,
+        const std::pair<size_t, size_t>& lowerHitCount,
+        size_t targetMuCount,
+        size_t targetLambdaCount,
+        const vector<bool>& prevPlaneHits,
+        const vector<bool>& currentPlaneHits) {
+    auto& logger = logging::getBackendSubLogger(BackendType::LR);
+    logger.noticeStream() << "Lower bound change! " << "lambda_variables : "
+        << lowerChange.first << " mu_variables : " << lowerChange.second <<
+        " of " << targetLambdaCount + targetMuCount;
+    logger.noticeStream() << "Upper bound change! " << "lambda_variables : "
+        << upperChange.first << " mu_variables : " << upperChange.second
+        << " of " << targetLambdaCount + targetMuCount;
+    logger.noticeStream() << "Sum of hit changes: " << lowerChange.first + lowerChange.second +
+        upperChange.first + upperChange.second << " of " << targetLambdaCount + targetMuCount;
+    logger.noticeStream() << "Hit stats! " << "\nupper_lambda: " << upperHitCount.first <<
+        " upper_mu: " << upperHitCount.second << "\nlower_lambda: " << lowerHitCount.first <<
+        " lower_mu: " << lowerHitCount.second << "\nsum_of_hits" << upperHitCount.first +
+            upperHitCount.second + lowerHitCount.first + lowerHitCount.second;
+    logger.noticeStream() << "Plane Hits change : " <<
+        computeHitDiff(prevPlaneHits, currentPlaneHits) << " of " << targetMuCount;;
+    logger.noticeStream() << "Count of current plane hits: " <<
+        computeTrueCount(currentPlaneHits) << " of " << targetMuCount;
+}
+
+void logLastCuttingPlaneIteration(unsigned iter) {
+    auto& logger = logging::getBackendSubLogger(BackendType::LR);
+    logger.notice("The last Iteration was: " + std::to_string(iter));
+}
+
+void logRestartSimplexFromDeque() {
+    auto& logger = logging::getBackendSubLogger(BackendType::LR);
+    logger.noticeStream() << "Restarting simplex from deque.";
+}
+
+void logImmortalProcessed(bool writeLogOut, const DualDequeInfo& info) {
+    auto& logger = logging::getBackendSubLogger(BackendType::LR);
+    if (writeLogOut) {
+        logger.notice("This immortal item is processed.");
+        if (info.checked) {
+            logger.notice("Item is now fixed.");
+        } else {
+            logger.notice("Item was not fixed.");
+        }
+    }
+}
+
+void logImmortalNorms(const DualDequeInfo& info) {
+    auto& logger = logging::getBackendSubLogger(BackendType::LR);
+    logger.noticeStream() << "Immortal L1 norm = " << dualL1Norm(info.duals);
+    logger.noticeStream() << "Immortal L2 norm = " << dualL2Norm(info.duals);
+}
+
+void logProcessingImmortalUnchecked() {
+    auto& logger = logging::getBackendSubLogger(BackendType::LR);
+    logger.notice("Processing immortal and unchecked item.");
+}
 
 } // namespace backend
 } // namespace sea

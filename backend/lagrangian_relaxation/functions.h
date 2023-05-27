@@ -9,6 +9,8 @@
 namespace sea {
 namespace backend {
 
+using std::size_t;
+
 double dualL2Norm(const DualVariables& duals);
 double dualL1Norm(const DualVariables& duals);
 
@@ -138,6 +140,7 @@ void prepareSimplex(
 
 size_t computeTrueCount(const vector<bool>& hitVector);
 size_t computeHitDiff(const vector<bool>& prevVector, const vector<bool>& newVector);
+
 pair<size_t, size_t> computeHitStats(const DualTemplate<bool>& currentHit);
 pair<size_t, size_t> computeHitChange(
         const DualTemplate<bool>& prevHit, const DualTemplate<bool>& newHit);
@@ -178,6 +181,21 @@ void logObjectiveAndDualNorms(double cuttingPlaneObjective, double regObjectiveV
         const DualVariables& dualVariables, const DualVariables& prevDuals);
 void logFinishedCuttingPlaneIteration(unsigned iter, double absObjectiveDiff,
         double absShiftDiff, double relShiftDiff);
+void logRestartSimplexFromDeque();
+void logLastCuttingPlaneIteration(unsigned iter);
+void logChangeInCuttingPlane(
+        const std::pair<size_t, size_t>& lowerChange,
+        const std::pair<size_t, size_t>& upperChange,
+        const std::pair<size_t, size_t>& upperHitCount,
+        const std::pair<size_t, size_t>& lowerHitCount,
+        size_t targetMuCount,
+        size_t targetLambdaCount,
+        const vector<bool>& prevPlaneHits,
+        const vector<bool>& currentPlaneHits);
+
+void logProcessingImmortalUnchecked();
+void logImmortalNorms(const DualDequeInfo& info);
+void logImmortalProcessed(bool writeLogOut, const DualDequeInfo& info);
 
 } // namespace backend
 } // namespace sea
