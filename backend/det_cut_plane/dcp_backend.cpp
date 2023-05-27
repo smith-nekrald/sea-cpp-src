@@ -28,10 +28,9 @@ using std::endl;
 using std::size_t;
 
 
-// Useful functions.
+// Functions for uniform building constraints, objective, revenue and derivatives.
 void addMultiVarConstraint(const vector<CoefIndex>& variables,
-                           double coefficient,
-                           unsigned constraintId,
+                           double coefficient, unsigned constraintId,
                            vector<vector<CoefIndex>>& constraints) {
     for (auto variableIndex : variables) {
         if (constraints[variableIndex.index].empty()
@@ -63,14 +62,14 @@ void addMultiVarObjective(const vector<CoefIndex>& variables,
     }
 }
 
-void addMultiVarObjective(const vector<unsigned>& variables, double coefficient,
-        vector<double>& objective) {
+void addMultiVarObjective(
+        const vector<unsigned>& variables, double coefficient, vector<double>& objective) {
     for (auto variableIndex : variables) {
         objective[variableIndex] += coefficient;
     }
 }
 
-double calcRevenue(const Demand& demand, double demandValue) {
+double calculateRevenue(const Demand& demand, double demandValue) {
     double revenue = 0.0;
     if (demand.type == Demand::Type::linear) {
         revenue = demandValue * (demandValue - demand.additive) / demand.multiplicative;
@@ -83,12 +82,12 @@ double calcRevenue(const Demand& demand, double demandValue) {
     return revenue;
 }
 
-double calcRevenueDeriv(const Demand& demand, double demandValue) {
+double calculateRevenueDerivative(const Demand& demand, double demandValue) {
     if (demand.type == Demand::Type::linear) {
         return (2. * demandValue - demand.additive) / demand.multiplicative;
     } else {
         const double LOG_TOLERANCE = 1e-200;
-        return (- 1.0 / demand.sensitivity * log(
+        return (-1.0 / demand.sensitivity * log(
                     LOG_TOLERANCE + demandValue / demand.scale)) - 1.0 / demand.sensitivity;
     }
 }
@@ -100,8 +99,7 @@ DetCutPlaneBackend::DetCutPlaneBackend(
     std::string filePath = "dcp_index_map_" + makeUniqueFileName();
     ManagerConfig indexMapConfig = {config.needMemory, filePath, true};
     indexManager = std::make_shared<DataManager<DcpIndexMap>>(indexMapConfig);
-    dcpCreateIndexMap(config.inputManager->getConstData(),
-            indexManager->getData());
+    dcpCreateIndexMap(config.inputManager->getConstData(), indexManager->getData());
 }
 
 void DetCutPlaneBackend::setupMainProblem() {
@@ -327,7 +325,7 @@ double DetCutPlaneBackend::runCbc() {
     // Solve the problem.
     {
         // This code is about redirecting stdout to a file, since
-        // no direct hand is provided inside Cbc.
+        // no direct handle is provided inside Cbc.
 
         int fileDescriptor; fpos_t position;
         fflush(stdout);
@@ -359,8 +357,7 @@ double DetCutPlaneBackend::runCbc() {
     }
     auto solution = model.getColSolution();
     double objectiveEstimation = model.getObjValue();
-    if (model.isProvenInfeasible() ||
-            model.isProvenDualInfeasible()) {
+    if (model.isProvenInfeasible() || model.isProvenDualInfeasible()) {
         objectiveEstimation = std::fabs(objectiveEstimation);
     }
     preparedSolutionObjective = objectiveEstimation;
@@ -374,8 +371,7 @@ double DetCutPlaneBackend::runCbc() {
         objectiveEstimation += finalCount * input.ports[idPort].offHiringCost;
     }
     // Save solution.
-    CoinDisjointCopyN(solution, indexMap.variableCount,
-            lastSolution.data());
+    CoinDisjointCopyN(solution, indexMap.variableCount, lastSolution.data());
 
     for (std::size_t idx = 0; idx < indexMap.variableCount; ++idx) {
         const double CHECK_TOLERANCE = 1e-2;
@@ -462,7 +458,7 @@ double DetCutPlaneBackend::calcError() {
                     indexMap.timeItineraryToDemandIndex[timeNow][idItinerary];
                 unsigned zi = indexMap.timeItineraryToZi[timeNow][idItinerary];
                 const auto& demand = event.demands[relatedIndex];
-                result += fabs(lastSolution[zi] - calcRevenue(
+                result += fabs(lastSolution[zi] - calculateRevenue(
                         demand, lastSolution[demandIndex]));
             }
         }
@@ -492,15 +488,15 @@ void DetCutPlaneBackend::addConstraints() {
                 cbcLastProblem.coefByVar[zi].push_back(
                         {1, indexMap.constraintCount - indexMap.demandZCount + zi});
                 cbcLastProblem.coefByVar[demandIndex].push_back(
-                        {-calcRevenueDeriv(demand, demandVal),
+                        {-calculateRevenueDerivative(demand, demandVal),
                     indexMap.constraintCount - indexMap.demandZCount + zi});
 
                 cbcLastProblem.gupper[indexMap.constraintCount - indexMap.demandZCount + zi] =
-                    calcRevenue(demand, demandVal)
-                    - calcRevenueDeriv(demand, demandVal) * demandVal;
+                    calculateRevenue(demand, demandVal)
+                    - calculateRevenueDerivative(demand, demandVal) * demandVal;
 
                 double oldValue = lastSolution[zi];
-                lastSolution[zi] = std::min(lastSolution[zi], calcRevenue(demand, demandVal));
+                lastSolution[zi] = std::min(lastSolution[zi], calculateRevenue(demand, demandVal));
                 preparedSolutionObjective += (lastSolution[zi] - oldValue);
             }
         }
@@ -722,7 +718,8 @@ void DetCutPlaneBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>*
             for (unsigned index = 0; index < event.relatedItineraryIds.size(); ++index) {
                 unsigned idItinerary = event.relatedItineraryIds[index];
                 const auto& demand = event.demands[index];
-                unsigned variableIndex = indexMap.timeItineraryToDemandIndex[relativeTime][idItinerary];
+                unsigned variableIndex = indexMap.timeItineraryToDemandIndex[
+                    relativeTime][idItinerary];
                 double& lower = vlower[variableIndex];
                 double& upper = vupper[variableIndex];
 
@@ -765,10 +762,10 @@ void DetCutPlaneBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>*
                 const auto& demand = event.demands[relatedIndex];
 
                 if (demand.type == Demand::Type::linear) {
-                    updateUpper(vupper[zi], calcRevenue(demand, demand.additive / 2));
+                    updateUpper(vupper[zi], calculateRevenue(demand, demand.additive / 2));
                 } else if (demand.type == Demand::Type::exponential) {
                     double optimalDemand = demand.scale * std::exp(-1.0);
-                    updateUpper(vupper[zi], calcRevenue(demand, optimalDemand));
+                    updateUpper(vupper[zi], calculateRevenue(demand, optimalDemand));
                 }
 
             }

@@ -338,12 +338,12 @@ void prepareSpotStrategies(
 
 
     for (std::size_t idx = 0; idx < launchConfig["turn_off_spot"].size(); ++idx) {
-        auto name = launchConfig["turn_off_spot"][int(idx)];
+        auto name = launchConfig["turn_off_spot"][static_cast<int>(idx)];
         turnOffSpot.push_back(name.asString());
     }
 
     for (std::size_t idx = 0; idx < launchConfig["spot_strategies"].size(); ++idx) {
-        auto name = launchConfig["spot_strategies"][int(idx)];
+        auto name = launchConfig["spot_strategies"][static_cast<int>(idx)];
         auto spotName = name.asString();
         if (std::find(std::begin(turnOffSpot),
                     std::end(turnOffSpot), spotName) != std::end(turnOffSpot)) {
@@ -436,12 +436,12 @@ void prepareAllotmentStrategies(const json::Value& configRoot,
 
     std::vector<std::string> turnOffLong;
     for (std::size_t idx = 0; idx < launchConfig["turn_off_allotment"].size(); ++idx) {
-        auto name = launchConfig["turn_off_allotment"][int(idx)];
+        auto name = launchConfig["turn_off_allotment"][static_cast<int>(idx)];
         turnOffLong.push_back(name.asString());
     }
 
     for (std::size_t idx = 0; idx < launchConfig["allotment_strategies"].size(); ++idx) {
-        auto name = launchConfig["allotment_strategies"][int(idx)];
+        auto name = launchConfig["allotment_strategies"][static_cast<int>(idx)];
         auto longName = name.asString();
         if (std::find(std::begin(turnOffLong), std::end(turnOffLong),
                     longName) != std::end(turnOffLong)) {
@@ -529,7 +529,7 @@ void prepareConfigurationPairs(const json::Value& configRoot,
     std::vector<std::pair<std::string, std::string>> ignoredPairs;
 
     for (std::size_t idx = 0; idx < launchConfig["ignore_pairs"].size(); ++idx) {
-        auto pairData = launchConfig["ignore_pairs"][int(idx)];
+        auto pairData = launchConfig["ignore_pairs"][static_cast<int>(idx)];
         auto spotValue = pairData["spot"].asString();
         auto longValue = pairData["allotment"].asString();
         ignoredPairs.push_back({spotValue, longValue});

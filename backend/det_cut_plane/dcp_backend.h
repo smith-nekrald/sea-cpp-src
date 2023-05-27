@@ -41,26 +41,20 @@ struct DetCutPlaneBackendConfig {
 class DetCutPlaneBackend {
 public:
     DetCutPlaneBackend(const DetCutPlaneBackendConfig& config);
-
     DecisionManagerPtr provideAllotments(double* objectiveValue = nullptr);
-
     void setUtilizationRatio(double value) {
         utilizationRatio = value;
     }
 
 private:
-    void initConstraintsLR(
-            vector<double>* glowerPtr, vector<double>* gupperPtr);
-    void initBoundsLR(
-            vector<double>* vlowerPtr, vector<double>* vupperPtr);
-
+    void initConstraintsLR(vector<double>* glowerPtr, vector<double>* gupperPtr);
+    void initBoundsLR(vector<double>* vlowerPtr, vector<double>* vupperPtr);
     void setupMainProblem();
     double runCbc();
     void addConstraints();
     void genRandomSolution();
     double calcError();
     void fillDecision(Decision* decision);
-
     double checkConstraintsAndBounds();
 
 private:
@@ -70,15 +64,25 @@ private:
 
 private:
     CbcPreMap cbcLastProblem;
-
     DetCutPlaneBackendConfig config;
     DcpIndexManagerPtr indexManager;
-
     vector<double> lastSolution;
     double preparedSolutionObjective;
     double utilizationRatio;
 };
 
+void addMultiVarConstraint(const vector<CoefIndex>& variables,
+                           double coefficient, unsigned constraintId,
+                           vector<vector<CoefIndex>>& constraints);
+void addMultiVarConstraint(const vector<unsigned>& variables,
+                           double coefficient, unsigned constraintId,
+                           vector<vector<CoefIndex>>& constraints);
+void addMultiVarObjective(
+        const vector<CoefIndex>& variables, double coefficient, vector<double>& objective);
+void addMultiVarObjective(
+        const vector<unsigned>& variables, double coefficient, vector<double>& objective);
+double calculateRevenue(const Demand& demand, double demandValue);
+double calculateRevenueDerivative(const Demand& demand, double demandValue);
 
 } // namespace backend
 } // namespace sea
