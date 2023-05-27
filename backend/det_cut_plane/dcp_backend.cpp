@@ -107,8 +107,7 @@ DetCutPlaneBackend::DetCutPlaneBackend(
     dcpCreateIndexMap(config.inputManager->getConstData(),
             indexManager->getData());
 
-    auto logger =
-        logging::getBackendSubLogger(BackendType::DET_CUT_PLANE)
+    auto logger = logging::getBackendSubLogger(BackendType::DET_CUT_PLANE)
         << log4cpp::Priority::DEBUG;
     printIndexMapStats(logger, indexManager->getConstData());
 }
@@ -548,10 +547,8 @@ double DetCutPlaneBackend::checkConstraintsAndBounds() {
         assert(!std::isnan(upper));
         assert(!std::isnan(value));
         if (value > upper) {
-            logger.debugStream()
-                << "Upper constraint violation: (id: "
-                << i  << ", value: " << value
-                << ", upper: " << upper << ")";
+            logger.debugStream() << "Upper constraint violation: (id: "
+                << i  << ", value: " << value << ", upper: " << upper << ")";
             maxViolation = std::max(maxViolation, value - upper);
             if (config.tolerateConstraints) {
                 upper = value;
@@ -559,10 +556,8 @@ double DetCutPlaneBackend::checkConstraintsAndBounds() {
         }
 
         if (value < lower) {
-            logger.debugStream()
-                << "Lower constraint violation: (id: " << i
-                << ", value: " << value
-                << ", lower: " << lower << ")";
+            logger.debugStream() << "Lower constraint violation: (id: " << i
+                << ", value: " << value << ", lower: " << lower << ")";
             maxViolation = std::max(maxViolation, lower - value);
             if (config.tolerateConstraints) {
                 lower = value;
@@ -578,15 +573,13 @@ double DetCutPlaneBackend::checkConstraintsAndBounds() {
         assert(!std::isnan(upper));
         assert(!std::isnan(value));
         if (value < lower) {
-            logger.debugStream() << "Lower bound violation: "
-                << " value = " << value << " bound = " << lower
-                << " variable_id = " <<  ind;
+            logger.debugStream() << "Lower bound violation: " << " value = " << value
+                << " bound = " << lower << " variable_id = " <<  ind;
             maxViolation = std::max(maxViolation, lower - value);
         }
         if (value > upper) {
-            logger.debugStream() << "Upper bound violation: "
-                << " value = " << value << " bound = " << upper
-                << " variable_id = " <<  ind;
+            logger.debugStream() << "Upper bound violation: " << " value = " << value
+                << " bound = " << upper << " variable_id = " <<  ind;
             maxViolation = std::max(maxViolation, value - upper);
         }
     }
@@ -826,12 +819,9 @@ DecisionManagerPtr DetCutPlaneBackend::provideAllotments(double* objectiveValue)
         error = calcError();
 
         logger.getStream(log4cpp::Priority::INFO)
-            << "Iteration: " << iterCount << ", "
-            << "Error: " << error << ", "
-            << "Constraint error: " << constraintError << ", "
-            << "Accumulated error: "
-                << accumulatedConstraintError << ", "
-            << "Objective: " << objectiveEstimation;
+            << "Iteration: " << iterCount << ", " << "Error: " << error << ", "
+            << "Constraint error: " << constraintError << ", " << "Accumulated error: "
+            << accumulatedConstraintError << ", " << "Objective: " << objectiveEstimation;
 
         if (objectiveEstimation < 0) {
              break;
@@ -985,7 +975,8 @@ void DetCutPlaneBackend::initConstraintsLR(vector<double>* glowerPtr, vector<dou
     for (const auto& arc : input.arcs) {
         if (arc.type == InputData::Arc::Type::travel) {
             unsigned constraintIndex = indexMap.arcCapacityConstraints[arc.id];
-            updateUpper(gupper[constraintIndex], double(input.vessels[arc.vesselId.value()].capacity * utilizationRatio));
+            updateUpper(gupper[constraintIndex],
+                    double(input.vessels[arc.vesselId.value()].capacity * utilizationRatio));
         }
     }
 
