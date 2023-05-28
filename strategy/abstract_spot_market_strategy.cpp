@@ -1,3 +1,9 @@
+// Implements conceptual methods for Abstract SpotMarket Strategy.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "../manager.h"
 #include "../algorithm/state.h"
 #include "../common.h"
@@ -8,8 +14,6 @@
 #include <iostream>
 #include <limits>
 
-const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
-const double INF = std::numeric_limits<double>::max();
 
 namespace sea {
 namespace strategy {
@@ -67,11 +71,13 @@ ConstDecisionManagerPtr AbstractSpotMarketStrategy::makeDecision() {
                             links.allotmentItineraryToPlace[contractId].end()) {
                         unsigned placeIndex = links.allotmentItineraryToPlace[
                             contractId].at(routeId);
+                        const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
                         assert(placeIndex != MAX_INDEX);
                         assert(routeId == decision->allotmentContainersQ[
                                 contractId][placeIndex].first);
-                        auto Q = decision->allotmentContainersQ[contractId][placeIndex].second;
-                        state.takenOnRoute[routeId] += Q;
+                        auto amountQ = decision->allotmentContainersQ[
+                            contractId][placeIndex].second;
+                        state.takenOnRoute[routeId] += amountQ;
                     }
                 }
             }
@@ -126,8 +132,8 @@ void AbstractSpotMarketStrategy::submitAction(ConstActionManagerPtr newActionMan
         assert(!timeParameters.gotPortDecision);
         timeParameters.doneAction = true;
         // update bookings in state
-        for (unsigned i = 0; i < action->bookingsB[eventNow.relativeTime].size(); ++i) {
-            state.accumulatedBookings[i] += action->bookingsB[eventNow.relativeTime][i];
+        for (unsigned idx = 0; idx < action->bookingsB[eventNow.relativeTime].size(); ++idx) {
+            state.accumulatedBookings[idx] += action->bookingsB[eventNow.relativeTime][idx];
         }
     } else {
         throw std::logic_error("This event type is not supported");
@@ -168,11 +174,14 @@ void AbstractSpotMarketStrategy::processOffhiring(const InputData::Event& event)
     auto& containersInPorts = state.containersInPorts;
     const auto& input = config.inputManager->getConstData();
     for (unsigned idPort = 0; idPort < input.ports.size(); ++idPort)  {
-        if (int(decision->offHiredInPortS[eventTime][idPort]) > containersInPorts[idPort]) {
+        int offHired = static_cast<int>(decision->offHiredInPortS[eventTime][idPort]);
+        if (offHired > containersInPorts[idPort]) {
+            assert(containersInPorts[idPort] >= 0);
             decision->offHiredInPortS[eventTime][idPort] = containersInPorts[idPort];
         }
+        int finalCount = static_cast<int>(input.ports[idPort].finalContainerCount);
         if (event.relativeTime + 1 == input.events.size()) {
-            if (containersInPorts[idPort] >= int(input.ports[idPort].finalContainerCount)) {
+            if (containersInPorts[idPort] >= finalCount) {
                 decision->offHiredInPortS[eventTime][idPort] =
                     containersInPorts[idPort] - input.ports[idPort].finalContainerCount;
             }
@@ -183,7 +192,8 @@ void AbstractSpotMarketStrategy::processOffhiring(const InputData::Event& event)
 }
 
 void AbstractSpotMarketStrategy::initialize() {
-    lastUpdate = -1e100;
+    const double INF = std::numeric_limits<double>::max();
+    lastUpdate = -INF;
     story.clear();
     state = State();
     initState(config.inputManager->getConstData(), &state);
