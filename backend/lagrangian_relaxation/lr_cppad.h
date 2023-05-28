@@ -5,9 +5,16 @@
 #include "index.h"
 
 #include <stdexcept>
+#include <cppad/cppad.hpp>
+#include <cppad/core/value.hpp>
+#include <cppad/core/var2par.hpp>
 
 namespace sea {
 namespace backend {
+
+double Value(const double& entry);
+double Value(const CppAD::AD<double>& entry);
+double Value(const CppAD::AD<CppAD::AD<double>>& entry);
 
 double evaluateFunctionInPoint(
         const DualVariables& point,
@@ -30,7 +37,6 @@ SubgradientOptimizationParameters estimateSubgradientWithCppAD(
         bool ignoreSpot=false,
         double l2CoeffReg=0,
         DualVariables mean=DualVariables());
-
 
 } // namespace backend
 } // namespace sea

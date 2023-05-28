@@ -1,3 +1,9 @@
+// Implements computeSubgradientInPoint method.
+//
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "functions.h"
 
 namespace sea {
@@ -21,7 +27,8 @@ SubgradientOptimizationParameters computeSubgradientInPoint(
     auto* decision = decisionManager->get();
 
     SubgradientOptimizationParameters answer = estimateSubgradientWithCppAD(
-            point, state, inputManager, linksManager, indexManager, decisionManager, ignoreSpot, l2CoeffReg, mean);
+            point, state, inputManager, linksManager, indexManager,
+            decisionManager, ignoreSpot, l2CoeffReg, mean);
 
     if (coeffU != nullptr) {
         const auto& input = inputManager->getConstData();
@@ -44,17 +51,12 @@ SubgradientOptimizationParameters computeSubgradientInPoint(
                                     magicIndex.arcToLambdaIndex[idArc]];
                             }
                         }
-                        double qr = 0, zr = 0;
+                        double qr = 0;
                         qr -= lambdaSum;
-                        zr -= lambdaSum;
                         qr -= itinerary.cost;
-                        zr -= itinerary.emptyCost;
                         qr += itinerary.declineCost;
                         qr -= event.duration * input.ports[
                             input.nodes[basedArc.fromNode].portId].storageCost;
-                        zr -= event.duration * input.ports[
-                            input.nodes[basedArc.fromNode].portId].storageCost;
-
                         double mu_r = point.muVariables[itinerary.id];
 
                         for (unsigned allotmentId : links.allotmentsWithItinerary[itinerary.id]) {
@@ -87,21 +89,18 @@ SubgradientOptimizationParameters computeSubgradientInPoint(
                                 coeffU->coefficients[allotment.id] +=  addFunctionValue;
                             }
                         }
-
                     }
                 }
             }
         }
-
         coeffU->freeMember = answer.functionValue;
-        for (unsigned idAllotment = 0; idAllotment < decision->allotmentAccepted.size(); ++idAllotment) {
+        for (unsigned idAllotment = 0;
+                idAllotment < decision->allotmentAccepted.size(); ++idAllotment) {
             if (decision->allotmentAccepted[idAllotment]) {
                 coeffU->freeMember -= coeffU->coefficients[idAllotment];
             }
-
         }
     }
-
     return answer;
 }
 

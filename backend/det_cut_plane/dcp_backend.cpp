@@ -1,3 +1,9 @@
+// Implementation for DetCutPlaneBackend and related functions.
+//
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "dcp_backend.h"
 #include "cbc_pre_map.h"
 #include "../lagrangian_relaxation/index.h"

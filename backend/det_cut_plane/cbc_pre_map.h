@@ -95,8 +95,8 @@ struct CbcPreMap {
         matrix.shrink_to_fit();
         indices.shrink_to_fit();
 
-        for (std::size_t i = 0; i < indices.size(); i++) {
-            assert(indices[i] < constraintCount);
+        for (std::size_t idx = 0; idx < indices.size(); idx++) {
+            assert(indices[idx] < constraintCount);
         }
 
         assert(matrixIndex == matrix.size());

@@ -1,13 +1,15 @@
+// Implements byItineraryRestore - method to make allocation decisions at cut-off events.
+//
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "functions.h"
 
 #include <limits>
 #include <filesystem>
 #include <cmath>
 #include <stdio.h>
-
-const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
-const double INF = std::numeric_limits<double>::max();
-const double FLOOR_EPS = 1e-3;
 
 
 namespace sea {
@@ -43,7 +45,6 @@ void byItineraryRestore(
                 return input.itineraries[lhs].declineCost > input.itineraries[rhs].declineCost;
             });
     for(auto itineraryId : interestingItineraries) {
-
         vector<double> objective;
         vector<int> correspondingAllotments;
 
@@ -217,6 +218,7 @@ void byItineraryRestore(
         // Reconstructing decision from solution.
         unsigned takenSum = 0;
 
+        const double FLOOR_EPS = 1e-3;
         double emptyCount = floor(solution[1] + FLOOR_EPS);
         assert(emptyCount >= 0.);
         decision->emptyContainersZ[itinerary.id] = static_cast<unsigned>(emptyCount);
@@ -289,13 +291,12 @@ void byItineraryRestore(
             decision->offHiredInPortS[event.relativeTime][beginPort.id] += offHiringDiff;;
             unsigned hiringArc = links.firstArcToHireAfterArc[endArc.id];
 
+            const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
             if (hiringArc != MAX_INDEX) {
                 decision->hiredY[hiringArc] += offHiringDiff;
             }
         }
-
         state->containersInPorts[beginPort.id] -= takenSum;
-
         // Update used capacity.
         for (unsigned arcId : itinerary.orderedArcs) {
             const auto& arc = input.arcs[arcId];

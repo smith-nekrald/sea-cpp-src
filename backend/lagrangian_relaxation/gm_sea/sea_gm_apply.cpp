@@ -1,3 +1,9 @@
+// Implements doGMOptimization and related logic.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "sea_gm_apply.h"
 #include "sea_constraints.h"
 

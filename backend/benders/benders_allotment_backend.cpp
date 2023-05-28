@@ -1,3 +1,9 @@
+// Implements BendersAllotmentBackend and related API.
+//
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "../lagrangian_relaxation/functions.h"
 #include "benders_allotment_backend.h"
 
@@ -14,10 +20,6 @@ using std::size_t;
 namespace sea {
 namespace backend {
 
-BendersAllotmentBackend::BendersAllotmentBackend(const BendersAllotmentBackendConfig& aConfig)
-    : config(aConfig) {
-}
-
 void recalculateUCoefficientsForDeterministic(
         const ConstInputManagerPtr& inputManager,
         const ConstLinksManagerPtr& linksManager,
@@ -26,12 +28,29 @@ void recalculateUCoefficientsForDeterministic(
         DecisionManagerPtr decisionManager,
         vector<CoefficientUInfo>* uinfo) {
     for (auto& entry : *uinfo) {
-        computeSubgradientInPoint(entry.second, state,
-                linksManager, inputManager, indexManager, decisionManager, &entry.first);
+        computeSubgradientInPoint(
+                entry.second, state, linksManager, inputManager,
+                indexManager, decisionManager, &entry.first);
     }
 }
 
+void prepareBestUSolution(const vector<CoefficientUInfo>& duals,
+    double* lastSolution, unsigned size, double precision) {
+    double yValue = COIN_DBL_MAX;
+    for (const auto & coeffUInfo : duals) {
+        double rhs = 0;
+        for (unsigned uInd = 0; uInd < coeffUInfo.first.coefficients.size(); ++uInd) {
+            rhs += lastSolution[uInd] * coeffUInfo.first.coefficients[uInd];
+        }
+        rhs += coeffUInfo.first.freeMember;
+        yValue = std::min<double>(yValue, rhs);
+    }
+    lastSolution[size - 1] = (yValue - precision);
+}
 
+BendersAllotmentBackend::BendersAllotmentBackend(const BendersAllotmentBackendConfig& aConfig)
+    : config(aConfig) {
+}
 
 void BendersAllotmentBackend::addDuals(const DualVariables& duals) {
     CoefficientUInfo info;
@@ -41,21 +60,6 @@ void BendersAllotmentBackend::addDuals(const DualVariables& duals) {
     info.first.freeMember = 0;
     storage.submittedDuals.push_back(info);
 }
-
-inline void prepareBestUSolution(const vector<CoefficientUInfo>& duals,
-    double* lastSolution, unsigned size, double precision = 1e-5) {
-    double y = COIN_DBL_MAX;
-    for (const auto & coeffUInfo : duals) {
-        double rhs = 0;
-        for (unsigned u = 0; u < coeffUInfo.first.coefficients.size(); ++u) {
-            rhs += lastSolution[u] * coeffUInfo.first.coefficients[u];
-        }
-        rhs += coeffUInfo.first.freeMember;
-        y = std::min<double>(y, rhs);
-    }
-    lastSolution[size - 1] = (y - precision);
-}
-
 
 vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDecision) {
     State state;
@@ -98,14 +102,14 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
 
     unsigned matrixPos = 0;
     // assign u coeffs
-    for (unsigned u = 0; u < input.allotments.size(); ++u) {
-        starts[u] = matrixPos;
+    for (unsigned uIdx = 0; uIdx < input.allotments.size(); ++uIdx) {
+        starts[uIdx] = matrixPos;
 
-        for (unsigned i = 0; i < preparedDuals.size(); ++i) {
-            indices[matrixPos] = i;
-            matrix[matrixPos++] = -preparedDuals[i].first.coefficients[u];
+        for (unsigned ind = 0; ind < preparedDuals.size(); ++ind) {
+            indices[matrixPos] = ind;
+            matrix[matrixPos++] = -preparedDuals[ind].first.coefficients[uIdx];
         }
-        for (unsigned groupId : links.allotmentToGroups[u]) {
+        for (unsigned groupId : links.allotmentToGroups[uIdx]) {
             indices[matrixPos] = preparedDuals.size() + groupId;
             matrix[matrixPos++] = 1;
         }
@@ -113,8 +117,8 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
 
     // assign y coeffs
     starts[variablesCount - 1] = matrixPos;
-    for (unsigned i = 0; i < preparedDuals.size(); ++i) {
-        indices[matrixPos] = i;
+    for (unsigned idx = 0; idx < preparedDuals.size(); ++idx) {
+        indices[matrixPos] = idx;
         matrix[matrixPos++] = 1;
     }
 
@@ -125,22 +129,22 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
     vector<double> constraintLowerBound(constraintsCount);
 
     //assign constraints
-    for (unsigned i = 0; i < preparedDuals.size(); ++i) {
-        constraintLowerBound[i] = -COIN_DBL_MAX;
-        constraintUpperBound[i] = preparedDuals[i].first.freeMember;
+    for (unsigned ind = 0; ind < preparedDuals.size(); ++ind) {
+        constraintLowerBound[ind] = -COIN_DBL_MAX;
+        constraintUpperBound[ind] = preparedDuals[ind].first.freeMember;
     }
-    for (unsigned i = 0; i < input.allotmentGroups.size(); ++i) {
-        constraintLowerBound[preparedDuals.size() + i] = 0;
-        constraintUpperBound[preparedDuals.size() + i] = 1;
+    for (unsigned ind = 0; ind < input.allotmentGroups.size(); ++ind) {
+        constraintLowerBound[preparedDuals.size() + ind] = 0;
+        constraintUpperBound[preparedDuals.size() + ind] = 1;
     }
 
     vector<double> varUpperBound(variablesCount);
     vector<double> varLowerBound(variablesCount);
 
     // u
-    for (unsigned u = 0; u < input.allotments.size(); ++u) {
-        varLowerBound[u] = 0;
-        varUpperBound[u] = 1;
+    for (unsigned uIdx = 0; uIdx < input.allotments.size(); ++uIdx) {
+        varLowerBound[uIdx] = 0;
+        varUpperBound[uIdx] = 1;
     }
     // y
     varLowerBound[variablesCount - 1] = -COIN_DBL_MAX;
@@ -148,8 +152,8 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
 
     vector<double> objective(variablesCount);
     // u
-    for (unsigned u = 0; u < input.allotments.size(); ++u) {
-        objective[u] = 0;
+    for (unsigned uIdx = 0; uIdx < input.allotments.size(); ++uIdx) {
+        objective[uIdx] = 0;
     }
     // y -> max
     objective[variablesCount - 1] = 1;
@@ -164,8 +168,8 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
 
     solver.setObjSense(-1); // -> max
 
-    for (unsigned u = 0; u < input.allotments.size(); ++u) {
-        solver.setInteger(u);
+    for (unsigned uIdx = 0; uIdx < input.allotments.size(); ++uIdx) {
+        solver.setInteger(uIdx);
     }
 
     // get model
@@ -175,20 +179,21 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
     model.setLogLevel(cbcLogLevel);
 
     // set previous solution
-    if (lastSolution.size() != size_t(variablesCount)) {
+    if (lastSolution.size() != static_cast<size_t>(variablesCount)) {
         lastSolution.assign(variablesCount, 0);
     }
 
-    prepareBestUSolution(preparedDuals, lastSolution.data(),
-                         variablesCount, config.globalPrecision);
-    model.setBestSolution(lastSolution.data(), variablesCount,
-                          lastSolution.back() * solver.getObjSense());
+    prepareBestUSolution(
+            preparedDuals, lastSolution.data(), variablesCount, config.globalPrecision);
+    model.setBestSolution(
+            lastSolution.data(), variablesCount, lastSolution.back() * solver.getObjSense());
+
     // solve
     {
-            int fd; fpos_t pos;
+            int fileDescriptor; fpos_t position;
             fflush(stdout);
-            fgetpos(stdout, &pos);
-            fd = dup(fileno(stdout));
+            fgetpos(stdout, &position);
+            fileDescriptor = dup(fileno(stdout));
             auto folderPath = std::filesystem::path("benders");
             if (!std::filesystem::exists(folderPath)) {
                 std::filesystem::create_directories(folderPath);
@@ -203,10 +208,10 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
 
             printf("Benders branch & bound. Finished computation.\n");
             fflush(stdout);
-            dup2(fd, fileno(stdout));
-            close(fd);
+            dup2(fileDescriptor, fileno(stdout));
+            close(fileDescriptor);
             clearerr(stdout);
-            fsetpos(stdout, &pos);
+            fsetpos(stdout, &position);
     }
 
     auto solution = model.getColSolution();
@@ -214,14 +219,12 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
     // save solution
     CoinDisjointCopyN(solution, variablesCount, lastSolution.data());
     vector<bool> response(input.allotments.size(), false);
-    for (unsigned u = 0; u < input.allotments.size(); ++u) {
-        lastSolution[u] =  unsigned(round(solution[u]));
-        response[u] = unsigned(round(solution[u]));
+    for (unsigned uIdx = 0; uIdx < input.allotments.size(); ++uIdx) {
+        lastSolution[uIdx] = static_cast<unsigned>(round(solution[uIdx]));
+        response[uIdx] = static_cast<unsigned>(round(solution[uIdx]));
     }
     return response;
 }
-
-
 
 } // namespace backend
 } // namespace sea

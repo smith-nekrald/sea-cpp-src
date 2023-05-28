@@ -1,3 +1,9 @@
+// Implements functions related to the cutting plane optimization method.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "functions.h"
 #include "lagrangian_relaxation_backend.h"
 
@@ -7,8 +13,6 @@
 
 namespace sea {
 namespace backend {
-
-const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
 
 using ArcType=InputData::Arc::Type;
 using EventType=InputData::Event::Type;
@@ -141,7 +145,8 @@ void processAvgValue(
         minAvgValue = std::min(minAvgValue, 0.5 * (lower[place] + upper[place]));
         target->muVariables[idMu] = lower[place];
     }
-    double lambdaBase = std::max(4.0, -minAvgValue);
+    const double BASE_MIN = 4.0;
+    double lambdaBase = std::max(BASE_MIN, -minAvgValue);
     target->lambdaVariables.assign(target->lambdaVariables.size(), lambdaBase);
 }
 
@@ -239,8 +244,8 @@ void addDualsToSimplex(
     unsigned targetLambdaCount = point.lambdaVariables.size();
     unsigned targetMuCount = point.muVariables.size();
 
-    auto current = computeSubgradientInPoint(point, state,
-            linksManager, inputManager, indexManager,
+    auto current = computeSubgradientInPoint(
+            point, state, linksManager, inputManager, indexManager,
             decisionManager, nullptr, ignoreSpot, configIter.coeffReg.value(), mean);
     if (regObjectiveValue != nullptr) {
         *regObjectiveValue = current.functionValue;
@@ -351,6 +356,7 @@ void prepareSimplex(
                     const auto& arc = input.arcs[idArc];
                     if (arc.type == ArcType::travel) {
                         unsigned place = magicIndex.arcToLambdaIndex[idArc];
+                        const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
                         assert(place != MAX_INDEX);
                         double value = 1.0;
                         elementByRow.push_back(value);
@@ -380,7 +386,6 @@ void prepareSimplex(
             }
         }
     }
-
     rowStart[equationId++] = rowPlace;
     assert(equationId == nrows + 1);
 
@@ -430,19 +435,14 @@ std::pair<double, DualVariables> initializeCuttingPlane(
         for (auto flag : flagVals) {
             for (auto shift : shiftVals) {
                 for (auto init : initTypes) {
-                    point = provideSomeSolution(columnLower, columnUpper,
-                            lhsArray, init,
-                            inputManager, indexManager,
-                            configIter, randomPack,
-                            flag, shift);
+                    point = provideSomeSolution(columnLower, columnUpper, lhsArray, init,
+                            inputManager, indexManager, configIter, randomPack, flag, shift);
                     assert(point.muVariables.size()
                             == inputManager->getConstData().itineraries.size());
                     if (checkIfFeasible(point, columnLower, columnUpper, lhsArray,
                                 inputManager, indexManager, configIter)) {
-                        addDualsToSimplex(point, ncols,
-                                configIter, state,
-                                linksManager, inputManager,
-                                indexManager, decisionManager,
+                        addDualsToSimplex(point, ncols, configIter, state,
+                                linksManager, inputManager, indexManager, decisionManager,
                                 &simplexBase, ignoreSpot, &regObjectiveHolder,
                                 mean, &trueObjectiveHolder);
                         updateBest(response, point, trueObjectiveHolder);
@@ -464,30 +464,22 @@ std::pair<double, DualVariables> initializeCuttingPlane(
                 point, columnLower, columnUpper,
                 lhsArray, inputManager, indexManager, configIter);
         }
-
-        for (std::size_t idMu = 0; (!checkResult) &&
-                idMu < point.muVariables.size(); ++idMu) {
-            point.muVariables[idMu] =
-                columnUpper[idMu + point.lambdaVariables.size()];
+        for (std::size_t idMu = 0; (!checkResult) && idMu < point.muVariables.size(); ++idMu) {
+            point.muVariables[idMu] = columnUpper[idMu + point.lambdaVariables.size()];
         }
 
-        if (checkResult ||
-                checkIfFeasible(point, columnLower, columnUpper,
+        if (checkResult || checkIfFeasible(point, columnLower, columnUpper,
                 lhsArray, inputManager, indexManager, configIter)) {
             info.checked = true;
-            addDualsToSimplex(point, ncols,
-                    configIter, state,
-                    linksManager, inputManager,
-                    indexManager, decisionManager,
-                    &simplexBase, ignoreSpot,
+            addDualsToSimplex(point, ncols, configIter, state, linksManager, inputManager,
+                    indexManager, decisionManager, &simplexBase, ignoreSpot,
                     &regObjectiveHolder, mean, &trueObjectiveHolder);
             updateBest(response, point, trueObjectiveHolder);
         }
         if (info.immortal) {
             logImmortalNorms(info);
             auto boolArray = {true, false};
-            for (std::size_t idx = 0;
-                    idx < configIter.immortalShuffleCount; ++idx) {
+            for (std::size_t idx = 0; idx < configIter.immortalShuffleCount; ++idx) {
                 for (const auto& useNormal : boolArray) {
                     for (const auto& useUniform : boolArray) {
                         for (const auto& changeMu : boolArray) {
@@ -497,12 +489,10 @@ std::pair<double, DualVariables> initializeCuttingPlane(
                                         changeMu, changeLambda, useUniform, useNormal);
                                 if (checkIfFeasible(duals, columnLower, columnUpper, lhsArray,
                                             inputManager, indexManager, configIter)) {
-                                    addDualsToSimplex(duals, ncols,
-                                            configIter, state,
-                                            linksManager, inputManager,
-                                            indexManager, decisionManager,
-                                            &simplexBase, ignoreSpot, &regObjectiveHolder,
-                                            mean, &trueObjectiveHolder);
+                                    addDualsToSimplex(duals, ncols, configIter, state,
+                                        linksManager, inputManager, indexManager, decisionManager,
+                                        &simplexBase, ignoreSpot, &regObjectiveHolder,
+                                        mean, &trueObjectiveHolder);
                                     updateBest(response, duals, trueObjectiveHolder);
                                 }
                             }
@@ -545,16 +535,12 @@ pair<size_t, size_t> computeHitStats(const DualTemplate<bool>& currentHit) {
 
 pair<size_t, size_t> computeHitChange(
         const DualTemplate<bool>& prevHit, const DualTemplate<bool>& newHit) {
-    size_t changeLambda = computeHitDiff(prevHit.lambdaVariables,
-                newHit.lambdaVariables),
-           changeMu = computeHitDiff(prevHit.muVariables,
-                newHit.muVariables);
+    size_t changeLambda = computeHitDiff(prevHit.lambdaVariables, newHit.lambdaVariables),
+           changeMu = computeHitDiff(prevHit.muVariables, newHit.muVariables);
     return {changeLambda, changeMu};
 }
 
-void computeBoundHit(
-        const vector<double>& bound,
-        const DualVariables& dualVariables,
+void computeBoundHit(const vector<double>& bound, const DualVariables& dualVariables,
         DualTemplate<bool>* hitMap) {
     const double EPS = 1e-3;
     assert(hitMap != nullptr);
@@ -568,8 +554,7 @@ void computeBoundHit(
     }
     vector<int> hitMu, hitLambda;
     for (size_t idx = 0; idx < targetLambdaCount; ++idx) {
-        if (fabsl(dualVariables.lambdaVariables[idx]
-                    - bound[idx]) < EPS) {
+        if (fabsl(dualVariables.lambdaVariables[idx] - bound[idx]) < EPS) {
             hitMap->lambdaVariables[idx] = true;
             hitLambda.push_back(idx);
         } else {
@@ -577,8 +562,7 @@ void computeBoundHit(
         }
     }
     for (size_t idx = 0; idx < targetMuCount; ++idx) {
-        if (fabsl(dualVariables.muVariables[idx]
-                    - bound[idx + targetLambdaCount]) < EPS) {
+        if (fabsl(dualVariables.muVariables[idx] - bound[idx + targetLambdaCount]) < EPS) {
             hitMu.push_back(idx);
             hitMap->muVariables[idx] = true;
         } else {
@@ -639,7 +623,6 @@ void doCuttingPlaneOptimization(
     size_t targetMuCount = dualVariables.muVariables.size();
 
     logStartCuttingPlaneOptimization(state, dualPtr);
-
     ClpSimplex simplexBase;
 
     vector<double> columnLower, columnUpper, lhsArray;
@@ -661,8 +644,7 @@ void doCuttingPlaneOptimization(
     vector<bool> prevPlaneHits;
     prevPlaneHits = computePlaneHits(inputManager, indexManager, lhsArray, prevDuals);
 
-    for (unsigned iter = 0;
-            iter < configIter.maxSubgradientIterations.value(); ++iter) {
+    for (unsigned iter = 0; iter < configIter.maxSubgradientIterations.value(); ++iter) {
         ClpSimplex simplexFinal(simplexBase);
 
         // Optimization in a separate block to ensure correct logging to clp.log.
@@ -711,14 +693,11 @@ void doCuttingPlaneOptimization(
                 inputManager, indexManager, configIter);
         logCuttingPlaneIterationDuals(iter, dualVariables, feasible);
 
-        double regObjectiveValue = -1e100;
-        double trueObjectiveValue = -1e100;
-        addDualsToSimplex(
-                dualVariables, ncols,
-                configIter, state,
-                linksManager, inputManager,
-                indexManager, decisionManager,
-                &simplexBase, ignoreSpot,
+        const double INF = std::numeric_limits<double>::max();
+        double regObjectiveValue = -INF;
+        double trueObjectiveValue = -INF;
+        addDualsToSimplex(dualVariables, ncols, configIter, state, linksManager, inputManager,
+                indexManager, decisionManager, &simplexBase, ignoreSpot,
                 &regObjectiveValue, mean, &trueObjectiveValue);
         updateBest(bestPoint, dualVariables, trueObjectiveValue);
         DualDequeInfo info;
@@ -728,8 +707,7 @@ void doCuttingPlaneOptimization(
         dualHistory->push_back(info);
         while (dualHistory->size() > configIter.deque_size) {
             if (dualHistory->front().immortal) {
-                assert(dualHistory->size()
-                    >= configIter.immortalLimit);
+                assert(dualHistory->size() >= configIter.immortalLimit);
                 dualHistory->push_back(dualHistory->front());
             }
             dualHistory->pop_front();
@@ -778,8 +756,9 @@ void doCuttingPlaneOptimization(
                 (iter % configIter.restartPeriod.value() ==
                     (configIter.restartPeriod.value() - 1))) {
             if (!configIter.singleRestart || !restartCount) {
+                const double CERTAINTY_COEF = 3.;
                 assert(configIter.deque_size.value()
-                        >= configIter.restartPeriod.value() / 3.);
+                        >= configIter.restartPeriod.value() / CERTAINTY_COEF);
                 logRestartSimplexFromDeque();
                 ClpSimplex newSimplexBase;
                 prepareSimplex(inputManager, indexManager, configIter,
@@ -787,11 +766,9 @@ void doCuttingPlaneOptimization(
                         &columnUpper, &lhsArray, &ncols);
                 simplexBase = newSimplexBase;
                 auto newBest = initializeCuttingPlane(
-                        inputManager, linksManager,
-                        indexManager, configIter, state, columnLower,
-                        columnUpper, lhsArray, ncols, randomPack,
-                        dualHistory, simplexBase, decisionManager,
-                        ignoreSpot, mean);
+                        inputManager, linksManager, indexManager, configIter, state, columnLower,
+                        columnUpper, lhsArray, ncols, randomPack, dualHistory, simplexBase,
+                        decisionManager, ignoreSpot, mean);
                 if (newBest.first < bestPoint.first) {
                     bestPoint = newBest;
                 }

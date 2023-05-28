@@ -18,8 +18,7 @@ std::vector<Type> subgradientRoutine(
 }
 
 template<typename Type>
-std::vector<CppAD::AD<Type>> makeADRoutine(
-        const std::vector<Type>& domain) {
+std::vector<CppAD::AD<Type>> makeADRoutine(const std::vector<Type>& domain) {
     CppAD::AD<Type>::abort_recording();
     std::vector<CppAD::AD<Type>> adPoint(domain.size());
     for (std::size_t idx = 0; idx < domain.size(); ++idx) {

@@ -1,3 +1,9 @@
+// Commonly used functions.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "functions.h"
 
 namespace sea {

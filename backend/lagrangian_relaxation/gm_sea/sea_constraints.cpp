@@ -1,3 +1,9 @@
+// Implements SeqQDescriptor logic.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "sea_constraints.h"
 
 #include <numeric>
@@ -8,8 +14,7 @@ namespace backend {
 
 using namespace gm;
 
-void SeaQDescriptor::initBoundsLR(
-        vector<double>* vlower, vector<double>* vupper) const {
+void SeaQDescriptor::initBoundsLR(vector<double>* vlower, vector<double>* vupper) const {
     const double LOCAL_INF = COIN_DBL_MAX;
 
     const auto& input = storage.inputManager->getConstData();

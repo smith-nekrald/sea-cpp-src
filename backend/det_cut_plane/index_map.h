@@ -14,6 +14,9 @@ struct DcpIndexMap: IpoptIndexMap {
 };
 
 void dcpCreateIndexMap(const InputData& input, DcpIndexMap& indexMap);
-
 } // namespace backend
+
+void writeToFile(const std::string& filePath, const backend::DcpIndexMap& indexMap);
+void loadFromFile(const std::string& filePath, backend::DcpIndexMap* indexMap);
+
 } // namespace sea

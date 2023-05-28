@@ -16,9 +16,6 @@ using ArcType=InputData::Arc::Type;
 using EventType=InputData::Event::Type;
 using CppAD::AD;
 
-double Value(const double& entry);
-double Value(const CppAD::AD<double>& entry);
-
 
 template <typename Type>
 inline Type computeFunctionValue(const InputData& input,
@@ -88,12 +85,14 @@ inline Type computeFunctionValue(const InputData& input,
                 const auto& basedArc = input.arcs[event.basedArc.value()];
                 for (unsigned itineraryId : event.relatedItineraryIds) {
                     const auto& itinerary = input.itineraries[itineraryId];
-                    unsigned F_r = decision->nonEmptyContainersQ[itinerary.id] + decision->emptyContainersZ[itinerary.id];
+                    unsigned F_r = decision->nonEmptyContainersQ[itinerary.id]
+                        + decision->emptyContainersZ[itinerary.id];
                     Type lambdaSum = 0.;
                     for (unsigned idArc : itinerary.orderedArcs) {
                         const auto& arc = input.arcs[idArc];
                         if (arc.type == ArcType::travel) {
-                            lambdaSum += point.lambdaVariables[magicIndex.arcToLambdaIndex.at(idArc)];
+                            lambdaSum += point.lambdaVariables[
+                                magicIndex.arcToLambdaIndex.at(idArc)];
                         }
                     }
                     Type qr = 0, zr = 0;
@@ -165,7 +164,8 @@ inline Type computeFunctionValue(const InputData& input,
                             if (demand.type == Demand::Type::linear) {
                                 optimalPrice = -demand.additive / demand.multiplicative;
                             } else {
-                                optimalPrice = 1e100;
+                                const double INF = std::numeric_limits<double>::max();
+                                optimalPrice = INF;
                             }
                         } else {
                             Type localRevenue = (optimalPrice + yr) * demandValue;
@@ -200,14 +200,11 @@ inline Type computeFunctionValue(const InputData& input,
                             Type showMultiplier =
                                 entry.showRate.estimatedProba * entry.productAmount;
                             Type objectiveAdd = std::max(Type(0.), Type(qri - mu_r));
-                            Type addFunctionValue
-                                = (showMultiplier *
-                                        (-itinerary.declineCost - entry.cancellationPrice
-                                         + objectiveAdd)
-                                        + entry.productAmount * entry.cancellationPrice);
+                            Type addFunctionValue = (showMultiplier *
+                                (-itinerary.declineCost - entry.cancellationPrice
+                                + objectiveAdd) + entry.productAmount * entry.cancellationPrice);
                             addFunctionValue += F_r_i * mu_r;
                             functionValue += addFunctionValue;
-
                         }
                     }
                 }

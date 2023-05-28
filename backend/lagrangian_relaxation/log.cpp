@@ -1,3 +1,9 @@
+// Implements logging for the module.
+//
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "functions.h"
 #include "lagrangian_relaxation_backend.h"
 #include "../../logging/logging.h"

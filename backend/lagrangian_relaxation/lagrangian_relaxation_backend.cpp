@@ -1,3 +1,9 @@
+// Implements logic related to the Lagrangian Relxation Backend.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "lagrangian_relaxation_backend.h"
 #include "functions.h"
 #include "lr_cppad.h"
@@ -10,36 +16,27 @@ namespace backend {
 using namespace gm;
 
 LagrangianRelaxationBackend::LagrangianRelaxationBackend(
-            const LagrangianRelaxationBackendConfig& aConfig)
-        : config(aConfig) {
-
+            const LagrangianRelaxationBackendConfig& aConfig) : config(aConfig) {
     std::string filePath = "lr_index_" + makeUniqueFileName();
-    ManagerConfig managerConfig = {config.needMemory.value(),
-        filePath, true};
+    ManagerConfig managerConfig = {config.needMemory.value(), filePath, true};
     index = std::make_shared<DataManager<
         LagrangianRelaxationIndex>>(managerConfig);
-
     initLagrangianRelaxationIndex(
             config.linksManager->getConstData(),
             config.inputManager->getConstData(),
             index->get());
     randomPack.generator = std::default_random_engine(config.seed.value());
     randomPack.normalDist = std::normal_distribution<double>(
-            config.normalMean.value(), config.normalStd.value());
-    randomPack.uniformDist =
-        std::uniform_real_distribution<double>(
-                config.uniformMin.value(), config.uniformMax.value());
-    randomPack.bernoullyDist =
-        std::bernoulli_distribution(config.bernoullyProba.value());
-
+        config.normalMean.value(), config.normalStd.value());
+    randomPack.uniformDist = std::uniform_real_distribution<double>(
+        config.uniformMin.value(), config.uniformMax.value());
+    randomPack.bernoullyDist = std::bernoulli_distribution(config.bernoullyProba.value());
     logLRConstruction();
 }
 
 DualVariables LagrangianRelaxationBackend::provideDuals(
-            const State& state,
-            DecisionManagerPtr decisionManager,
-            UCoefficients* uCoeff,
-            double* objectiveEstimation) const {
+            const State& state, DecisionManagerPtr decisionManager,
+            UCoefficients* uCoeff, double* objectiveEstimation) const {
     DualVariables duals;
     initDuals(index->getConstData(), &duals);
     if (config.optimizationAlgo == OptimizationAlgo::CUTTING_PLANE) {
@@ -57,7 +54,6 @@ DualVariables LagrangianRelaxationBackend::provideDuals(
     }
     mean = duals;
     logProvideDuals(decisionManager, duals);
-
     return duals;
 }
 
@@ -73,7 +69,6 @@ void LagrangianRelaxationBackend::makeCutoffDecisionWithDuals(
     byItineraryRestore(event, config.inputManager, config.linksManager,
         index, actionManager, duals, state, decisionManager);
 }
-
 
 } // namespace backend
 } // namespace sea

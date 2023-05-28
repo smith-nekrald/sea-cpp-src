@@ -31,7 +31,8 @@ inline void initBackend(std::shared_ptr<Backend>& backend_ptr, const Config& con
 }
 
 template<typename Backend, typename Config>
-inline void initBackend(std::shared_ptr<Backend>& backend_ptr, const Config& config, double utilizationRatio) {
+inline void initBackend(std::shared_ptr<Backend>& backend_ptr,
+        const Config& config, double utilizationRatio) {
     initBackend(backend_ptr, config);
     backend_ptr->setUtilizationRatio(utilizationRatio);
 }

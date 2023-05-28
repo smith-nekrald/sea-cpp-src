@@ -1,9 +1,15 @@
+// Implements logic for BregmanOptimization Problem and ArgminOptimization Problem.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "ufgm_problem.h"
 #include "gm_interfaces.h"
 
 #include <cppad/ipopt/solve.hpp>
 
-namespace gm{
+namespace gm {
 
 using std::size_t;
 using std::vector;

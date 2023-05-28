@@ -1,3 +1,9 @@
+// Implements UFGM Optimizer logic.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "ufgm_optimizer.h"
 #include "ufgm_problem.h"
 
@@ -41,8 +47,7 @@ UFGMOptimizer::UFGMOptimizer(
     , L0(L0) {
 }
 
-vector<double> UFGMOptimizer::optimize(
-        const vector<double>& initial) const {
+vector<double> UFGMOptimizer::optimize(const vector<double>& initial) const {
     story.clear();
 
     vector<double> xk = initial, yk = initial, vk = initial;
@@ -167,8 +172,8 @@ vector<double> UFGMOptimizer::optimize(
     return xBest;
 };
 
-void UFGMOptimizer::setCppADToValues(const vector<double>& values,
-        vector<AD<double>>* variablesPtr) const {
+void UFGMOptimizer::setCppADToValues(
+        const vector<double>& values, vector<AD<double>>* variablesPtr) const {
     assert(variablesPtr != nullptr);
     auto& variables = *variablesPtr;
     assert(variables.size() == values.size());

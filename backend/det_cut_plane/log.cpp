@@ -1,3 +1,9 @@
+// Logging for the Det-Cut-Plane backend module.
+//
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "dcp_backend.h"
 #include "../../logging/logging.h"
 
