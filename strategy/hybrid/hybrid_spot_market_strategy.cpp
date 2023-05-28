@@ -1,3 +1,8 @@
+// Implements logic for Hybrid Spot Market Strategy.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
 #include "hybrid_spot_market_strategy.h"
 
 namespace sea {
@@ -33,7 +38,8 @@ void HybridSpotMarketStrategy::reset() {
             backendConfigs.lrConfig);
     backends.dcpBackend = nullptr;
     backends.bendersBackend = nullptr;
-    lastUpdate=-1e100;
+    const double INF = std::numeric_limits<double>::max();
+    lastUpdate=-INF;
 }
 
 void HybridSpotMarketStrategy::setBackends(const sea::BackendHolder& holder) {

@@ -1,3 +1,9 @@
+// Logging for lr strategy module.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "lr_cutting_plane_spot_market_strategy.h"
 
 namespace sea {

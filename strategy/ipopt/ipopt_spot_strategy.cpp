@@ -1,3 +1,10 @@
+// Implements logic for Ipopt Spot Market Strategy.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
+
 #include "ipopt_spot_strategy.h"
 #include "../../logging/logging.h"
 
@@ -48,7 +55,8 @@ void IpoptSpotMarketStrategy::processCutoff(const InputData::Event& event) {
         // Processing allotments
         for (unsigned idAllotment : links.allotmentsWithItinerary[idItinerary]) {
             if (decision->allotmentAccepted[idAllotment]) {
-                unsigned placeIndex = links.allotmentItineraryToPlace.at(idAllotment).at(idItinerary);
+                unsigned placeIndex = links.allotmentItineraryToPlace.at(
+                        idAllotment).at(idItinerary);
                 unsigned shownAllotment = action->allotmentDemandN[idAllotment][placeIndex].second;
                 assert(action->allotmentDemandN[idAllotment][placeIndex].first == idItinerary);
                 assert(decision->allotmentContainersQ[idAllotment][placeIndex].first

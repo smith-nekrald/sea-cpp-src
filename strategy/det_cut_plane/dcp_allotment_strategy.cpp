@@ -1,3 +1,9 @@
+// Implements logic for DetCutPlane Allotment Strategy.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "dcp_allotment_strategy.h"
 #include "../../logging/logging.h"
 
@@ -10,23 +16,19 @@ DecisionManagerPtr DetCutPlaneAllotmentStrategy::provideAllotments() {
     }
     auto decision = backends.dcpBackend->provideAllotments(&valueEstimation);
     logPrintAnswerInProvideAllotments(decision);
-
     if (config.storeInitialDecision) {
         decisionCopy[utilizationRatio] = decision->deepCopy();
         decisionCopy[utilizationRatio]->release();
     }
-
     return decision;
 }
 
 void DetCutPlaneAllotmentStrategy::reset() {
-    initBackend(
-        backends.dcpBackend, backendConfigs.dcpConfig, utilizationRatio);
+    initBackend(backends.dcpBackend, backendConfigs.dcpConfig, utilizationRatio);
     backends.ipoptBackend = nullptr;
     backends.bendersBackend = nullptr;
     backends.lrBackend = nullptr;
 }
-
 
 } // namespace strategy
 } // namespace sea

@@ -1,3 +1,11 @@
+// Implements logic for LR Spot Market Strategy.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
+#include <limits>
+
 #include "lr_cutting_plane_spot_market_strategy.h"
 
 namespace sea {
@@ -50,8 +58,9 @@ void LRCuttingPlaneSpotMarketStrategy::reset() {
             backends.ipoptBackend, backendConfigs.ipoptConfig, config.utilizationRatio.value());
     backends.bendersBackend = nullptr;
     backends.dcpBackend = nullptr;
-    lastUpdate = -1e100;
-    lastSoftUpdateTime = -1e100;
+    const double INF = std::numeric_limits<double>::max();
+    lastUpdate = -INF;
+    lastSoftUpdateTime = -INF;
 }
 
 void LRCuttingPlaneSpotMarketStrategy::setBackends(const BackendHolder& holder)  {

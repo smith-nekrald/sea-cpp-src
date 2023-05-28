@@ -1,3 +1,8 @@
+// Implements logic for dcp allotment strategy module.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
 #include "dcp_allotment_strategy.h"
 
 namespace sea {

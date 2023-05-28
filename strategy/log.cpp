@@ -1,3 +1,9 @@
+// Logging for strategy module.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "abstract_allotment_strategy.h"
 #include "abstract_spot_market_strategy.h"
 

@@ -15,12 +15,10 @@ using ZeroAllotmentStrategyConfig=IpoptAllotmentStrategyConfig;
 class ZeroAllotmentStrategy: public AbstractAllotmentStrategy {
 public:
     ZeroAllotmentStrategy(const IpoptAllotmentStrategyConfig& aConfig)
-        : AbstractAllotmentStrategy(
-                aConfig.abstractConfig,
-                aConfig.backendConfigs,
-                "zero_allotment") {
-            reset();
-            assert(config.type == AllotmentStrategyType::ZERO_IPOPT);
+            : AbstractAllotmentStrategy(
+                aConfig.abstractConfig, aConfig.backendConfigs, "zero_allotment") {
+        reset();
+        assert(config.type == AllotmentStrategyType::ZERO_IPOPT);
     }
     void reset() override;
     void hardReset() override;

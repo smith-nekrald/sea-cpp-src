@@ -1,5 +1,7 @@
 #pragma once
 
+#include <limits>
+
 #include "../abstract_spot_market_strategy.h"
 #include "../../backend/ipopt/ipopt_backend.h"
 #include "../../backend/lagrangian_relaxation/lagrangian_relaxation_backend.h"
@@ -22,13 +24,12 @@ public:
 
 public:
     HybridSpotMarketStrategy(const HybridSpotMarketStrategyConfig& aConfig)
-        : AbstractSpotMarketStrategy(
-                aConfig.abstractConfig,
-                aConfig.backendConfigs,
-                "hybrid_spot")
-        , innerConfig(aConfig.innerConfig) {
-            reset();
-            lastUpdate=-1e100;
+            : AbstractSpotMarketStrategy(
+                aConfig.abstractConfig, aConfig.backendConfigs, "hybrid_spot")
+            , innerConfig(aConfig.innerConfig) {
+        reset();
+        const double INF = std::numeric_limits<double>::max();
+        lastUpdate = -INF;
     }
     virtual ~HybridSpotMarketStrategy() {};
     void reset() override;

@@ -1,3 +1,9 @@
+// Implements logic for Ipopt Allotment Strategy.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "ipopt_allotment_strategy.h"
 #include "../../logging/logging.h"
 
@@ -37,3 +43,4 @@ void IpoptAllotmentStrategy::hardReset() {
 
 } // namespace strategy
 } // namespace sea
+

@@ -16,16 +16,13 @@ struct NullAllotmentStrategyConfig {
 };
 
 
-
 class NullAllotmentStrategy: public AbstractAllotmentStrategy {
 public:
     NullAllotmentStrategy(const NullAllotmentStrategyConfig& aConfig)
-        : AbstractAllotmentStrategy(
-                aConfig.abstractConfig,
-                aConfig.backendConfigs,
-                "null_allotment") {
-            reset();
-            assert(config.type == AllotmentStrategyType::ZERO_NULL);
+            : AbstractAllotmentStrategy(
+                aConfig.abstractConfig, aConfig.backendConfigs, "null_allotment") {
+        reset();
+        assert(config.type == AllotmentStrategyType::ZERO_NULL);
     }
     void reset() override;
     // Creates new DecisionManagerPtr and fills field related to selected allotments.
@@ -33,6 +30,13 @@ public:
     virtual ~NullAllotmentStrategy() {};
 };
 
+
+template<typename Type>
+void fillZero(std::vector<Type>& data) {
+    for (std::size_t ind = 0; ind < data.size(); ++ind) {
+        data[ind] = 0;
+    }
+}
 
 } // namespace strategy
 } // namespace sea

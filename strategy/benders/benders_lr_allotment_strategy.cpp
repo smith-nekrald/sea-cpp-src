@@ -1,13 +1,16 @@
+// Implements logic for BendersLRAllotmentStrategy.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+
 #include "benders_lr_allotment_strategy.h"
 #include "../../algorithm/state.h"
-
 
 namespace sea {
 namespace strategy {
 
-
-double objectiveBlending(
-        double deterministicObjective, double methodObjective, double weight) {
+double objectiveBlending(double deterministicObjective, double methodObjective, double weight) {
     return weight * methodObjective + (1.0 - weight) * deterministicObjective;
 }
 
@@ -59,7 +62,6 @@ DecisionManagerPtr BendersLRAllotmentStrategy::provideAllotments() {
     VariableGroup currentGroup, bestGroup = lastGroup;
 
     for (std::size_t iterId = 0; iterId < innerConfig.iterationCount; ++iterId) {
-
         backends.bendersBackend->addDuals(duals);
         currentGroup.allotmentSelection = backends.bendersBackend->makeAllotments(decisionManager);
         decisionManager = backends.ipoptBackend->bendersQuery(
