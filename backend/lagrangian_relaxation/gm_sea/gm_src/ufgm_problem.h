@@ -38,10 +38,10 @@ public:
      * @param pivot Pivoting point. Corresponds to vk in notation.
      * @param qDescriptor The constraint descriptor, allows to build constraints that force
      * optimization in the projected space.
-     * @param regularizer The object to compute regularizer in point.
-     * @param prox The object to compute prox function in point.
-     * @param adRegularizer The object to compute regularizer derivative in point.
-     * @param adProx The object to compute prox functino derivative in point.
+     * @param regularizer The object to compute regularizer value and subgradient in point.
+     * @param prox The object to compute prox function value and subgradient in point.
+     * @param adRegularizer The object to compute regularizer value and subgradient in CppAD form.
+     * @param adProx The object to compute prox function value and subgradient in CppAD form.
      */
     BregmanOptimizationProblem(
             const std::vector<double>& grad_f_xk,
@@ -69,13 +69,13 @@ private:
     const std::vector<double> pivot;
     /// @brief Method to build constraints and therefore ensure optimization over projected space.
     std::shared_ptr<const IQDescriptor> qDescriptor;
-    /// @brief Object to compute regularizer in point.
+    /// @brief Object to compute regularizer value and subgradient in point.
     std::shared_ptr<const DoubleFunction> regularizer;
-    /// @brief Object to compute prox-function in point.
+    /// @brief Object to compute prox-function value and subgradient in point.
     std::shared_ptr<const DoubleFunction> prox;
-    /// @brief Object to compute regularizer derivative in point.
+    /// @brief Object to compute regularizer value and subgradient in CppAD form.
     std::shared_ptr<const CppADFunction> adRegularizer;
-    /// @brief Object to compute prox-function derivative in point.
+    /// @brief Object to compute prox-function value and subgradient in CppAD form.
     std::shared_ptr<const CppADFunction> adProx;
 };
 
@@ -99,10 +99,10 @@ public:
      * @param coeffFree Free coefficient in the objective.
      * @param qDescriptor Object for making constraints and therefore enrusing optimization
      * in the projected space.
-     * @param regularizer Object to compute regularizer value in point.
-     * @param prox Object to compute prox-function value in point.
-     * @param adRegularizer Object to compute regularizer derivative in point.
-     * @param adProx Object to compute prox-function derivative in point.
+     * @param regularizer Object to compute regularizer value and subgradient in point.
+     * @param prox Object to compute prox-function value and subgradient in point.
+     * @param adRegularizer Object to compute regularizer value and subgradient in CppAD form.
+     * @param adProx Object to compute prox-function value and subgradient in CppAD form.
      */
     ArgminOptimizationProblem(
             const std::vector<double>& coeffAns,
@@ -134,13 +134,13 @@ private:
     /// @brief Object for making constraints and therefore ensuring
     /// optimization in the projected space.
     std::shared_ptr<const IQDescriptor> qDescriptor;
-    /// @brief Object to compute regularizer in point.
+    /// @brief Object to compute regularizer value and subgradient in point.
     std::shared_ptr<const DoubleFunction> regularizer;
-    /// @brief Object to compute prox function in point.
+    /// @brief Object to compute prox function value and subgradient in point.
     std::shared_ptr<const DoubleFunction> prox;
-    /// @brief Object to compute regularizer derivative in point.
+    /// @brief Object to compute regularizer value and subgradient in CppAD form.
     std::shared_ptr<const CppADFunction> adRegularizer;
-    /// @brief Object to compute prox-function derivative in point.
+    /// @brief Object to compute prox-function value and subgradient in CppAD form.
     std::shared_ptr<const CppADFunction> adProx;
 };
 
