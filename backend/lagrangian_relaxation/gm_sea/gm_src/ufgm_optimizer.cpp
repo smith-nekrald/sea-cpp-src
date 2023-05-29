@@ -55,8 +55,7 @@ vector<double> UFGMOptimizer::optimize(const vector<double>& initial) const {
     const size_t MAX_POW = 256;
 
     vector<double> coeffAns(problemSize);
-    double coeffReg = 0,
-           coeffFree = 0;
+    double coeffReg = 0, coeffFree = 0;
 
     double Lk = L0, Ak = 0, ak = 0, tau_k = 0;
 
@@ -70,9 +69,13 @@ vector<double> UFGMOptimizer::optimize(const vector<double>& initial) const {
         std::cout << "UFGMOptimizer : iteration = " << iter_id + 1 << " ";
         std::cout << "valueBest = " << valueBest << " last_pow = " << pow <<  " ";
         std::cout << "Ak = " << Ak << " Lk = " << Lk << " tau_k = " << tau_k << std::endl;
-        if (Ak > 1e19) break;
 
-        double equ_a = 1, equ_b = -1. /Lk, equ_c = -Ak / Lk;
+        const double BOUND_AK = 1e19;
+        if (Ak > BOUND_AK) { 
+            break;
+        }
+
+        double equ_a = 1, equ_b = -1. / Lk, equ_c = - Ak / Lk;
         vk = compute_argmin_psi(coeffAns, coeffReg, coeffFree, initial, vk);
 
         double pow2 = 1.;
@@ -103,22 +106,18 @@ vector<double> UFGMOptimizer::optimize(const vector<double>& initial) const {
                 }
 
                 auto f_grad = target->getSubgradient(cand_xk);
-                vector<double> cand_xk_hat = compute_argmin_bregman(
-                        f_grad, cand_ak, vk, xk);
+                vector<double> cand_xk_hat = compute_argmin_bregman(f_grad, cand_ak, vk, xk);
 
                 vector<double> cand_yk(problemSize, 0);
                 for (size_t idx = 0; idx < problemSize; ++idx) {
                     cand_yk[idx] = cand_xk_hat[idx] * cand_tauk + (1. - cand_tauk) * yk[idx];
                 }
 
-
                 double scalarProduct = 0, diffSqrNorm = 0;
                 for (size_t idx = 0; idx < problemSize; ++idx) {
                     scalarProduct += f_grad[idx] * (cand_yk[idx] - cand_xk[idx]);
-                    diffSqrNorm += (cand_yk[idx] - cand_xk[idx])
-                        * (cand_yk[idx] - cand_xk[idx]);
+                    diffSqrNorm += (cand_yk[idx] - cand_xk[idx]) * (cand_yk[idx] - cand_xk[idx]);
                 }
-
 
                 if (target->getValue(cand_yk) <= target->getValue(cand_xk) +
                         scalarProduct + pow2 / 2. * Lk * diffSqrNorm + eps / 2 * cand_tauk) {
@@ -193,10 +192,8 @@ vector<double> UFGMOptimizer::compute_argmin_bregman(
     qDescriptor->initConstraintsLR(&glower, &gupper);
     qDescriptor->initBoundsLR(&vlower, &vupper);
 
-    BregmanOptimizationProblem problem(
-            grad_f_xk, ak, bregmanPivot, qDescriptor,
-            regularizer, prox,
-            adRegularizer, adProx);
+    BregmanOptimizationProblem problem(grad_f_xk, ak, bregmanPivot, qDescriptor,
+            regularizer, prox, adRegularizer, adProx);
 
     string options = makeIpoptOptions();
     CppAD::ipopt::solve_result<vector<double>> solution; // scaled

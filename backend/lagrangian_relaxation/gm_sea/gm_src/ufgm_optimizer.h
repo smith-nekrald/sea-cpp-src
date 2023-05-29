@@ -8,6 +8,10 @@
 
 namespace gm {
 
+/**
+ * @brief Implements Universal Fast Gradient Method optimization, defined at the 
+ * Nesterov HSE lecture 2 on slide 25.
+ */
 class UFGMOptimizer : public IGradientOptimizer {
 
 public:
@@ -45,21 +49,19 @@ private:
 
 private:
 
-    std::shared_ptr<const DoubleFunction>
-        target,
-        regularizer,
-        prox;
-    std::shared_ptr<const CppADFunction>
-        adTarget,
-        adRegularizer,
-        adProx;
+    std::shared_ptr<const DoubleFunction> target;
+    std::shared_ptr<const DoubleFunction> regularizer;
+    std::shared_ptr<const DoubleFunction> prox;
+
+    std::shared_ptr<const CppADFunction> adTarget;
+    std::shared_ptr<const CppADFunction> adRegularizer;
+    std::shared_ptr<const CppADFunction> adProx;
 
     std::shared_ptr<const IQDescriptor> qDescriptor;
 
     const size_t maxIter;
-    const double
-        eps,
-        L0;
+    const double eps;
+    const double L0;
 };
 
 } // namespace gm
