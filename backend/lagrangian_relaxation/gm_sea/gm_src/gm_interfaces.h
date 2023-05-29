@@ -265,6 +265,7 @@ class IPsiM {
 public:
     /**
      * @brief Get the PsiM value or expression (depending on template parameters).
+     * Pure virtual function.
      * 
      * @param xPoint Point x for PsiM.
      * @param yPoint Point y for PsiM.
