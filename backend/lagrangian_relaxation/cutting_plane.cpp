@@ -74,7 +74,7 @@ bool checkIfFeasible(
     const double LOCAL_EPS = FACTOR * configIter.globalPrecision.value();
     const auto& input = inputManager->getConstData();
     assert(variables.muVariables.size() == input.itineraries.size());
-    const auto& magicIndex = indexManager->getConstData();
+    const auto& lrIndex = indexManager->getConstData();
 
     unsigned lambdaCount = variables.lambdaVariables.size();
     bool ok = true;
@@ -105,7 +105,7 @@ bool checkIfFeasible(
         for (unsigned idArc : itinerary.orderedArcs) {
             const auto& arc = input.arcs[idArc];
             if (arc.type == ArcType::travel) {
-                unsigned place = magicIndex.arcToLambdaIndex[idArc];
+                unsigned place = lrIndex.arcToLambdaIndex[idArc];
                 sum += variables.lambdaVariables[place];
             }
         }
@@ -121,8 +121,8 @@ bool checkIfFeasible(
     return ok;
 }
 
-void processMinValue(const std::vector<double> lower,
-                     const std::vector<double> upper,
+void processMinValue(const std::vector<double>& lower,
+                     const std::vector<double>& upper,
                      DualVariables* target) {
     double minLowerValue = COIN_DBL_MAX;
     for (unsigned idMu = 0; idMu < target->muVariables.size(); ++idMu) {
@@ -131,13 +131,14 @@ void processMinValue(const std::vector<double> lower,
         target->muVariables[idMu] = lower[place];
     }
     assert(upper.size() == lower.size());
-    double lambdaBase = std::max(5.0, -minLowerValue);
+    const double BASE_MIN = 5.0;
+    double lambdaBase = std::max(BASE_MIN, -minLowerValue);
     target->lambdaVariables.assign(target->lambdaVariables.size(), lambdaBase);
 }
 
 void processAvgValue(
-        const std::vector<double> lower,
-        const std::vector<double> upper,
+        const std::vector<double>& lower,
+        const std::vector<double>& upper,
         DualVariables* target) {
     double minAvgValue = COIN_DBL_MAX;
     for (unsigned idMu = 0; idMu < target->muVariables.size(); ++idMu) {
@@ -294,11 +295,11 @@ void prepareSimplex(
         vector<double>* lhsArrayPtr,
         unsigned* ncolsPtr) {
 
-    auto& dualVariables = *dualPtr;
+    const auto& dualVariables = *dualPtr;
     auto& simplexBase =*simplexBasePtr;
 
     const auto& input = inputManager->getConstData();
-    const auto& magicIndex = indexManager->getConstData();
+    const auto& lrIndex = indexManager->getConstData();
 
     // Initialize local constants.
     const double LOCAL_INF = COIN_DBL_MAX;
@@ -355,7 +356,7 @@ void prepareSimplex(
                 for (unsigned idArc : itinerary.orderedArcs) {
                     const auto& arc = input.arcs[idArc];
                     if (arc.type == ArcType::travel) {
-                        unsigned place = magicIndex.arcToLambdaIndex[idArc];
+                        unsigned place = lrIndex.arcToLambdaIndex[idArc];
                         const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
                         assert(place != MAX_INDEX);
                         double value = 1.0;
@@ -579,7 +580,7 @@ vector<bool> computePlaneHits(
         const DualVariables& variables) {
     vector<int> hitIdx;
     const auto& input = inputManager->getConstData();
-    const auto& magicIndex = indexManager->getConstData();
+    const auto& lrIndex = indexManager->getConstData();
     const double EPS = 1e-3;
     vector<bool> response(input.itineraries.size(), false);
     for (size_t idItinerary = 0; idItinerary < input.itineraries.size(); ++idItinerary) {
@@ -588,7 +589,7 @@ vector<bool> computePlaneHits(
         for (unsigned idArc : itinerary.orderedArcs) {
             const auto& arc = input.arcs[idArc];
             if (arc.type == ArcType::travel) {
-                unsigned place = magicIndex.arcToLambdaIndex[idArc];
+                unsigned place = lrIndex.arcToLambdaIndex[idArc];
                 sum += variables.lambdaVariables[place];
             }
         }

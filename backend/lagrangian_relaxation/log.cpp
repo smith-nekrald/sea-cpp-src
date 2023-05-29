@@ -29,8 +29,8 @@ void printDualsToBackendLog(const DualVariables& duals, BackendType type) {
 
 void logNonEmptyQInByItineraryRestore(unsigned itineraryId, double nonEmptyQ) {
     auto& logger = logging::getBackendSubLogger(BackendType::LR);
-    logger.debugStream() << "restore.cpp : itinerary = " << itineraryId;
-    logger.debugStream() << "restore.cpp : Q = " << nonEmptyQ;
+    logger.debugStream() << "itinerary = " << itineraryId;
+    logger.debugStream() << "NonEmptyQ : Q = " << nonEmptyQ;
 }
 
 void logEnteredByItineraryRestore(
@@ -38,9 +38,8 @@ void logEnteredByItineraryRestore(
     auto& logger = logging::getBackendSubLogger(BackendType::LR);
     logger.infoStream() << "Entered byItineraryRestore. \n " <<
             "Relative time = " << event.relativeTime;
-        logger.debug("Duals to backend log: ");
-        printDualsToBackendLog(dualVariables, BackendType::LR);
-
+    logger.debug("Duals to backend log: ");
+    printDualsToBackendLog(dualVariables, BackendType::LR);
 }
 
 void logProcessingItineraryInByItineraryRestore(
