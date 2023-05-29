@@ -43,7 +43,7 @@ public:
     virtual Type getValue(const std::vector<Type>& point) const {
         auto pointCopy = point;
         if (pointCopy.size() == center.size()) {
-            for (size_t idx = 0; idx < adPoint.size(); ++idx) {
+            for (size_t idx = 0; idx < pointCopy.size(); ++idx) {
                 pointCopy[idx] -= center[idx];
             }
         }
