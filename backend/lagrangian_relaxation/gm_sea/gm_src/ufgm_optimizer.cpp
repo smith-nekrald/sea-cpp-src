@@ -64,32 +64,32 @@ vector<double> UFGMOptimizer::optimize(const vector<double>& initial) const {
 
     bool findPow = true;
     size_t pow = 0;
-    for (size_t iter_id = 0; iter_id < maxIter && findPow; ++iter_id) {
+    for (size_t iterId = 0; iterId < maxIter && findPow; ++iterId) {
 
-        std::cout << "UFGMOptimizer : iteration = " << iter_id + 1 << " ";
+        std::cout << "UFGMOptimizer : iteration = " << iterId + 1 << " ";
         std::cout << "valueBest = " << valueBest << " last_pow = " << pow <<  " ";
         std::cout << "Ak = " << Ak << " Lk = " << Lk << " tau_k = " << tau_k << std::endl;
 
         const double BOUND_AK = 1e19;
-        if (Ak > BOUND_AK) { 
+        if (Ak > BOUND_AK) {
             break;
         }
 
         double equ_a = 1, equ_b = -1. / Lk, equ_c = - Ak / Lk;
-        vk = compute_argmin_psi(coeffAns, coeffReg, coeffFree, initial, vk);
+        vk = computeArgMinPhi(coeffAns, coeffReg, coeffFree, initial, vk);
 
         double pow2 = 1.;
         findPow = false;
         for (pow = 0; pow < MAX_POW && !findPow; ++pow) {
             bool ok = true;
-            auto discr = equ_b * equ_b - 4. * equ_a * equ_c;
-            if (discr < 0) {
+            auto discriminant = equ_b * equ_b - 4. * equ_a * equ_c;
+            if (discriminant < 0) {
                 ok = false;
             }
             vector<double> ak_cands = {};
             if (ok) {
-                auto ak1 = (-equ_b + std::sqrt(discr)) / (2. * equ_a);
-                auto ak2 = (-equ_b - std::sqrt(discr)) / (2. * equ_a);
+                auto ak1 = (-equ_b + std::sqrt(discriminant)) / (2. * equ_a);
+                auto ak2 = (-equ_b - std::sqrt(discriminant)) / (2. * equ_a);
                 for (auto& item : {ak1, ak2}) {
                     if (item > 0) {
                         ak_cands.push_back(item);
@@ -106,7 +106,7 @@ vector<double> UFGMOptimizer::optimize(const vector<double>& initial) const {
                 }
 
                 auto f_grad = target->getSubgradient(cand_xk);
-                vector<double> cand_xk_hat = compute_argmin_bregman(f_grad, cand_ak, vk, xk);
+                vector<double> cand_xk_hat = computeArgMinBregman(f_grad, cand_ak, vk, xk);
 
                 vector<double> cand_yk(problemSize, 0);
                 for (size_t idx = 0; idx < problemSize; ++idx) {
@@ -182,7 +182,7 @@ void UFGMOptimizer::setCppADToValues(
     }
 }
 
-vector<double> UFGMOptimizer::compute_argmin_bregman(
+vector<double> UFGMOptimizer::computeArgMinBregman(
         const std::vector<double>& grad_f_xk,
         double ak,
         const std::vector<double>& bregmanPivot,
@@ -204,7 +204,7 @@ vector<double> UFGMOptimizer::compute_argmin_bregman(
     return variables;
 }
 
-vector<double> UFGMOptimizer::compute_argmin_psi(
+vector<double> UFGMOptimizer::computeArgMinPhi(
         const std::vector<double>& coeffAns,
         double coeffReg,
         double coeffFree,
