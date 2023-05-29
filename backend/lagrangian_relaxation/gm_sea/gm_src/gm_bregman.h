@@ -1,3 +1,9 @@
+/**
+ * @file gm_bregman.h
+ * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
+ * @brief Implementation for Bregman Mapping and intermediate classes, including PsiM.
+ * @copyright (c) Smith School of Business, 2023
+ */
 #pragma once
 
 #include "gm_interfaces.h"
@@ -16,6 +22,13 @@ namespace gm {
 template<typename TypeX, typename TypeY>
 class PsiM : public IPsiM<TypeX, TypeY> {
 public:
+    /**
+     * @brief PsiM constructor.
+     * 
+     * @param aTarget Object to compute and differentiate target function.
+     * @param aRegularizer Object to compute and differentiate regularizer.
+     * @param aBregman Object to compute Bregman Distance.
+     */
     PsiM(std::shared_ptr<const IOrderOneOracle<TypeX>> aTarget,
         std::shared_ptr<const IOrderOneOracle<TypeY>> aRegularizer,
         std::shared_ptr<const BregmanDistance<TypeX, TypeY>> aBregman)
@@ -58,17 +71,34 @@ public:
     virtual ~PsiM() {};
 
 private:
+    /// @brief Object to compute and differentiate target function.
     std::shared_ptr<const IOrderOneOracle<TypeX>> target;
+    /// @brief Object to compute and differentiate regularizer.
     std::shared_ptr<const IOrderOneOracle<TypeY>> regularizer;
+    /// @brief Object to compute Bregman Distance.
     std::shared_ptr<const BregmanDistance<TypeX, TypeY>> bregman;
 };
 
 
+/**
+ * @brief Entity to form objective and constraints for computing Bregman Mapping.
+ */
 class OptimizationProblemBregmanMapping {
 public:
+    /// @brief Simplified notation for CppAD vector.
     typedef std::vector<CppAD::AD<double>> ADvector;
 
 public:
+    /**
+     * @brief Constructs optimization problem.
+     * 
+     * @param aQDescriptor Object for expressing constraints and bounds.
+     * @param aTarget Object to compute and differentiate target function.
+     * @param aRegularizer Object to compute and differentiate regularizer.
+     * @param aBregman Object for computing and expressing Bregman distance.
+     * @param aPoint Point to compute Bregman mapping at.
+     * @param anM The parameter M in PsiM function.
+     */
     OptimizationProblemBregmanMapping(std::shared_ptr<const IQDescriptor> aQDescriptor,
                 std::shared_ptr<const DoubleFunction> aTarget,
                 std::shared_ptr<const CppADFunction> aRegularizer,
@@ -81,9 +111,14 @@ public:
             , bregman(aBregman)
             , point(aPoint)
             , valueM(anM) {
-
         gradInPoint = target->getSubgradient(point);
     };
+    /**
+     * @brief Forms objective and constraints.
+     * 
+     * @param functions Place to write objective (functions[0]) and constraints (functions[1:]).
+     * @param variables Independent variables to form objective and constraints from.
+     */
     void operator()(ADvector& functions, const ADvector& variables) {
         auto constraints = qDescriptor->makeConstraints(variables);
         functions.resize(constraints.size() + 1);
@@ -96,13 +131,20 @@ public:
     }
 
 private:
+    /// @brief Object for expressing constraints and bounds.
     std::shared_ptr<const IQDescriptor> qDescriptor;
+    /// @brief Object for computing and differentiating the target function.
     std::shared_ptr<const DoubleFunction> target;
+    /// @brief Object for expressing and differentiating the regularizer.
     std::shared_ptr<const CppADFunction> regularizer;
+    /// @brief Object for expressing Bregman Distance.
     std::shared_ptr<const BregmanDistance<double, CppAD::AD<double>>> bregman;
 
+    /// @brief The point to compute Bregman Mapping at.
     std::vector<double> point;
+    /// @brief Target gradient in point.
     std::vector<double> gradInPoint;
+    /// @brief Value of parameter M in PsiM.
     double valueM;
 };
 
@@ -113,19 +155,27 @@ private:
  */
 class BregmanMapping : public IBregmanMapping {
 public:
+    /**
+     * @brief Constructs Bregman Mapping.
+     * 
+     * @param aTarget Object for computing function value and gradient.
+     * @param aRegularizer Object for expressing regularizer value and gradient in CppAD form.
+     * @param aProx Object for computing prox-function value and gradient.
+     * @param anADProx Object for expressing prox-function value and gradient in CppAD form.
+     * @param aQDescriptor Object for building constraints and variable bounds.
+     */
     BregmanMapping(
-            std::shared_ptr<const DoubleFunction> aTarget,
-            std::shared_ptr<const CppADFunction> aRegularizer,
-            std::shared_ptr<const DoubleFunction> aProx,
-            std::shared_ptr<const CppADFunction> anADProx,
-            std::shared_ptr<const IQDescriptor> aQDescriptor)
-        : target(aTarget)
-        , regularizer(aRegularizer)
-        , prox(aProx)
-        , adProx(anADProx)
-        , qDescriptor(aQDescriptor) {
-            bregman = std::make_shared<
-                BregmanDistance<double, CppAD::AD<double>>>(prox, adProx);
+                std::shared_ptr<const DoubleFunction> aTarget,
+                std::shared_ptr<const CppADFunction> aRegularizer,
+                std::shared_ptr<const DoubleFunction> aProx,
+                std::shared_ptr<const CppADFunction> anADProx,
+                std::shared_ptr<const IQDescriptor> aQDescriptor)
+            : target(aTarget)
+            , regularizer(aRegularizer)
+            , prox(aProx)
+            , adProx(anADProx)
+            , qDescriptor(aQDescriptor) {
+        bregman = std::make_shared<BregmanDistance<double, CppAD::AD<double>>>(prox, adProx);
     }
     /**
      * @brief Computes Bregman mapping in point. Pure virtual function.
@@ -163,11 +213,17 @@ public:
     virtual ~BregmanMapping() {};
 
 private:
+    /// @brief Object for computing optimization function value and gradient.
     std::shared_ptr<const DoubleFunction> target;
+    /// @brief Object for expressing regularizer value and gradient in CppAD form.
     std::shared_ptr<const CppADFunction> regularizer;
+    /// @brief Object for computing prox-function value and gradient.
     std::shared_ptr<const DoubleFunction> prox;
+    /// @brief Object for expressing prox-function value and gradient in CppAD form.
     std::shared_ptr<const CppADFunction> adProx;
+    /// @brief Object for building constraints and variable bounds.
     std::shared_ptr<const IQDescriptor> qDescriptor;
+    /// @brief Object for expressing Bregman Distance in CppAD form.
     std::shared_ptr<BregmanDistance<double, CppAD::AD<double>>> bregman;
 };
 
