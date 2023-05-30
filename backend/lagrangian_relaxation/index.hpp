@@ -1,3 +1,9 @@
+/**
+ * @file index.hpp
+ * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
+ * @brief Serialization for LR Index.
+ * @copyright (c) Smith School of Business, 2023
+ */
 #include "index.h"
 
 #include <cereal/cereal.hpp>
@@ -13,6 +19,13 @@
 
 namespace cereal {
 
+/**
+ * @brief Template serialization for LR Index.
+ * 
+ * @tparam Archive Type of serialization archive.
+ * @param archive Archive for serialization.
+ * @param index LR Index to serialize.
+ */
 template<class Archive>
 void serialize(Archive& archive, sea::backend::LagrangianRelaxationIndex& index) {
     archive(index.arcToLambdaIndex, index.lambdaCount, index.muCount);

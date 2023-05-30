@@ -24,76 +24,132 @@ namespace backend {
 using std::size_t;
 using std::experimental::optional;
 
+/**
+ * @brief Enumerates the way to compute CLP solution.
+ */
 enum class ClpSolutionConfig {
-    CLP_PRIMAL,
-    CLP_DUAL
+    CLP_PRIMAL, ///< Primal Simplex.
+    CLP_DUAL    ///< Dual Simplex.
 };
 
+/**
+ * @brief Enumerates cutoff decision type.
+ */
 enum class CutoffDecisionType {
-    BY_ITINERARY,
-    BY_EVENT
+    BY_ITINERARY,  ///< Itinerary-based decision at cut-off.
+    BY_EVENT       ///< Event-based decision at cut-off.
 };
 
+/**
+ * @brief Enumerates random initialization.
+ */
 enum class RandomInitType {
-    RANDOM_NORMAL,
-    RANDOM_UNIFORM,
-    RANDOM_BOTH
+    RANDOM_NORMAL,  ///< With normal distribution.
+    RANDOM_UNIFORM, ///< With uniform distribution.
+    RANDOM_BOTH     ///< Both uniform and normal distribution.
 };
 
+/**
+ * @brief Enumerate optimization approach.
+ */
 enum class OptimizationAlgo {
-    CUTTING_PLANE,
-    GM
+    CUTTING_PLANE, ///< Optimization with cutting plane.
+    GM             ///< Optimization by gradient method.
 };
 
+/**
+ * @brief Configures Lagrangian Relaxation Backend.
+ */
 struct LagrangianRelaxationBackendConfig {
     // Common entries related to problem structure.
+
+    /// @brief Manager with InputData.
     ConstInputManagerPtr inputManager = nullptr;
+    /// @brief Manager with InputLinks.
     ConstLinksManagerPtr linksManager = nullptr;
-    optional<bool> needMemory; //  = false;
+    /// @brief Whether fancy memory optimization is applied. Typically set to false.
+    optional<bool> needMemory; 
 
     // Entries related to initialization and bounds.
+
+    /// @brief Maximal shadow capacity cost.
     optional<double> maxCapacityCost; // = 2e5;
+    /// @brief Initialization suggestion for shadow capacity cost.
     optional<double> initCapacityCost; // = 2e2;
 
     // Entries related to randomization.
-    optional<RandomInitType> initStrategy; // = RandomInitType::RANDOM_BOTH;
-    optional<double> uniformMin; // = 0.0;
+
+    /// @brief Initialization strategy. Normal, Uniform, or Both. Typical value is Both.
+    optional<RandomInitType> initStrategy; 
+    /// @brief Minimal uniform generation range. Typical value = 0.0
+    optional<double> uniformMin; 
+    /// @brief Maximal uniform generation range. Typical value = 2.0
     optional<double> uniformMax; // = 2.0;
-    optional<double> normalMean; // = 0.0;
-    optional<double> normalStd;  // = 2.0;
-    optional<double> bernoullyProba; // = 0.01;
-    optional<size_t> seed; // = 7;
+    /// @brief Expected value for normal distribution. Typical value = 0.0
+    optional<double> normalMean; 
+    /// @brief Standard deviation for normal distribution. Typical value = 2.0
+    optional<double> normalStd;
+    /// @brief Probability for bernoulli distribution. Typical value = 0.01
+    optional<double> bernoullyProba; 
+    /// @brief Seed for reproducible randomization. Typical value = 3.
+    optional<size_t> seed; 
 
     // Debug info.
-    optional<size_t> clpLogLevel; // = 3;
-    optional<bool> keepStory; // = false;
+
+    /// @brief CLP log level. Typical value = 3.
+    optional<size_t> clpLogLevel; 
+    /// @brief Whether to keep history with measurements. Typical value = false.
+    optional<bool> keepStory; 
 
     // Common optimization method parameters.
-    optional<OptimizationAlgo> optimizationAlgo; // cutting plane now
-    optional<size_t> maxSubgradientIterations; // = 800;
-    optional<double> subgradientPrecision; // = 1e-5;
-    optional<double> coeffReg; // = 0.001;
+
+    /// @brief Optimization algorithm family. Cutting Plane or Gradient Optimization.
+    optional<OptimizationAlgo> optimizationAlgo; 
+    /// @brief Maximal number of iterations. Typical value is 800.
+    optional<size_t> maxSubgradientIterations;
+    /// @brief Precision for subgradient methods. Typical value = 1e-5.
+    optional<double> subgradientPrecision;
+    /// @brief Regularization coefficient. Typical value = 0.001.
+    optional<double> coeffReg; 
 
     // Common backend parameters.
-    optional<CutoffDecisionType> cutoffDecisionType; // = CutoffDecisionType::BY_ITINERARY;
-    optional<ClpSolutionConfig> clpMethod; // = ClpSolutionConfig::CLP_PRIMAL;
-    optional<double> globalPrecision; // = 1e-5;
-    optional<double> zeroIgnorePrecision; // = 1e-10;
+
+    /// @brief Type of decision at cutoff. Typically CutOffDecisionType::BY_ITINERARY.
+    optional<CutoffDecisionType> cutoffDecisionType; 
+    /// @brief Method to use for CLP linear programming. Typically ClpSolutionConfig::CLP_PRIMAL.
+    optional<ClpSolutionConfig> clpMethod;
+    /// @brief Default precision.
+    optional<double> globalPrecision;
+    /// @brief Precison to treat small floats like zero.
+    optional<double> zeroIgnorePrecision;
 
     // Cutting-plane related configurations and tweaks.
-    optional<size_t> minSubgradientIterations; //  = 15;
-    optional<size_t> initPointCount; // = 15;
-    optional<size_t> deque_size; // = 1000;
-    optional<bool> useEquationsRestart; // = true;
-    optional<bool> singleRestart; // = true;
-    optional<size_t> restartPeriod; // = 2000;
-    optional<size_t> immortalLimit; // = 100;
+
+    /// @brief Minimal number of subgradient iterations in cutting plane method. Typically 15.
+    optional<size_t> minSubgradientIterations;
+    /// @brief Number of initialization points. Typically 15.
+    optional<size_t> initPointCount; 
+    /// @brief Size of deque with cutting plane points. Typically 1000.
+    optional<size_t> deque_size;
+    /// @brief Whether to use equations restart. Typically true.
+    optional<bool> useEquationsRestart;
+    /// @brief Whether to restart only once. Typically true.
+    optional<bool> singleRestart; 
+    /// @brief Number of iterations before restart. Typically 2000.
+    optional<size_t> restartPeriod; 
+    /// @brief Maximal number of immortal points in dualHistory deque. Typically 100.
+    optional<size_t> immortalLimit;
+    /// @brief Maximal number of immortal points in dual deque from those generated randomly.
     optional<size_t> immortalShuffleCount; // = 30;
 
     // GM-related configurations and tweaks.
-    optional<double> L0; // = 100., 1/"gradient_step";
-    optional<gm::GradientFamily> gradientOptimizer; // = ::UFGM
-    optional<gm::GmProxType> ufgmProxType; // L2SQUARED
+    /// @brief Initial value of L. Typically set to 100., or 1/"gradient_step".
+    optional<double> L0; 
+    /// @brief Type of gradient optimizer. Current the most efficient is UFGM.
+    optional<gm::GradientFamily> gradientOptimizer; 
+    /// @brief UFGM prox-function. Currently L2SQUARED is the typical vallue.
+    optional<gm::GmProxType> ufgmProxType; 
+    /// @brief UFGM regularizer. Currently L2SQUARED is the typical value.
     optional<gm::GmRegularizerType> ufgmRegType; // L2SQUARED
 };
 
