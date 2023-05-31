@@ -35,6 +35,7 @@ using std::size_t;
 
 
 // Functions for uniform building constraints, objective, revenue and derivatives.
+
 void addMultiVarConstraint(const vector<CoefIndex>& variables,
                            double coefficient, unsigned constraintId,
                            vector<vector<CoefIndex>>& constraints) {
