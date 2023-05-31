@@ -150,6 +150,10 @@ public:
     void setUtilizationRatio(double value) {
         utilizationRatio = value;
     }
+    /**
+     * @brief Virtual destructor to ensure correct C++ polymorphism.
+     */
+    virtual ~IpoptBackend() {}
 
 protected:
     /**

@@ -71,6 +71,10 @@ public:
      * @return Selected allotments.
      */
     vector<bool> makeAllotments(DecisionManagerPtr decisionManager);
+    /**
+     * @brief Virtual Destructor for efficient C++ polymorphism.
+     */
+    virtual ~BendersAllotmentBackend() {}
 
 private:
     /// @brief Configuration for benders allotment backend.

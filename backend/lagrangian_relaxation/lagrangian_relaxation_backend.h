@@ -263,6 +263,10 @@ public:
         }
         dualHistory.push_back(info);
     }
+    /**
+     * @brief Virtual Destructor for efficient C++ polymorphism.
+     */
+    virtual ~LagrangianRelaxationBackend() {}
 
 private:
     /**

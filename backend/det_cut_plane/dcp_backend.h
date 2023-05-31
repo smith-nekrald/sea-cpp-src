@@ -85,6 +85,10 @@ public:
     void setUtilizationRatio(double value) {
         utilizationRatio = value;
     }
+    /**
+     * @brief Virtual destructor for efficient C++ polymorphism.
+     */
+    virtual ~DetCutPlaneBackend() {}
 
 private:
     /**
