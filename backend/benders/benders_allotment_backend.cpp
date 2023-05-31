@@ -74,11 +74,8 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
             indexManager->get());
 
     recalculateUCoefficientsForDeterministic(
-        config.inputManager, config.linksManager,
-        indexManager,
-        state,
-        basicDecision,
-        &storage.submittedDuals);
+        config.inputManager, config.linksManager, indexManager, 
+        state, basicDecision, &storage.submittedDuals);
     indexManager.reset();
 
     const auto& input = config.inputManager->getConstData();
@@ -122,7 +119,7 @@ vector<bool> BendersAllotmentBackend::makeAllotments(DecisionManagerPtr basicDec
         matrix[matrixPos++] = 1;
     }
 
-    assert(int(matrixPos) == int(matrixElementsCount));
+    assert(static_cast<int>(matrixPos) == static_cast<int>(matrixElementsCount));
     starts[variablesCount] = matrixElementsCount;
 
     vector<double> constraintUpperBound(constraintsCount);
