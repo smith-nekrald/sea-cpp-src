@@ -1,3 +1,10 @@
+/**
+ * @file lagrangian_relaxation_backend.h
+ * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
+ * @brief Implements Lagrangian Relaxation backend. This entity is mostly responsible for
+ * building shadow price of capacity (DualVariables) and making decisions based on duals.
+ * @copyright (c) Smith School of Business, 2023
+ */
 #pragma once
 
 #include "gm_sea/gm_src/gm_types.h"
@@ -153,38 +160,83 @@ struct LagrangianRelaxationBackendConfig {
     optional<gm::GmRegularizerType> ufgmRegType; // L2SQUARED
 };
 
+/**
+ * @brief Package with precomputed randomness.
+ */
 struct RandomPack {
-    std::default_random_engine generator;
-    std::normal_distribution<double> normalDist;
-    std::uniform_real_distribution<double> uniformDist;
-    std::bernoulli_distribution bernoullyDist;
+    std::default_random_engine generator;               ///< Random engine. Turns distrubtions.
+    std::normal_distribution<double> normalDist;        ///< For sampling from Normal distribution.
+    std::uniform_real_distribution<double> uniformDist; ///< For sampling from Uniform distribution.
+    std::bernoulli_distribution bernoullyDist;  ///< For sampling from Bernoulli disribution.
 };
 
+/**
+ * @brief Entry in the dual deque - storage of points for effective cutting plane optimization.
+ */
 struct DualDequeInfo {
-    DualVariables duals;
-    bool immortal;
-    bool checked;
+    DualVariables duals; ///< Dual variables, a point defining cutting plane line.
+    bool immortal;       ///< If true, the entry is not removed from deque.
+    bool checked;        ///< If checked, the entry is a checked feasible point.
 };
 
+/**
+ * @brief Backend for performing optimization based on Lagrangian Relaxation.
+ */
 class LagrangianRelaxationBackend {
 
 public:
+    /**
+     * @brief Constructor for the Lagrangian Relaxation Backend.
+     * 
+     * @param config Configuration for LR backend.
+     */
     LagrangianRelaxationBackend(
             const LagrangianRelaxationBackendConfig& config);
+    /**
+     * @brief Computes dual variables, aka shadow price of capacity.
+     * 
+     * @param[in] state The state of trajectory evaluation.
+     * @param[out] decisionManager The manager with Decision.
+     * @param[out] uCoeff Place for writing Benders Decomposition coefficients, if relevant.
+     * @param[out] objectiveEstimation  Place for writing objective estimation, if relevant.
+     * @return The DualVariables point, optimal if converged, and approximation otherwise.
+     */
     DualVariables provideDuals(
             const State& state,
             DecisionManagerPtr decisionManager,
             UCoefficients* uCoeff = nullptr,
             double* objectiveEstimation = nullptr) const;
+    /**
+     * @brief Makes decision for cut-off stage given dual variables storing shadow price of 
+     * capacity.
+     * 
+     * @param[in] event Current cutoff event to process.
+     * @param[in] duals Dual variables storing the shadow price of capacity.
+     * @param[in] actionManager Manager with Action.
+     * @param[out] decisionManager Manager with Decision. Updated.
+     * @param[out] state State of trajectory evaluation. Updated.
+     */
     void makeCutoffDecisionWithDuals(
             const InputData::Event& event,
             const DualVariables& duals,
             const ConstActionManagerPtr& actionManager,
             DecisionManagerPtr decisionManager,
             State* state) const;
+    /**
+     * @brief Set ignoreSpot boolean to a specific value. When true, this enforces the 
+     * algorithm to ignore spot market.
+     * 
+     * @param value The value to assign.
+     */
     void setIgnoreSpot(bool value) {
         ignoreSpot = value;
     }
+    /**
+     * @brief Provides algorithm with Ipopt-computed dual variables. A good initialization may 
+     * accelerate convergence.
+     * 
+     * @param duals The DualVariables object computed with Fluid approximation, e.g. via Ipopt.
+     */
     void provideIpoptDuals(const DualVariables& duals) {
         DualDequeInfo info;
         info.duals = duals;
@@ -213,17 +265,38 @@ public:
     }
 
 private:
+    /**
+     * @brief Logs that LR Backend is constructed.
+     */
     void logLRConstruction() const;
+    /**
+     * @brief Logs progress in provideDuals.
+     * 
+     * @param decisionManager The Manager with Decision.
+     * @param duals The computed dual variables to log.
+     */
     void logProvideDuals(
-            ConstDecisionManagerPtr decisionManger, const DualVariables& duals) const;
+            ConstDecisionManagerPtr decisionManager, const DualVariables& duals) const;
+    /**
+     * @brief Logs making cut-off decision with duals.
+     * 
+     * @param duals The supplied dual variables.
+     */
     void logMakeCutoffDecisionWithDuals(const DualVariables& duals) const;
 
 private:
+    /// @brief Configuration for LR backend.
     LagrangianRelaxationBackendConfig config;
+    /// @brief LR Index. Helps for building cutting plane optimization.
     LRIndexManagerPtr index;
+    /// @brief Central duals. Helps for effective regularization in gradient methods.
     mutable DualVariables mean;
+    /// @brief Deque with cutting plane pivot points (obtained at iterations, pre-initialized or
+    /// randomly. Mutable because each iteration adds a point.
     mutable std::deque<DualDequeInfo> dualHistory;
+    /// @brief Package with randomization. Mutable because random engine gets updated.
     mutable RandomPack randomPack;
+    /// @brief If true, spot market is ignored.
     bool ignoreSpot = false;
 };
 

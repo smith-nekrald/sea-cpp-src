@@ -1,3 +1,10 @@
+/**
+ * @file lr_cppad.hpp
+ * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
+ * @brief Template implementation for computing LR objective in point. Supported types:
+ * double and CppAD::AD<double>.
+ * @copyright (c) Smith School of Business, 2023
+ */
 #pragma once
 
 #include "lagrangian_relaxation_backend.h"
@@ -17,21 +24,40 @@ using EventType=InputData::Event::Type;
 using CppAD::AD;
 
 
+/**
+ * @brief Computes function value (or expression) in point. Two types are supported: CppAD<double>
+ * and double. Uniform way to compute function value, function expression (and therefore 
+ * subgradient).
+ * 
+ * @tparam Type The expression type. Expected options: double and CppAD<double>.
+ * @param[in] input InputData with environmental statistics.
+ * @param[in] links InputLinks, a data structure for effective work with InputData.
+ * @param[in] state The state of trajectory evaluation.
+ * @param[in] lrIndex Lagrangian Relaxation index.
+ * @param[in] timeParameters Time parameters, allow to track current pivot event and stage.
+ * @param[out] decision The Decision to form.
+ * @param[in] point Point with dual variables.
+ * @param[in] ignoreSpot If true, spot market is ignored.
+ * @param[in] l2RegConstant Coefficient for l2 regularization. Only relevant for cutting plane,
+ * gradient methods UPGM and UFGM have their own regularizations.
+ * @param[in] mean Mean value for centering. Note that UFGM and UPGM have their own centering.
+ * @return Function in point, expression or value.
+ */
 template <typename Type>
 inline Type computeFunctionValue(const InputData& input,
                    const InputLinks& links,
                    const State& state,
-                   const LagrangianRelaxationIndex& magicIndex,
+                   const LagrangianRelaxationIndex& lrIndex,
                    const TimeParameters& timeParameters,
                    Decision* decision,
                    const DualTemplate<Type>& point,
                    bool ignoreSpot = false,
                    double l2RegConstant = 0,
                    DualVariables mean = DualVariables()){
-    Type functionValue = Type(0);
+    Type functionValue = static_cast<Type>(0);
     const double EPS = 1e-7;
     if (l2RegConstant > EPS) {
-        Type regularizer = Type(0);
+        Type regularizer = static_cast<Type>(0);
         for (size_t idx : {0, 1}) {
             auto& item = (idx == 0 ? point.lambdaVariables : point.muVariables);
             if (mean.lambdaVariables.size() || mean.muVariables.size()) {
@@ -55,7 +81,7 @@ inline Type computeFunctionValue(const InputData& input,
         Type arcFromStartTime = input.nodes[arc.fromNode].realTime;
         if (arc.type == ArcType::travel && arcFromStartTime >= theNextEvent.realTime) {
             const auto& vessel = input.vessels[arc.vesselId.value()];
-            unsigned place = magicIndex.arcToLambdaIndex.at(idArc);
+            unsigned place = lrIndex.arcToLambdaIndex.at(idArc);
             Type scaledCapacity = vessel.capacity * point.lambdaVariables[place];
             scaledCapacitySum += scaledCapacity;
         }
@@ -73,7 +99,7 @@ inline Type computeFunctionValue(const InputData& input,
                             const auto& arcNode = input.nodes[arc.fromNode];
                             double timeArc = arcNode.realTime;
                             if (timeArc >= theNextEvent.realTime) {
-                                unsigned place = magicIndex.arcToLambdaIndex.at(idArc);
+                                unsigned place = lrIndex.arcToLambdaIndex.at(idArc);
                                 Type taken = state.takenOnRoute[itinerary.id];
                                 functionValue -= taken * point.lambdaVariables[place];
                             }
@@ -92,7 +118,7 @@ inline Type computeFunctionValue(const InputData& input,
                         const auto& arc = input.arcs[idArc];
                         if (arc.type == ArcType::travel) {
                             lambdaSum += point.lambdaVariables[
-                                magicIndex.arcToLambdaIndex.at(idArc)];
+                                lrIndex.arcToLambdaIndex.at(idArc)];
                         }
                     }
                     Type qr = 0, zr = 0;
@@ -107,7 +133,7 @@ inline Type computeFunctionValue(const InputData& input,
                         input.nodes[basedArc.fromNode].portId].storageCost;
                     Type mu_r = point.muVariables[itinerary.id];
 
-                    Type plusDiff = std::max(Type(0.), Type(qr - mu_r));
+                    Type plusDiff = std::max<Type>(0., qr - mu_r);
                     Type yr = -itinerary.returnPrice + itinerary.showRate.estimatedProba * (
                                 -itinerary.declineCost + itinerary.returnPrice + plusDiff);
 
@@ -199,7 +225,7 @@ inline Type computeFunctionValue(const InputData& input,
                             qri += entry.price;
                             Type showMultiplier =
                                 entry.showRate.estimatedProba * entry.productAmount;
-                            Type objectiveAdd = std::max(Type(0.), Type(qri - mu_r));
+                            Type objectiveAdd = std::max<Type>(0., qri - mu_r);
                             Type addFunctionValue = (showMultiplier *
                                 (-itinerary.declineCost - entry.cancellationPrice
                                 + objectiveAdd) + entry.productAmount * entry.cancellationPrice);
@@ -285,13 +311,34 @@ inline Type computeFunctionValue(const InputData& input,
     return functionValue;
 }
 
+/// @brief Simplified notation for CppAD::AD<CppAD::AD<double>>.
 using NestedAD=CppAD::AD<CppAD::AD<double>>;
 
+/**
+ * @brief Implementation specification for NestedAD. This method is never called, but
+ * needs specification for compiling the template-based functions.
+ * 
+ * @tparam NestedAD The template parameter specification.
+ * @param input InputData with environmental statistics.
+ * @param links InputLinks, a data structure for effective work with InputData.
+ * @param state The state of trajectory evaluation.
+ * @param lrIndex Lagrangian Relaxation index.
+ * @param timeParameters Time parameters, allow to track current pivot event and stage.
+ * @param decision The Decision to form.
+ * @param point Point with dual variables.
+ * @param ignoreSpot If true, spot market is ignored.
+ * @param l2RegConstant Coefficient for l2 regularization. Only relevant for cutting plane,
+ * gradient methods UPGM and UFGM have their own regularizations.
+ * @param mean Mean value for centering. Note that UFGM and UPGM have their own centering.
+
+ * @return Originally, expected to provide function value in point. Really, this specification
+ * throws an exception, since second derivative is not needed and is not supported.
+ */
 template<> inline NestedAD computeFunctionValue<NestedAD>(
-        const InputData&, const InputLinks&, const State&,
-        const LagrangianRelaxationIndex&, const TimeParameters&,
-        Decision*, const DualTemplate<NestedAD>&, bool, double,
-        DualTemplate<double>) {
+        const InputData& input, const InputLinks& links, const State& state,
+        const LagrangianRelaxationIndex& lrIndex, const TimeParameters& timeParameters,
+        Decision* decision, const DualTemplate<NestedAD>& point, bool ignoreSpot, 
+        double l2RegConstant, DualTemplate<double> mean) {
     throw std::logic_error("Second derivative is not supported");
 }
 
