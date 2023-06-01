@@ -1,3 +1,10 @@
+/**
+ * @file general_strategy.h
+ * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
+ * @brief Aggregated include header for all the relevant headers from the strategy module.
+ * @copyright (c) Smith School of Business, 2023
+ */
+
 #pragma once
 
 #include "abstract_allotment_strategy.h"
