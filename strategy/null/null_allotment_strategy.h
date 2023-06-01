@@ -1,7 +1,8 @@
 /**
  * @file null_allotment_strategy.h
  * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
- * @brief Implements Null Allotment Strategy - no allotments are taken.
+ * @brief Implements Null Allotment Strategy - no allotments are taken, no spot market afterwards, 
+ * all decisions are set to zero.
  * @copyright (c) Smith School of Business, 2023
  */
 #pragma once
@@ -28,8 +29,7 @@ struct NullAllotmentStrategyConfig {
 
 
 /**
- * @brief Null Allotment Strategy: no allotments are taken. However, normal spot market
- * processing is allowed, and therefore the rest of the parameters are optimized accordingly.
+ * @brief Null Allotment Strategy: no allotments are taken. Every decision is set to zero.
  */
 class NullAllotmentStrategy: public AbstractAllotmentStrategy {
 public:
@@ -49,8 +49,8 @@ public:
      */
     void reset() override;
     /**
-     * @brief Fills allotments in the Decision (no allotments are taken), and the rest
-     * of the expected fields.
+     * @brief Fills allotments in the Decision (no allotments are taken), and all other decisions
+     * are set to zero.    * 
      * 
      * @return Manager with corresponding Decision.
      */
