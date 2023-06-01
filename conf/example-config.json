@@ -81,7 +81,7 @@
         ],
         "long_output_file" : "long_output_file.txt",
         "short_output_file" : "short_output_file.txt",
-        "dataset_path": "datasets/data_simple_ports_3_vessels_1_period_short_demand_exponential_fast",
+        "dataset_path": "datasets/data_simple_ports_3_vessels_1_period_short_demand_linear_fast",
         "need_memory": false,
         "market_dataset_limit": 500,
         "dump_folder": "dumpfolder"
