@@ -8,7 +8,7 @@
 #include "det_cut_plane/dcp_allotment_strategy.h"
 
 #include "ipopt/ipopt_spot_strategy.h"
-#include "lr_spot/lr_cutting_plane_spot_market_strategy.h"
+#include "lr_spot/lr_spot_market_strategy.h"
 #include "hybrid/hybrid_spot_market_strategy.h"
 
 #include "zero/zero_allotment_strategy.h"

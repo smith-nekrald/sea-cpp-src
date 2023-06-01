@@ -4,12 +4,12 @@
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
 
-#include "lr_cutting_plane_spot_market_strategy.h"
+#include "lr_spot_market_strategy.h"
 
 namespace sea {
 namespace strategy {
 
-void LRCuttingPlaneSpotMarketStrategy::logDualsInUpdateParams(
+void LRBasedSpotMarketStrategy::logDualsInUpdateParams(
         const InputData::Event& event) const {
     logging::getOutTestLogger().debugStream() << "Updated_Duals at realTime = "
         << event.realTime << " relativeTime =  "  << event.relativeTime;

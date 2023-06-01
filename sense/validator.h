@@ -31,7 +31,7 @@ struct StrategyConfigs {
     /// @brief Configures Ipopt Allotment Strategy (basedon fluid approximation).
     strategy::IpoptAllotmentStrategyConfig ipoptAllotment;
     /// @brief Configures Lagrangian Relaxation-based Spot Strategy.
-    strategy::LRCuttingPlaneSpotMarketStrategyConfig lrSpot;
+    strategy::LRBasedSpotMarketStrategyConfig lrSpot;
     /// @brief Configures Benders Decomposition-based Allotment Strategy.
     strategy::BendersLRAllotmentStrategyConfig bendersAllotment;
 };

@@ -6,14 +6,14 @@
 
 #include <limits>
 
-#include "lr_cutting_plane_spot_market_strategy.h"
+#include "lr_spot_market_strategy.h"
 
 namespace sea {
 namespace strategy {
 
 using Event=InputData::Event;
 
-void LRCuttingPlaneSpotMarketStrategy::updateParams(const Event& event) {
+void LRBasedSpotMarketStrategy::updateParams(const Event& event) {
     bool needUpdate = (event.realTime - lastUpdate) > config.updateInterval;
     bool needSoftUpdate = (event.realTime - lastSoftUpdateTime) > softUpdatePeriod;
     if (needUpdate) {
@@ -45,13 +45,13 @@ void LRCuttingPlaneSpotMarketStrategy::updateParams(const Event& event) {
     }
 }
 
-void LRCuttingPlaneSpotMarketStrategy::processCutoff(const Event& event) {
+void LRBasedSpotMarketStrategy::processCutoff(const Event& event) {
     updateParams(event);
     backends.lrBackend->makeCutoffDecisionWithDuals(
             event, duals, actionManager, decisionManager, &state);
 }
 
-void LRCuttingPlaneSpotMarketStrategy::reset() {
+void LRBasedSpotMarketStrategy::reset() {
     initialize();
     initBackend(backends.lrBackend, backendConfigs.lrConfig);
     initBackend(
@@ -63,7 +63,7 @@ void LRCuttingPlaneSpotMarketStrategy::reset() {
     lastSoftUpdateTime = -INF;
 }
 
-void LRCuttingPlaneSpotMarketStrategy::setBackends(const BackendHolder& holder)  {
+void LRBasedSpotMarketStrategy::setBackends(const BackendHolder& holder)  {
     if (holder.ipoptBackend != nullptr) {
         backends.ipoptBackend = holder.ipoptBackend;
         backends.ipoptBackend->setUtilizationRatio(config.utilizationRatio.value());

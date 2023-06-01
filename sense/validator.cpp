@@ -199,7 +199,7 @@ void Validator::processSelection(vector<bool> selection, bool processAnyway) {
         algoLRConfig.allotmentStrategy =
             std::make_shared<strategy::IpoptAllotmentStrategy>(strategyConfigs.ipoptAllotment);
         algoLRConfig.spotMarketStrategy =
-            std::make_shared<strategy::LRCuttingPlaneSpotMarketStrategy>(strategyConfigs.lrSpot);
+            std::make_shared<strategy::LRBasedSpotMarketStrategy>(strategyConfigs.lrSpot);
 
         Evaluator evaluator(evalConfig);
 

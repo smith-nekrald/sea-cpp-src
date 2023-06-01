@@ -351,7 +351,7 @@ void prepareSpotStrategies(
             continue;
         }
         if (spotName == "lr" || spotName == "nospot_lr") {
-            sea::strategy::LRCuttingPlaneSpotMarketStrategyConfig config;
+            sea::strategy::LRBasedSpotMarketStrategyConfig config;
             config.backendConfigs = holder;
             config.abstractConfig = commonSpotConfig;
             config.abstractConfig.needWarmBackends = true;
@@ -368,10 +368,10 @@ void prepareSpotStrategies(
 
             if (spotName == "lr") {
                 spotStrategies[spotName] = std::make_shared<
-                    sea::strategy::LRCuttingPlaneSpotMarketStrategy>(config);
+                    sea::strategy::LRBasedSpotMarketStrategy>(config);
             } else if (spotName == "nospot_lr")  {
                 spotStrategies[spotName] = std::make_shared<sea::strategy::LTSpotMarketStrategy<
-                    sea::strategy::LRCuttingPlaneSpotMarketStrategy>>(config);
+                    sea::strategy::LRBasedSpotMarketStrategy>>(config);
             }
         } else if (spotName == "ipopt" || spotName == "nospot_ipopt") {
             sea::strategy::IpoptSpotMarketStrategyConfig config;

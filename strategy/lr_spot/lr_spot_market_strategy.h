@@ -8,20 +8,20 @@
 namespace sea {
 namespace strategy {
 
-struct LRCuttingPlaneSpotMarketStrategyConfig {
+struct LRBasedSpotMarketStrategyConfig {
     SpotMarketStrategyConfig abstractConfig;
     BackendConfigHolder backendConfigs;
     bool doHardUpdate = true;
     double softUpdatePeriod = 56.0;
     bool askIpoptDuals = true;
 };
-class LRCuttingPlaneSpotMarketStrategy : public AbstractSpotMarketStrategy {
+class LRBasedSpotMarketStrategy : public AbstractSpotMarketStrategy {
 
 public:
-    using ConfigType=LRCuttingPlaneSpotMarketStrategy;
+    using ConfigType=LRBasedSpotMarketStrategy;
 
 public:
-    LRCuttingPlaneSpotMarketStrategy(const LRCuttingPlaneSpotMarketStrategyConfig& aConfig)
+    LRBasedSpotMarketStrategy(const LRBasedSpotMarketStrategyConfig& aConfig)
         : AbstractSpotMarketStrategy(
                 aConfig.abstractConfig,
                 aConfig.backendConfigs,
@@ -34,7 +34,7 @@ public:
     }
     void reset() override;
     virtual void setBackends(const BackendHolder& holder) override;
-    virtual ~LRCuttingPlaneSpotMarketStrategy() {};
+    virtual ~LRBasedSpotMarketStrategy() {};
 
 protected:
     virtual void processCutoff(const InputData::Event& event) override;
