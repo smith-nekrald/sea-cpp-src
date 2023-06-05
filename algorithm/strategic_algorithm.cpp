@@ -6,7 +6,6 @@
 #include "strategic_algorithm.h"
 
 namespace sea {
-
 namespace algo {
 
 
@@ -20,18 +19,16 @@ ConstDecisionManagerPtr StrategicAlgorithm::makeDecision() {
     if (!allotmentsAsked) {
         auto decisionManager = config.allotmentStrategy->provideAllotments();
         assert(decisionManager != nullptr);
-        config.spotMarketStrategy->supplyAllotmentDecision(
-                decisionManager);
+        config.spotMarketStrategy->supplyAllotmentDecision(decisionManager);
         config.allotmentStrategy->reset();
         allotmentsAsked = true;
         decisionManagerResponse = decisionManager;
         if (config.spotMarketStrategy->needWarmBackends()) {
-            config.spotMarketStrategy->setBackends(
-                    config.allotmentStrategy->getBackends());
+            config.spotMarketStrategy->setBackends(config.allotmentStrategy->getBackends());
         }
+        logSelectedAllotments(decisionManagerResponse);
     } else {
         decisionManagerResponse = config.spotMarketStrategy->makeDecision();
-        logSelectedAllotments(decisionManagerResponse);
     }
     return decisionManagerResponse;
 }
