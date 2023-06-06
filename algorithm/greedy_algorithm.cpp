@@ -59,8 +59,10 @@ ConstDecisionManagerPtr GreedyAlgorithm::makeDecision() {
 
 void GreedyAlgorithm::reset() {
     allotmentsAsked = false;
-    const double INF = std::numeric_limits<double>::max();
-    greedyStats.availableArcCapacity.assign(input.arcs.size(), INF);
+    const double FLOAT_INF = std::numeric_limits<double>::max();
+    greedyStats.availableArcCapacity.assign(input.arcs.size(), FLOAT_INF);
+    const size_t LONG_INF = std::numeric_limits<size_t>::max();
+    greedyStats.freeArcCapacity.assign(input.arcs.size(), LONG_INF);
     greedyStats.allocatedSpotRouteCapacity.assign(input.itineraries.size(), 0);
     greedyStats.allocatedLongEntryCapacity.assign(input.allotmentEntries.size(), 0);
     greedyStats.ifSelectedFromGroup.assign(input.allotmentGroups.size(), false);
@@ -69,6 +71,8 @@ void GreedyAlgorithm::reset() {
             assert(arc.type == InputData::Arc::Type::travel);
             auto& vessel = input.vessels[arc.id];
             greedyStats.availableArcCapacity[arc.id] = vessel.capacity;
+            greedyStats.freeArcCapacity[arc.id] = static_cast<size_t>(
+                    std::floor(vessel.capacity));
         }
     }
     state = State();
@@ -97,6 +101,24 @@ double GreedyAlgorithm::computeGreedyCapacityForItinerary(size_t idxItinerary) c
     }
     return minimalCapacity;
 }
+
+size_t GreedyAlgorithm::computeAllocationCapacityForItinerary(size_t idxRoute) const {
+    const auto& route = input.itineraries[idxRoute];
+    size_t freeCapacity = std::numeric_limits<size_t>::max();
+    for (size_t idArc: route.orderedArcs) {
+        freeCapacity = std::min<size_t>(greedyStats.freeArcCapacity[idArc], freeCapacity);
+    }
+    return freeCapacity;
+}
+
+size_t GreedyAlgorithm::allocateCapacityForItinerary(size_t idxRoute, size_t amount) {
+    const auto& route = input.itineraries[idxRoute];
+    for (size_t idArc: route.orderedArcs) {
+        assert(greedyStats.freeArcCapacity[idArc] <= amount);
+        greedyStats.freeArcCapacity[idArc] -= amount;
+    }
+}
+
 
 bool GreedyAlgorithm::checkIfAllotmentAvailable(size_t idxAllotment) const {
     const auto& allotment = input.allotments[idxAllotment];
@@ -223,35 +245,41 @@ void GreedyAlgorithm::processCutoff(const InputData::Event& event) {
         // Process Spot Market.
         unsigned shownCountSpot = action->spotMarketDemandN[idItinerary];
         decision->emptyContainersZ[idItinerary] = 0;
-        decision->nonEmptyContainersQ[idItinerary] = shownCountSpot;
-        decision->hiredY[arc.id] += shownCountSpot;
+        size_t maxAvailableSpot = computeAllocationCapacityForItinerary(idItinerary);
+        size_t allocateSpot = std::min<size_t>(shownCountSpot, maxAvailableSpot);
+        decision->nonEmptyContainersQ[idItinerary] = allocateSpot;
+        allocateCapacityForItinerary(idItinerary, allocateSpot);
+        decision->hiredY[arc.id] += allocateSpot;
         auto& route = input.itineraries[idItinerary];
         // Update Greedy Stats with new spot-related information.
         double allocatedGreedy = greedyStats.allocatedSpotRouteCapacity[route.id];
         for (unsigned idxArc: route.orderedArcs) {
             greedyStats.availableArcCapacity[idxArc] += allocatedGreedy;
-            greedyStats.availableArcCapacity[idxArc] -= shownCountSpot;
+            greedyStats.availableArcCapacity[idxArc] -= allocateSpot;
         }
-        greedyStats.allocatedSpotRouteCapacity[route.id] = shownCountSpot;
+        greedyStats.allocatedSpotRouteCapacity[route.id] = allocateSpot;
         // Process Allotments.
         for (unsigned idAllotment : links.allotmentsWithItinerary[idItinerary]) {
             if (decision->allotmentAccepted[idAllotment]) {
                 unsigned placeIndex = links.allotmentItineraryToPlace.at(
                         idAllotment).at(idItinerary);
                 unsigned shownAllotment = action->allotmentDemandN[idAllotment][placeIndex].second;
-                decision->allotmentContainersQ[idAllotment][placeIndex].second = shownAllotment;
+                size_t maxAvailableLong = computeAllocationCapacityForItinerary(idItinerary);
+                size_t allocateLong = std::min<size_t>(shownAllotment, maxAvailableLong);
+                decision->allotmentContainersQ[idAllotment][placeIndex].second = allocateLong;
+                allocateCapacityForItinerary(idItinerary, allocateLong);
                 assert(action->allotmentDemandN[idAllotment][placeIndex].first == idItinerary);
                 assert(decision->allotmentContainersQ[idAllotment][placeIndex].first
                         == idItinerary);
-                decision->hiredY[arc.id] += shownAllotment;
-                unsigned entryId = links.allotmentItineraryToEntry[idAllotment].at(route.id);
+                decision->hiredY[arc.id] += allocateLong;
                 // Update Greedy Stats with new allotment-related information.
+                unsigned entryId = links.allotmentItineraryToEntry[idAllotment].at(route.id);
                 double allocatedFCFS = greedyStats.allocatedLongEntryCapacity[entryId];
                 for (unsigned idxArc: route.orderedArcs) {
                     greedyStats.availableArcCapacity[idxArc] += allocatedFCFS;
-                    greedyStats.availableArcCapacity[idxArc] -= shownAllotment;
+                    greedyStats.availableArcCapacity[idxArc] -= allocateLong;
                 }
-                greedyStats.allocatedLongEntryCapacity[entryId] = shownAllotment;
+                greedyStats.allocatedLongEntryCapacity[entryId] = allocateLong;
             }
         }
     }

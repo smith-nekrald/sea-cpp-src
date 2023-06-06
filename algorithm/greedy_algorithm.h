@@ -18,7 +18,10 @@ struct GreedyConfig {
 };
 
 struct GreedyStats {
+    // For making decisions and tracking approximate capacity utilization.
     std::vector<double> availableArcCapacity;
+    // For tracking real capacity allocations. Capacity here is about real allocations at cutoff.
+    std::vector<size_t> freeArcCapacity;
     std::vector<double> allocatedSpotRouteCapacity;
     std::vector<double> allocatedLongEntryCapacity;
     std::vector<bool> ifSelectedFromGroup;
@@ -44,8 +47,10 @@ protected:
     void processOffhiring(const InputData::Event& event);
 
 private:
-    double computeGreedyCapacityForItinerary(size_t idxItinerary) const;
     bool checkIfAllotmentAvailable(size_t idxAllotment) const;
+    double computeGreedyCapacityForItinerary(size_t idxItinerary) const;
+    size_t computeAllocationCapacityForItinerary(size_t idxItinerary) const;
+    size_t allocateCapacityForItinerary(size_t idxRoute, size_t amount);
 
 private:
     State state;
