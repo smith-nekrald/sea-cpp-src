@@ -1,3 +1,9 @@
+// Implements Greedy Algorithm logic.
+//
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2023
+//
 #include <cmath>
 #include <cassert>
 
@@ -294,13 +300,17 @@ void GreedyAlgorithm::processCutoff(const InputData::Event& event) {
 
 void GreedyAlgorithm::processPricing(const InputData::Event& event) {
     assert(event.type == InputData::Event::Type::pricing);
-    if (ignoreSpotMarket) {
-        return;
-    }
     assert(event.demands.size() == event.relatedItineraryIds.size());
     auto& decision = decisionManager->getData();
     auto& prices = decision.prices[event.relativeTime];
     size_t nPricesToSet = event.demands.size();
+    const double INF = std::numeric_limits<double>::max();
+    if (ignoreSpotMarket) {
+        for (size_t idx = 0; idx < nPricesToSet; ++idx) {
+            prices[idx].second = INF;
+        }
+        return;
+    }
     for (size_t idx = 0; idx < nPricesToSet; ++idx) {
         // Find maximal available capacity.
         size_t idxRoute = event.relatedItineraryIds[idx];
@@ -311,7 +321,6 @@ void GreedyAlgorithm::processPricing(const InputData::Event& event) {
         double maxCapacity = freeCapacity / route.showRate.estimatedProba;
         const double ONE_TEU = 1.;
         if (maxCapacity < ONE_TEU) {
-            const double INF = std::numeric_limits<double>::max();
             prices[idx].second = INF;
             continue;
         }
