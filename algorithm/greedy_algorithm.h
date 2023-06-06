@@ -10,18 +10,30 @@
 namespace sea {
 namespace algo {
 
+/**
+ * @brief  Configures Greedy Algorithm.
+ */
 struct GreedyConfig {
+    /// @brief Manager with InputData.
     ConstInputManagerPtr inputManager;
+    /// @brief Manager with InputLinks.
     ConstLinksManagerPtr linksManager;
+    /// @brief Whether algorithm should track history.
     bool trackStory;
+    /// @brief Whether algorithm should try to optimize memory.
     bool memoryOptimization;
+    bool ignoreSpotMarket;
+    bool ignoreLongMarket;
 };
 
 struct GreedyStats {
-    // For making decisions and tracking approximate capacity utilization.
+    /// @brief Approximation on the available capacity per arc. This approximation is relevant
+    /// for making greedy decisions and tracking approximate capacity utilization.
     std::vector<double> availableArcCapacity;
-    // For tracking real capacity allocations. Capacity here is about real allocations at cutoff.
+    /// @brief For tracking real capacity allocations at cutoff events. This tracking allows
+    /// to avoid allocating more than arc capacity.
     std::vector<size_t> freeArcCapacity;
+    /// @brief Stores the amount of greedily allocated per route.
     std::vector<double> allocatedSpotRouteCapacity;
     std::vector<double> allocatedLongEntryCapacity;
     std::vector<bool> ifSelectedFromGroup;
@@ -50,13 +62,12 @@ private:
     bool checkIfAllotmentAvailable(size_t idxAllotment) const;
     double computeGreedyCapacityForItinerary(size_t idxItinerary) const;
     size_t computeAllocationCapacityForItinerary(size_t idxItinerary) const;
-    size_t allocateCapacityForItinerary(size_t idxRoute, size_t amount);
+    void allocateCapacityForItinerary(size_t idxRoute, size_t amount);
 
 private:
     State state;
     GreedyStats greedyStats;
     bool allotmentsAsked;
-    bool memoryOptimization;
 
     DecisionManagerPtr decisionManager;
     ConstActionManagerPtr actionManager;
@@ -66,6 +77,10 @@ private:
 
     const InputData input;
     const InputLinks links;
+
+    bool ignoreSpotMarket;
+    bool ignoreLongMarket;
+    bool memoryOptimization;
 };
 
 } // namespace algo

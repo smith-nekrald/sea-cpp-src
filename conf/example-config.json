@@ -4,7 +4,9 @@
     "greedy_config" : {
         "use_greedy": true,
         "track_history": false,
-        "memory_optimization": false
+        "memory_optimization": false,
+        "ignore_spot": false,
+        "ignore_long": false
     },
     "backends_config" : {
         "ipopt_backend_config": {

@@ -651,6 +651,8 @@ void start(const json::Value& configRoot) {
         config.linksManager = linksManager;
         config.memoryOptimization = greedyConfig["memory_optimization"].asBool();
         config.trackStory = greedyConfig["track_history"].asBool();
+        config.ignoreSpotMarket = greedyConfig["ignore_spot"].asBool();
+        config.ignoreLongMarket = greedyConfig["ignore_long"].asBool();
         auto greedyAlgo = std::make_shared<sea::algo::GreedyAlgorithm>(config);
         algoVector.push_back(greedyAlgo);
         logCreatedAlgorithm(greedyAlgo->getName());
