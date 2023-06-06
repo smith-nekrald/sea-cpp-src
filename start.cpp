@@ -17,6 +17,7 @@
 #include "common.h"
 #include "manager.h"
 #include "algorithm/strategic_algorithm.h"
+#include "algorithm/greedy_algorithm.h"
 #include "backend/backend_general.h"
 #include "backend/lagrangian_relaxation/gm_sea/gm_src/gm_types.h"
 #include "strategy/general_strategy.h"
@@ -641,6 +642,20 @@ void start(const json::Value& configRoot) {
 
     // Build algorithms.
     std::vector<sea::algo::IAlgorithmPtr> algoVector;
+    // Start with Greedy algorithm (if relevant).
+    const auto& greedyConfig = configRoot["greedy_config"];
+    bool useGreedy = greedyConfig["use_greedy"].asBool();
+    if (useGreedy) {
+        sea::algo::GreedyConfig config;
+        config.inputManager = inputManager;
+        config.linksManager = linksManager;
+        config.memoryOptimization = greedyConfig["memory_optimization"].asBool();
+        config.trackStory = greedyConfig["track_history"].asBool();
+        auto greedyAlgo = std::make_shared<sea::algo::GreedyAlgorithm>(config);
+        algoVector.push_back(greedyAlgo);
+        logCreatedAlgorithm(greedyAlgo->getName());
+    }
+    // Then build strategic algorithms.
     for (const auto& conf : configurationPairs) {
         sea::algo::StrategicAlgorithmConfig config;
         config.allotmentStrategy = allotmentStrategies[conf.second];
@@ -649,7 +664,6 @@ void start(const json::Value& configRoot) {
         algoVector.push_back(algo);
         logCreatedAlgorithm(algo->getName());
     }
-
     // Validation launch, if relevant.
     bool doValidation = configRoot["do_validation"].asBool();
     if (doValidation) {

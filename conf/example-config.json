@@ -1,6 +1,11 @@
 {
     "do_validation": false,
     "write_eval_story" : false,
+    "greedy_config" : {
+        "use_greedy": true,
+        "track_history": false,
+        "memory_optimization": false
+    },
     "backends_config" : {
         "ipopt_backend_config": {
             "solver_type" : "mumps",
