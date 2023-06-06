@@ -50,7 +50,7 @@ map<string, vector<Statistics>> Launcher::doLaunches() {
             auto stats = evaluator.calc(algo, item);
             if (config.writeStory) {
                 auto algoStory = evaluator.getAlgoStory();
-                auto evalStory = evaluator.getEvalStory();
+                auto evaluationStory = evaluator.getEvaluationStory();
 
                 auto folderPath = std::filesystem::path("eval_story");
                 if (!std::filesystem::exists(folderPath)) {
@@ -63,7 +63,7 @@ map<string, vector<Statistics>> Launcher::doLaunches() {
                 out << "AlgoStory: " << std::endl;
                 printStory(algoStory, out);
                 out << "EvalStory: " << std::endl;
-                printStory(evalStory, out);
+                printStory(evaluationStory, out);
                 out.flush();
                 out.close();
             }

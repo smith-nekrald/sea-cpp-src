@@ -62,8 +62,8 @@ public:
      *
      * @return The evaluation history.
      */
-    std::map<std::string, std::vector<double>> getEvalStory() const {
-        return evalStory;
+    std::map<std::string, std::vector<double>> getEvaluationStory() const {
+        return evaluationStory;
     }
 
 private:
@@ -261,7 +261,7 @@ private:
     /// @brief Contains algorithm-provided history, if such history is collected.
     std::map<std::string, std::vector<double>> algoStory;
     /// @brief Contains evaluator-provided history, if such history is collected.
-    std::map<std::string, std::vector<double>> evalStory;
+    std::map<std::string, std::vector<double>> evaluationStory;
 };
 
 }   // namespace sea

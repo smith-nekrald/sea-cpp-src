@@ -49,7 +49,7 @@ void Evaluator::initStartState() {
     totalBookings.assign(input.itineraries.size(), 0);
     usedCapacity.assign(input.arcs.size(), 0);
 
-    evalStory.clear();
+    evaluationStory.clear();
     algoStory.clear();
 }
 
@@ -106,19 +106,19 @@ Statistics Evaluator::calc(algo::IAlgorithmPtr algo, ConstMarketManagerPtr marke
             + statistics.containerProfit + statistics.emptyContainerProfit;
 
         if (config.keepStory) {
-            evalStory["event_relative_time"].push_back(event.relativeTime);
-            evalStory["event_real_time"].push_back(event.realTime);
-            evalStory["profit_now"].push_back(statistics.fullProfit);
-            evalStory["spot_profit_now"].push_back(statistics.spotProfit);
-            evalStory["allotment_profit_now"].push_back(statistics.allotmentProfit);
-            evalStory["container_profit_now"].push_back(statistics.containerProfit);
-            evalStory["empty_container_profit_now"].push_back(statistics.emptyContainerProfit);
-            evalStory["empty_containers_count_now"].push_back(statistics.emptyContainerCount);
-            evalStory["spot_bookings_count_now"].push_back(statistics.sumSpotBookingAmount);
-            evalStory["allotment_booking_count_now"].push_back(
+            evaluationStory["event_relative_time"].push_back(event.relativeTime);
+            evaluationStory["event_real_time"].push_back(event.realTime);
+            evaluationStory["profit_now"].push_back(statistics.fullProfit);
+            evaluationStory["spot_profit_now"].push_back(statistics.spotProfit);
+            evaluationStory["allotment_profit_now"].push_back(statistics.allotmentProfit);
+            evaluationStory["container_profit_now"].push_back(statistics.containerProfit);
+            evaluationStory["empty_container_profit_now"].push_back(statistics.emptyContainerProfit);
+            evaluationStory["empty_containers_count_now"].push_back(statistics.emptyContainerCount);
+            evaluationStory["spot_bookings_count_now"].push_back(statistics.sumSpotBookingAmount);
+            evaluationStory["allotment_booking_count_now"].push_back(
                     statistics.sumAllotmentBookingAmount);
-            evalStory["spot_container_count_now"].push_back(statistics.spotContainerCount);
-            evalStory["long_container_count_now"].push_back(statistics.allotmentContainerCount);
+            evaluationStory["spot_container_count_now"].push_back(statistics.spotContainerCount);
+            evaluationStory["long_container_count_now"].push_back(statistics.allotmentContainerCount);
         }
     }
 
