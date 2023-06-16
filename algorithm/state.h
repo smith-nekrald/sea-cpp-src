@@ -49,7 +49,7 @@ void toNextEvent(TimeParameters* parameters);
 struct State {
     /// @brief Amount of accumulated bookings, per itinerary. Denoted b_r in the model.
     std::vector<unsigned> accumulatedBookings;
-    /// @brief Amount of boarded and shipped TEU. Denoted n_{t,r} and l_{t,r} in the model.
+    /// @brief Amount of shipped TEU. Denoted n_{t,r} and l_{t,r} in the model.
     std::vector<unsigned> carriedOnRoute;
     /// @brief Amount of TEU currently stored in ports.
     std::vector<int> containersInPorts;

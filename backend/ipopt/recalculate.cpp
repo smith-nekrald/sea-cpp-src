@@ -83,9 +83,9 @@ void IpoptBackend::setPreviouslyMadeDecisions(
             const auto& arc = input.arcs[event.basedArc.value()];
             for (unsigned idItinerary : event.relatedItineraryIds) {
                 // Processing Q_r
-                unsigned boardQIndex = indexMap.idItineraryToQIndex[idItinerary];
-                variablesPtr->at(boardQIndex) = vlowerPtr->at(boardQIndex)
-                    = vupperPtr->at(boardQIndex) = decision->nonEmptyContainersQ[idItinerary];
+                unsigned shippedQIndex = indexMap.idItineraryToQIndex[idItinerary];
+                variablesPtr->at(shippedQIndex) = vlowerPtr->at(shippedQIndex)
+                    = vupperPtr->at(shippedQIndex) = decision->nonEmptyContainersQ[idItinerary];
                 // Processing Z_r
                 unsigned emptyZIndex = indexMap.idItineraryToZIndex[idItinerary];
                 variablesPtr->at(emptyZIndex) = vlowerPtr->at(emptyZIndex)
@@ -302,8 +302,8 @@ void IpoptBackend::writeSolutionToDecision(
                 const double FLOOR_EPS = 1e-3;
 
                 // Processing Q_r
-                unsigned boardQIndex = indexMap.idItineraryToQIndex[idItinerary];
-                double valueQ = floor(solutionValues[boardQIndex] + FLOOR_EPS);
+                unsigned shipQIndex = indexMap.idItineraryToQIndex[idItinerary];
+                double valueQ = floor(solutionValues[shipQIndex] + FLOOR_EPS);
                 assert(valueQ >= 0);
                 decision->nonEmptyContainersQ[idItinerary] = static_cast<unsigned>(valueQ);
 

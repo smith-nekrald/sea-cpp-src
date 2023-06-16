@@ -93,7 +93,7 @@ protected:
      * @param[in] variables The vector with variables.
      * @param[out] functionsPtr A poiner to a vector with functions.
      * @param[out] bookingsPtr A pointer to a vector for tracking bookings.
-     * @param[out] boardedPtr A pointer to a vector for tracking the boarded containers.
+     * @param[out] shippedPtr A pointer to a vector for tracking the shipped containers.
      * @param[out] containersPtr A pointer to a vector for tracking containers in ports.
      */
     void processCutoff(const unsigned timeNow,
@@ -101,7 +101,7 @@ protected:
                    const vector<CppAD::AD<double>>& variables,
                    vector<CppAD::AD<double>>* functionsPtr,
                    vector<CppAD::AD<double>>* bookingsPtr,
-                   vector<CppAD::AD<double>>* boardedPtr,
+                   vector<CppAD::AD<double>>* shippedPtr,
                    vector<CppAD::AD<double>>* containersPtr) const;
     /**
      * @brief  Processes one arrival event. Updates corresponding objective and constraints.
@@ -110,22 +110,22 @@ protected:
      * @param[in] event The arrival event to process.
      * @param[in] variables A vector with variables.
      * @param[out] functionsPtr A poiner to a vector with functions.
-     * @param[out] boardedPtr A pointer to a vector for tracking the boarded containers.
+     * @param[out] shippedPtr A pointer to a vector for tracking the shipped containers.
      * @param[out] containersPtr A pointer to a vector for tracking containers in ports.
      */
     void processArrival(const InputData::Event& event,
                    const vector<CppAD::AD<double>>& variables,
                    vector<CppAD::AD<double>>* functionsPtr,
-                   vector<CppAD::AD<double>>* boardedPtr,
+                   vector<CppAD::AD<double>>* shippedPtr,
                    vector<CppAD::AD<double>>* containersPtr) const;
 
     /**
      * @brief Forms capacity constraints.
      *
-     * @param[in] boarded Vector tracking amount of boarded containers.
+     * @param[in] shipped Vector tracking amount of shipped containers.
      * @param[in] functionsPtr A pointer to a vector with functions.
      */
-    void formCapacityConstraints(const vector<CppAD::AD<double>>& boarded,
+    void formCapacityConstraints(const vector<CppAD::AD<double>>& shipped,
             vector<CppAD::AD<double>>* functionsPtr) const;
     /**
      * @brief Forms constraints about the final amount of containers in ports.

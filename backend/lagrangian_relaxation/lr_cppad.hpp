@@ -254,21 +254,21 @@ inline Type computeFunctionValue(const InputData& input,
             for (unsigned idItinerary : event.relatedItineraryIds) {
                 const auto& itinerary = input.itineraries[idItinerary];
                 const auto& lastArc = input.arcs[itinerary.orderedArcs.back()];
-                unsigned boardedOnItinerary = 0;
-                boardedOnItinerary += decision->nonEmptyContainersQ[itinerary.id];
-                boardedOnItinerary += decision->emptyContainersZ[itinerary.id];
+                unsigned carriedOnItinerary = 0;
+                carriedOnItinerary += decision->nonEmptyContainersQ[itinerary.id];
+                carriedOnItinerary += decision->emptyContainersZ[itinerary.id];
                 for (unsigned idAllotment : links.allotmentsWithItinerary[itinerary.id]) {
                     if (decision->allotmentAccepted[idAllotment]) {
                         unsigned place = links.allotmentItineraryToPlace.at(
                                 idAllotment).at(itinerary.id);
-                        boardedOnItinerary += decision->allotmentContainersQ[
+                        carriedOnItinerary += decision->allotmentContainersQ[
                             idAllotment][place].second;
                         assert(decision->allotmentContainersQ[idAllotment][place].first
                                 == itinerary.id);
                     }
                 }
-                backByArc[lastArc.id] += boardedOnItinerary;
-                localContainersInPorts[port.id] -= boardedOnItinerary;
+                backByArc[lastArc.id] += carriedOnItinerary;
+                localContainersInPorts[port.id] -= carriedOnItinerary;
                 if (localContainersInPorts[port.id] < 0) {
                     decision->hiredY[arc.id] -= localContainersInPorts[port.id];
                     paidForContainers += port.hiringCost * (-localContainersInPorts[port.id]);

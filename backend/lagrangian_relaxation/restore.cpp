@@ -216,18 +216,18 @@ void byItineraryRestore(
         const double* solution = solver.primalColumnSolution();
 
         // Reconstructing decision from solution.
-        unsigned boardedSum = 0;
+        unsigned shippedSum = 0;
 
         const double FLOOR_EPS = 1e-3;
         double emptyCount = floor(solution[1] + FLOOR_EPS);
         assert(emptyCount >= 0.);
         decision->emptyContainersZ[itinerary.id] = static_cast<unsigned>(emptyCount);
-        boardedSum += static_cast<unsigned>(emptyCount);
+        shippedSum += static_cast<unsigned>(emptyCount);
 
         double nonEmptySpotCount = floor(solution[0] + FLOOR_EPS);
         assert(nonEmptySpotCount >= 0.);
         decision->nonEmptyContainersQ[itinerary.id] = static_cast<unsigned>(nonEmptySpotCount);
-        boardedSum += static_cast<unsigned>(nonEmptySpotCount);
+        shippedSum += static_cast<unsigned>(nonEmptySpotCount);
 
         logNonEmptyQInByItineraryRestore(
                 itinerary.id, decision->nonEmptyContainersQ[itinerary.id]);
@@ -238,7 +238,7 @@ void byItineraryRestore(
                 double longCount = floor(solution[ind] + FLOOR_EPS);
                 assert(longCount >= 0);
                 unsigned loadNow = static_cast<unsigned> (solution[ind]);
-                boardedSum += loadNow;
+                shippedSum += loadNow;
                 unsigned idAllotment = correspondingAllotments[ind];
                 unsigned place = links.allotmentItineraryToPlace.at(
                     idAllotment).at(itinerary.id);
@@ -252,21 +252,21 @@ void byItineraryRestore(
         assert(Y_HS_solution >= 0. && Y_OS_solution >= 0.);
         unsigned Y_HS = static_cast<unsigned>(Y_HS_solution);
         unsigned Y_OS = static_cast<unsigned>(Y_OS_solution);
-        while (F_r + Y_HS < boardedSum + Y_OS) {
+        while (F_r + Y_HS < shippedSum + Y_OS) {
             if (Y_OS > 0) {
                 --Y_OS;
             } else {
                 ++Y_HS;
             }
         }
-        while (F_r + Y_HS > boardedSum + Y_OS) {
+        while (F_r + Y_HS > shippedSum + Y_OS) {
             if (Y_HS > 0) {
                 --Y_HS;
             } else {
                 ++Y_OS;
             }
         }
-        assert(F_r + Y_HS == Y_OS  + boardedSum);
+        assert(F_r + Y_HS == Y_OS  + shippedSum);
 
         int hiringDiff = static_cast<int>(Y_HS) - static_cast<int>(Y_OS);
         unsigned & hiredNow = decision->hiredY[basedArc.id];
@@ -296,12 +296,12 @@ void byItineraryRestore(
                 decision->hiredY[hiringArc] += offHiringDiff;
             }
         }
-        state->containersInPorts[beginPort.id] -= boardedSum;
+        state->containersInPorts[beginPort.id] -= shippedSum;
         // Update used capacity.
         for (unsigned arcId : itinerary.orderedArcs) {
             const auto& arc = input.arcs[arcId];
             if (arc.type == ArcType::travel) {
-                state->usedCapacity[arcId] += boardedSum;
+                state->usedCapacity[arcId] += shippedSum;
                 const auto& vessel = input.vessels[arc.vesselId.value()];
                 assert(state->usedCapacity[arcId] <= vessel.capacity);
             }
