@@ -212,15 +212,15 @@ private:
      * @brief Logs spot-itinerary information during executing processCutoffDecision.
      *
      * @param itineraryId The considered itinerary index.
-     * @param takenContainers Amount of taken containers.
-     * @param emptyContainers Amount of emtpy containers.
-     * @param diffDemandTaken Difference between shown and taken.
+     * @param boardedContainers Amount of boarded containers.
+     * @param emptyContainers Amount of empty containers.
+     * @param diffDemandTaken Difference between shown and boarded.
      * @param paidDeclineCost The decline cost paid.
      * @param nonEmptyTransferCost The cost paid for transporting non-empty containers.
      * @param emptyTransferCost The cost paid for transporting empty containers.
      * @param waitingCost The cost paid by containers waiting in port.
      */
-    void logItinerarySpotInProcessCutoffDecision(unsigned itineraryId, unsigned takenContainers,
+    void logItinerarySpotInProcessCutoffDecision(unsigned itineraryId, unsigned boardedContainers,
             unsigned emptyContainers, double diffDemandTaken, double paidDeclineCost,
             double nonEmptyTransferCost, double emptyTransferCost,  double waitingCost) const;
     /**

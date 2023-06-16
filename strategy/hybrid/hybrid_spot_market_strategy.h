@@ -34,7 +34,7 @@ struct HybridSpotMarketStrategyConfig {
 };
 
 /**
- * @brief Hybrid Spot Market Strategy. Essentially, the idea is to take dual variables
+ * @brief Hybrid Spot Market Strategy. Essentially, the idea is to use dual variables
  * computed as side product in fluid approximation with Ipopt, and apply LR-based heuristic
  * on top of these dual variables.
  */

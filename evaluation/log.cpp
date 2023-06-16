@@ -131,14 +131,14 @@ void Evaluator::logStartProcessCutoffDecision(
 }
 
 void Evaluator::logItinerarySpotInProcessCutoffDecision(
-        unsigned itineraryId, unsigned takenContainers, unsigned emptyContainers,
+        unsigned itineraryId, unsigned boardedContainers, unsigned emptyContainers,
         double diffDemandTaken, double paidDeclineCost, double nonEmptyTransferCost,
         double emptyTransferCost,  double waitingCost) const {
     auto& logger = logging::getEvaluationLogger();
     auto stream = logger.getStream(log4cpp::Priority::DEBUG);
     stream << "spot market, itinerary " << itineraryId << "\n";
-    stream << "spot market, taken Q_r = " << takenContainers << "\n";
-    stream << "spot market, taken Z_r = " << emptyContainers << "\n";
+    stream << "spot market, boarded Q_r = " << boardedContainers << "\n";
+    stream << "spot market, boarded Z_r = " << emptyContainers << "\n";
     stream << "spot market, declined " << diffDemandTaken << "containers" << "\n";
     stream << "spot market, paying decline cost = " << paidDeclineCost
             << " for diff = " << diffDemandTaken << "\n";

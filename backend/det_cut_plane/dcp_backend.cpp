@@ -121,7 +121,7 @@ void DetCutPlaneBackend::setupMainProblem() {
     initBoundsLR(&cbcLastProblem.vlower, &cbcLastProblem.vupper);
 
     vector<vector<unsigned>> bookings(input.itineraries.size());
-    vector<vector<unsigned>> takens(input.itineraries.size());
+    vector<vector<unsigned>> boarded(input.itineraries.size());
     vector<vector<CoefIndex>> containers(input.ports.size());
 
     for (unsigned timeNow = 0; timeNow < input.events.size(); ++timeNow) {
@@ -161,8 +161,8 @@ void DetCutPlaneBackend::setupMainProblem() {
                     unsigned qSpotIndex = indexMap.idItineraryToQIndex[idItinerary];
                     unsigned zIndex = indexMap.idItineraryToZIndex[idItinerary];
 
-                    takens[idItinerary].push_back(qSpotIndex);
-                    takens[idItinerary].push_back(zIndex);
+                    boarded[idItinerary].push_back(qSpotIndex);
+                    boarded[idItinerary].push_back(zIndex);
 
                     containers[idPort].push_back({-1, qSpotIndex});
                     containers[idPort].push_back({-1, zIndex});
@@ -195,7 +195,7 @@ void DetCutPlaneBackend::setupMainProblem() {
 
                         unsigned uAllotmentIndex = indexMap.allotmentToUIndex[idAllotment];
 
-                        takens[idItinerary].push_back(qAllotmentIndex);
+                        boarded[idItinerary].push_back(qAllotmentIndex);
                         containers[idPort].push_back({-1, qAllotmentIndex});
 
                         auto entryId = links.allotmentItineraryToEntry.at(
@@ -236,7 +236,7 @@ void DetCutPlaneBackend::setupMainProblem() {
 
                 containers[port.id].push_back({-1, offhiredIndex});
                 for (unsigned idItinerary : links.itinerariesToArc[idBasedArc]) {
-                    for (auto variableIndex : takens[idItinerary]) {
+                    for (auto variableIndex : boarded[idItinerary]) {
                         containers[port.id].push_back({1, variableIndex});
                     }
                 }
@@ -262,7 +262,7 @@ void DetCutPlaneBackend::setupMainProblem() {
         if (arc.type == InputData::Arc::Type::travel) {
             vector<unsigned> insideArcIndices;
             for (unsigned idItinerary : links.itinerariesWithArc[idArc]) {
-                std::copy(takens[idItinerary].begin(), takens[idItinerary].end(),
+                std::copy(boarded[idItinerary].begin(), boarded[idItinerary].end(),
                         std::back_inserter(insideArcIndices));
             }
             unsigned constraintIndex = indexMap.arcCapacityConstraints[idArc];
@@ -558,8 +558,8 @@ void DetCutPlaneBackend::fillDecision(Decision* decision) {
             for (unsigned idItinerary : event.relatedItineraryIds) {
                 // Processing Q_r
                 const double EPS = 1e-3;
-                unsigned takeQIndex = indexMap.idItineraryToQIndex[idItinerary];
-                double valueQ = floor(lastSolution[takeQIndex] + EPS);
+                unsigned boardQIndex = indexMap.idItineraryToQIndex[idItinerary];
+                double valueQ = floor(lastSolution[boardQIndex] + EPS);
                 decision->nonEmptyContainersQ[idItinerary] = unsigned(valueQ);
 
                 // Processing Z_r (setting decision and bounds)
@@ -569,9 +569,9 @@ void DetCutPlaneBackend::fillDecision(Decision* decision) {
 
                 // Processing allotments
                 for (unsigned idAllotment : links.allotmentsWithItinerary[idItinerary]) {
-                    unsigned takeIQIndex = indexMap.allotmentItineraryToQIndex[
+                    unsigned loadIQIndex = indexMap.allotmentItineraryToQIndex[
                         idAllotment][idItinerary];
-                    double valueIQ = floor(lastSolution[takeIQIndex] + EPS);
+                    double valueIQ = floor(lastSolution[loadIQIndex] + EPS);
                     unsigned placeIndex = links.allotmentItineraryToPlace.at(
                             idAllotment).at(idItinerary);
                     assert(decision->allotmentContainersQ[idAllotment][placeIndex].first

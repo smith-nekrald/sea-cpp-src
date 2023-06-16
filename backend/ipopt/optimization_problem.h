@@ -3,7 +3,7 @@
  * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
  * @brief Implements OptimizationProblem, which is a way to describe the optimization objective
  * and constraints in a CppAD-friendly format.
- * 
+ *
  * @copyright Smith School of Business (c) 2023
  */
 #pragma once
@@ -19,7 +19,7 @@ namespace backend {
  * @brief Configures Optimization Problem.
  */
 struct OptimizationConfig {
-    /// @brief Manager for Ipopt Index, helps to convert regular indexation into the 
+    /// @brief Manager for Ipopt Index, helps to convert regular indexation into the
     /// indexation for optimization problem and backwards.
     ConstIpoptIndexManagerPtr indexManager;
     /// @brief Manager for InputData. Dataset with static information.
@@ -27,7 +27,7 @@ struct OptimizationConfig {
     /// @brief Manager for InputLinks. Dataset with data structures over static information.
     ConstLinksManagerPtr linksManager;
 
-    /// @brief Manager for the current Decision. 
+    /// @brief Manager for the current Decision.
     ConstDecisionManagerPtr decisionManager;
     /// @brief Manager for the current Action.
     ConstActionManagerPtr actionManager;
@@ -55,24 +55,24 @@ public:
 public:
     /**
      * @brief Constructs a new Optimization Problem.
-     * 
+     *
      * @param aConfig Optimization problem configuration.
      */
     OptimizationProblem(const OptimizationConfig& aConfig);
     /**
-     * @brief The operator called by CppAD. 
-     * 
-     * @param functions The functions to form. Where functions[0] is objective, the rest are 
-     * constraints. 
-     * @param variables The variables to use for forming objectives and constraints. 
+     * @brief The operator called by CppAD.
+     *
+     * @param functions The functions to form. Where functions[0] is objective, the rest are
+     * constraints.
+     * @param variables The variables to use for forming objectives and constraints.
      */
     void operator()(ADvector& functions, const ADvector& variables);
 
 protected:
     /**
-     * @brief Processes one pricing event. Updates corresponding objective and constraints. 
+     * @brief Processes one pricing event. Updates corresponding objective and constraints.
      * Helps when going through the events inside the operator() called from CppAD.
-     * 
+     *
      * @param[in] timeNow The time of considered pricing event.
      * @param[in] event  A pricing event to process.
      * @param[in] variables  The vector with variables.
@@ -87,13 +87,13 @@ protected:
     /**
      * @brief Processes one cutoff event. Updates corresponding objective and constraints.
      * Helps when going throught the events inside the operator() called from CppAD.
-     * 
+     *
      * @param[in] timeNow The time of considered cutoff event.
      * @param[in] event  The cutoff event to process.
      * @param[in] variables The vector with variables.
      * @param[out] functionsPtr A poiner to a vector with functions.
      * @param[out] bookingsPtr A pointer to a vector for tracking bookings.
-     * @param[out] takensPtr A pointer to a vector for tracking the taken containers.
+     * @param[out] boardedPtr A pointer to a vector for tracking the boarded containers.
      * @param[out] containersPtr A pointer to a vector for tracking containers in ports.
      */
     void processCutoff(const unsigned timeNow,
@@ -101,36 +101,36 @@ protected:
                    const vector<CppAD::AD<double>>& variables,
                    vector<CppAD::AD<double>>* functionsPtr,
                    vector<CppAD::AD<double>>* bookingsPtr,
-                   vector<CppAD::AD<double>>* takensPtr,
+                   vector<CppAD::AD<double>>* boardedPtr,
                    vector<CppAD::AD<double>>* containersPtr) const;
     /**
      * @brief  Processes one arrival event. Updates corresponding objective and constraints.
      * Helps when going through the events inside the operator() called from CppAD.
-     * 
+     *
      * @param[in] event The arrival event to process.
      * @param[in] variables A vector with variables.
      * @param[out] functionsPtr A poiner to a vector with functions.
-     * @param[out] takensPtr A pointer to a vector for tracking the taken containers.
+     * @param[out] boardedPtr A pointer to a vector for tracking the boarded containers.
      * @param[out] containersPtr A pointer to a vector for tracking containers in ports.
      */
     void processArrival(const InputData::Event& event,
                    const vector<CppAD::AD<double>>& variables,
                    vector<CppAD::AD<double>>* functionsPtr,
-                   vector<CppAD::AD<double>>* takensPtr,
+                   vector<CppAD::AD<double>>* boardedPtr,
                    vector<CppAD::AD<double>>* containersPtr) const;
 
     /**
      * @brief Forms capacity constraints.
-     * 
-     * @param[in] takens Vector tracking amount of taken containers.
+     *
+     * @param[in] boarded Vector tracking amount of boarded containers.
      * @param[in] functionsPtr A pointer to a vector with functions.
      */
-    void formCapacityConstraints(const vector<CppAD::AD<double>>& takens,
+    void formCapacityConstraints(const vector<CppAD::AD<double>>& boarded,
             vector<CppAD::AD<double>>* functionsPtr) const;
     /**
-     * @brief Forms constraints about the final amount of containers in ports. 
+     * @brief Forms constraints about the final amount of containers in ports.
      * Updates objective, if relevant.
-     * 
+     *
      * @param containers Vector tracking amount of containers in ports.
      * @param functionsPtr A pointer to a vector with functions.
      */
@@ -138,7 +138,7 @@ protected:
             vector<CppAD::AD<double>>* functionsPtr) const;
     /**
      * @brief Forms one-group constraints. At most one allotment from each group can get selected.
-     * 
+     *
      * @param variables Vector with original variables.
      * @param functionsPtr A pointer to a vector with functions.
      */
@@ -150,7 +150,7 @@ protected:
     void releaseManagers();
 
 private:
-    /// @brief Configuration for optimization problem. Contains static 
+    /// @brief Configuration for optimization problem. Contains static
     // structures, the current Action and Decision, etc.
     const OptimizationConfig config;
 };

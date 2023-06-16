@@ -1,7 +1,7 @@
 /**
  * @file null_allotment_strategy.h
  * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
- * @brief Implements Null Allotment Strategy - no allotments are taken, no spot market afterwards, 
+ * @brief Implements Null Allotment Strategy - no allotments are accepted, no spot market afterwards,
  * all decisions are set to zero.
  * @copyright (c) Smith School of Business, 2023
  */
@@ -29,13 +29,13 @@ struct NullAllotmentStrategyConfig {
 
 
 /**
- * @brief Null Allotment Strategy: no allotments are taken. Every decision is set to zero.
+ * @brief Null Allotment Strategy: no allotments are accepted. Every decision is set to zero.
  */
 class NullAllotmentStrategy: public AbstractAllotmentStrategy {
 public:
     /**
      * @brief Constructor for a Null Allotment Strategy.
-     * 
+     *
      * @param aConfig Configuration for Null Allotment Strategy.
      */
     NullAllotmentStrategy(const NullAllotmentStrategyConfig& aConfig)
@@ -49,9 +49,9 @@ public:
      */
     void reset() override;
     /**
-     * @brief Fills allotments in the Decision (no allotments are taken), and all other decisions
-     * are set to zero.    * 
-     * 
+     * @brief Fills allotments in the Decision (no allotments are accepted), and all other decisions
+     * are set to zero.    *
+     *
      * @return Manager with corresponding Decision.
      */
     virtual DecisionManagerPtr provideAllotments() override;
@@ -64,7 +64,7 @@ public:
 
 /**
  * @brief Template method to fill a vector with zeroes.
- * 
+ *
  * @tparam Type The type of the vector entry.
  * @param data The data to fill with zeroes.
  */

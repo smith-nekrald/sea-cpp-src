@@ -83,16 +83,16 @@ void IpoptBackend::setPreviouslyMadeDecisions(
             const auto& arc = input.arcs[event.basedArc.value()];
             for (unsigned idItinerary : event.relatedItineraryIds) {
                 // Processing Q_r
-                unsigned takeQIndex = indexMap.idItineraryToQIndex[idItinerary];
-                variablesPtr->at(takeQIndex) = vlowerPtr->at(takeQIndex)
-                    = vupperPtr->at(takeQIndex) = decision->nonEmptyContainersQ[idItinerary];
+                unsigned boardQIndex = indexMap.idItineraryToQIndex[idItinerary];
+                variablesPtr->at(boardQIndex) = vlowerPtr->at(boardQIndex)
+                    = vupperPtr->at(boardQIndex) = decision->nonEmptyContainersQ[idItinerary];
                 // Processing Z_r
                 unsigned emptyZIndex = indexMap.idItineraryToZIndex[idItinerary];
                 variablesPtr->at(emptyZIndex) = vlowerPtr->at(emptyZIndex)
                     = vupperPtr->at(emptyZIndex) = decision->emptyContainersZ[idItinerary];
                 // Processing allotments
                 for (unsigned idAllotment : links.allotmentsWithItinerary[idItinerary]) {
-                    unsigned takeIQIndex =
+                    unsigned loadIQIndex =
                         indexMap.allotmentItineraryToQIndex[idAllotment][idItinerary];
                     unsigned placeIndex =
                         links.allotmentItineraryToPlace.at(idAllotment).at(idItinerary);
@@ -104,8 +104,8 @@ void IpoptBackend::setPreviouslyMadeDecisions(
                     if (!decision->allotmentAccepted[idAllotment]) {
                         targetValue = 0;
                     }
-                    variablesPtr->at(takeIQIndex) = vlowerPtr->at(takeIQIndex)
-                        = vupperPtr->at(takeIQIndex) = targetValue;
+                    variablesPtr->at(loadIQIndex) = vlowerPtr->at(loadIQIndex)
+                        = vupperPtr->at(loadIQIndex) = targetValue;
                 }
             }
             // tracking variables y_a^H
@@ -302,8 +302,8 @@ void IpoptBackend::writeSolutionToDecision(
                 const double FLOOR_EPS = 1e-3;
 
                 // Processing Q_r
-                unsigned takeQIndex = indexMap.idItineraryToQIndex[idItinerary];
-                double valueQ = floor(solutionValues[takeQIndex] + FLOOR_EPS);
+                unsigned boardQIndex = indexMap.idItineraryToQIndex[idItinerary];
+                double valueQ = floor(solutionValues[boardQIndex] + FLOOR_EPS);
                 assert(valueQ >= 0);
                 decision->nonEmptyContainersQ[idItinerary] = static_cast<unsigned>(valueQ);
 
@@ -315,9 +315,9 @@ void IpoptBackend::writeSolutionToDecision(
 
                 // Processing allotments
                 for (unsigned idAllotment : links.allotmentsWithItinerary[idItinerary]) {
-                    unsigned takeIQIndex = indexMap.allotmentItineraryToQIndex[
+                    unsigned loadIQIndex = indexMap.allotmentItineraryToQIndex[
                         idAllotment][idItinerary];
-                    double valueIQ = floor(solutionValues[takeIQIndex] + FLOOR_EPS);
+                    double valueIQ = floor(solutionValues[loadIQIndex] + FLOOR_EPS);
                     assert(valueIQ >= 0);
                     unsigned placeIndex = links.allotmentItineraryToPlace.at(
                             idAllotment).at(idItinerary);

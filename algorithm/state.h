@@ -49,8 +49,8 @@ void toNextEvent(TimeParameters* parameters);
 struct State {
     /// @brief Amount of accumulated bookings, per itinerary. Denoted b_r in the model.
     std::vector<unsigned> accumulatedBookings;
-    /// @brief Amount of taken and shipped TEU. Denoted n_{t,r} and l_{t,r} in the model.
-    std::vector<unsigned> takenOnRoute;
+    /// @brief Amount of boarded and shipped TEU. Denoted n_{t,r} and l_{t,r} in the model.
+    std::vector<unsigned> carriedOnRoute;
     /// @brief Amount of TEU currently stored in ports.
     std::vector<int> containersInPorts;
     /// @brief Time parameters structure to track current event.
@@ -101,8 +101,8 @@ void printState(const State& state, Writer& writer) {
     for (const auto& item : state.accumulatedBookings) {
         writer << item << " ";
     }
-    writer << "\ntakenOnRoute: \n";
-    for (const auto& item : state.takenOnRoute) {
+    writer << "\ncarriedOnRoute: \n";
+    for (const auto& item : state.carriedOnRoute) {
         writer << item << " ";
     }
     writer << "\ncontainersInPorts: \n";

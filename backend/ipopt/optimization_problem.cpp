@@ -62,7 +62,7 @@ void OptimizationProblem::processCutoff(const unsigned timeNow,
                                         const vector<AD<double>>& variables,
                                         vector<AD<double>>* functionsPtr,
                                         vector<AD<double>>* bookingsPtr,
-                                        vector<AD<double>>* takensPtr,
+                                        vector<AD<double>>* boardedPtr,
                                         vector<AD<double>>* containersPtr) const {
 
     auto& input = config.inputManager->getConstData();
@@ -70,7 +70,7 @@ void OptimizationProblem::processCutoff(const unsigned timeNow,
     auto& indexMap = config.indexManager->getConstData();
 
     vector<AD<double>>& bookings = *bookingsPtr;
-    vector<AD<double>>& takens = *takensPtr;
+    vector<AD<double>>& boarded = *boardedPtr;
     vector<AD<double>>& containers = *containersPtr;
 
     vector<AD<double>>& functions = *functionsPtr;
@@ -103,8 +103,8 @@ void OptimizationProblem::processCutoff(const unsigned timeNow,
         const AD<double>& qSpot = variables[qSpotIndex];
         const AD<double>& zEmpty = variables[zIndex];
 
-        takens[idItinerary] += qSpot;
-        takens[idItinerary] += zEmpty;
+        boarded[idItinerary] += qSpot;
+        boarded[idItinerary] += zEmpty;
 
         containers[idPort] -= qSpot;
         containers[idPort] -= zEmpty;
@@ -135,7 +135,7 @@ void OptimizationProblem::processCutoff(const unsigned timeNow,
             unsigned uAllotmentIndex = indexMap.allotmentToUIndex[idAllotment];
             const AD<double>& uAllotment = variables[uAllotmentIndex];
 
-            takens[idItinerary] += qAllotment;
+            boarded[idItinerary] += qAllotment;
             containers[idPort] -= qAllotment;
 
             auto entryId = links.allotmentItineraryToEntry.at(idAllotment).at(idItinerary);
@@ -177,14 +177,14 @@ void OptimizationProblem::processCutoff(const unsigned timeNow,
 void OptimizationProblem::processArrival(const InputData::Event& event,
                                         const vector<AD<double>>& variables,
                                         vector<AD<double>>* functionsPtr,
-                                        vector<AD<double>>* takensPtr,
+                                        vector<AD<double>>* boardedPtr,
                                         vector<AD<double>>* containersPtr) const {
 
     auto& input = config.inputManager->getConstData();
     auto& links = config.linksManager->getConstData();
     auto& indexMap = config.indexManager->getConstData();
 
-    vector<AD<double>>& takens = *takensPtr;
+    vector<AD<double>>& boarded = *boardedPtr;
     vector<AD<double>>& containers = *containersPtr;
 
     vector<AD<double>>& functions = *functionsPtr;
@@ -201,7 +201,7 @@ void OptimizationProblem::processArrival(const InputData::Event& event,
     objective -= offhired  * port.offHiringCost;
     containers[port.id] -= offhired;
     for (unsigned idItinerary : links.itinerariesToArc[idBasedArc]) {
-        containers[port.id] += takens[idItinerary];
+        containers[port.id] += boarded[idItinerary];
     }
     // Containers constraint on arrival
     unsigned arrivalPortConstraintIndex = indexMap.portPositiveArrivalArcConstraints[idBasedArc];
@@ -210,7 +210,7 @@ void OptimizationProblem::processArrival(const InputData::Event& event,
 }
 
 void OptimizationProblem::formCapacityConstraints(
-        const vector<CppAD::AD<double>>& takens,
+        const vector<CppAD::AD<double>>& boarded,
         vector<CppAD::AD<double>>* functionsPtr) const {
 
     auto& input = config.inputManager->getConstData();
@@ -225,7 +225,7 @@ void OptimizationProblem::formCapacityConstraints(
         if (arc.type == InputData::Arc::Type::travel) {
             AD<double> inside_arc = 0.0;
             for (unsigned idItinerary : links.itinerariesWithArc[idArc]) {
-                inside_arc += takens[idItinerary];
+                inside_arc += boarded[idItinerary];
             }
             unsigned constraintIndex = indexMap.arcCapacityConstraints[idArc];
             AD<double>& constraint = functions[constraintIndex];
@@ -283,7 +283,7 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
 
     // State variables.
     vector<AD<double>> bookings(input.itineraries.size(), 0.);
-    vector<AD<double>> takens(input.itineraries.size(), 0.);
+    vector<AD<double>> boarded(input.itineraries.size(), 0.);
     vector<AD<double>> containers(input.ports.size(), 0.);
 
     // Initial container counts.
@@ -305,9 +305,9 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
         if (event.type == InputData::Event::Type::pricing) {
             processPricing(timeNow, event, variables, &functions, &bookings);
         } else if (event.type == InputData::Event::Type::cutoff) {
-            processCutoff(timeNow, event, variables, &functions, &bookings, &takens, &containers);
+            processCutoff(timeNow, event, variables, &functions, &bookings, &boarded, &containers);
         } else if (event.type == InputData::Event::Type::arrival) {
-            processArrival(event, variables, &functions, &takens, &containers);
+            processArrival(event, variables, &functions, &boarded, &containers);
         }
 
         // Common recalculation.
@@ -318,7 +318,7 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
     }
 
     // Forming the rest of constraints and updating objective when needed.
-    formCapacityConstraints(takens, &functions);
+    formCapacityConstraints(boarded, &functions);
     formFinalContainerConstraints(containers, &functions);
     formGroupConstraints(variables, &functions);
 

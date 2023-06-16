@@ -32,7 +32,7 @@ struct GreedyConfig {
     bool memoryOptimization;
     /// @brief If set to true, spot market is ignored.
     bool ignoreSpotMarket;
-    /// @brief If set to true, allotment market is ignored (no allotments taken).
+    /// @brief If set to true, allotment market is ignored (no allotments accepted).
     bool ignoreLongMarket;
 };
 

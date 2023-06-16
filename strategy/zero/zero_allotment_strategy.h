@@ -1,7 +1,7 @@
 /**
  * @file zero_allotment_strategy.h
  * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
- * @brief Zero Allotment Strategy. No allotments are taken, but spot market is allowed.
+ * @brief Zero Allotment Strategy. No allotments are accepted, but spot market is allowed.
  * @copyright (c) Smith School of Business, 2023
  */
 #pragma once
@@ -19,15 +19,15 @@ namespace strategy {
 /// @brief Simplified notation for re-using Ipopt Allotment Strategy configuration.
 using ZeroAllotmentStrategyConfig=IpoptAllotmentStrategyConfig;
 
-/// @brief Zero allotment strategy.  No allotments are taken, but the spot market is allowed.
+/// @brief Zero allotment strategy.  No allotments are accepted, but the spot market is allowed.
 class ZeroAllotmentStrategy: public AbstractAllotmentStrategy {
 public:
     /**
      * @brief Constructs a new Zero Allotment Strategy object.
-     * 
+     *
      * @param aConfig Configuration for zero allotment strategy.
      */
-    ZeroAllotmentStrategy(const IpoptAllotmentStrategyConfig& aConfig) 
+    ZeroAllotmentStrategy(const IpoptAllotmentStrategyConfig& aConfig)
             : AbstractAllotmentStrategy(
                 aConfig.abstractConfig, aConfig.backendConfigs, "zero_allotment") {
         reset();
@@ -42,9 +42,9 @@ public:
      */
     void hardReset() override;
     /**
-     * @brief Fills allotments in the Decision (no allotments are taken), and the rest
+     * @brief Fills allotments in the Decision (no allotments are accepted), and the rest
      * of the expected fields.
-     * 
+     *
      * @return Manager pointer with corresponding decision.
      */
     virtual DecisionManagerPtr provideAllotments() override;

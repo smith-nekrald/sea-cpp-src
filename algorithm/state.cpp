@@ -1,4 +1,4 @@
-// Implements functions declared in state. 
+// Implements functions declared in state.
 
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
@@ -17,8 +17,8 @@ void initState(const InputData& input, State* state) {
     assert(state != nullptr);
     state->accumulatedBookings.assign(input.itineraries.size(), 0);
     state->accumulatedBookings.shrink_to_fit();
-    state->takenOnRoute.resize(input.itineraries.size(), 0);
-    state->takenOnRoute.shrink_to_fit();
+    state->carriedOnRoute.resize(input.itineraries.size(), 0);
+    state->carriedOnRoute.shrink_to_fit();
     state->itineraryFutureEstimation.assign(input.itineraries.size(), 0);
     state->itineraryFutureEstimation.shrink_to_fit();
     state->timeParameters = TimeParameters();

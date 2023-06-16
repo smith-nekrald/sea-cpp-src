@@ -26,9 +26,9 @@ using CppAD::AD;
 
 /**
  * @brief Computes function value (or expression) in point. Two types are supported: CppAD<double>
- * and double. Uniform way to compute function value, function expression (and therefore 
+ * and double. Uniform way to compute function value, function expression (and therefore
  * subgradient).
- * 
+ *
  * @tparam Type The expression type. Expected options: double and CppAD<double>.
  * @param[in] input InputData with environmental statistics.
  * @param[in] links InputLinks, a data structure for effective work with InputData.
@@ -100,8 +100,8 @@ inline Type computeFunctionValue(const InputData& input,
                             double timeArc = arcNode.realTime;
                             if (timeArc >= theNextEvent.realTime) {
                                 unsigned place = lrIndex.arcToLambdaIndex.at(idArc);
-                                Type taken = state.takenOnRoute[itinerary.id];
-                                functionValue -= taken * point.lambdaVariables[place];
+                                Type shipped = state.carriedOnRoute[itinerary.id];
+                                functionValue -= shipped * point.lambdaVariables[place];
                             }
                         }
                     }
@@ -254,21 +254,21 @@ inline Type computeFunctionValue(const InputData& input,
             for (unsigned idItinerary : event.relatedItineraryIds) {
                 const auto& itinerary = input.itineraries[idItinerary];
                 const auto& lastArc = input.arcs[itinerary.orderedArcs.back()];
-                unsigned takenOnItinerary = 0;
-                takenOnItinerary += decision->nonEmptyContainersQ[itinerary.id];
-                takenOnItinerary += decision->emptyContainersZ[itinerary.id];
+                unsigned boardedOnItinerary = 0;
+                boardedOnItinerary += decision->nonEmptyContainersQ[itinerary.id];
+                boardedOnItinerary += decision->emptyContainersZ[itinerary.id];
                 for (unsigned idAllotment : links.allotmentsWithItinerary[itinerary.id]) {
                     if (decision->allotmentAccepted[idAllotment]) {
                         unsigned place = links.allotmentItineraryToPlace.at(
                                 idAllotment).at(itinerary.id);
-                        takenOnItinerary += decision->allotmentContainersQ[
+                        boardedOnItinerary += decision->allotmentContainersQ[
                             idAllotment][place].second;
                         assert(decision->allotmentContainersQ[idAllotment][place].first
                                 == itinerary.id);
                     }
                 }
-                backByArc[lastArc.id] += takenOnItinerary;
-                localContainersInPorts[port.id] -= takenOnItinerary;
+                backByArc[lastArc.id] += boardedOnItinerary;
+                localContainersInPorts[port.id] -= boardedOnItinerary;
                 if (localContainersInPorts[port.id] < 0) {
                     decision->hiredY[arc.id] -= localContainersInPorts[port.id];
                     paidForContainers += port.hiringCost * (-localContainersInPorts[port.id]);
@@ -317,7 +317,7 @@ using NestedAD=CppAD::AD<CppAD::AD<double>>;
 /**
  * @brief Implementation specification for NestedAD. This method is never called, but
  * needs specification for compiling the template-based functions.
- * 
+ *
  * @tparam NestedAD The template parameter specification.
  * @param input InputData with environmental statistics.
  * @param links InputLinks, a data structure for effective work with InputData.
@@ -337,7 +337,7 @@ using NestedAD=CppAD::AD<CppAD::AD<double>>;
 template<> inline NestedAD computeFunctionValue<NestedAD>(
         const InputData& input, const InputLinks& links, const State& state,
         const LagrangianRelaxationIndex& lrIndex, const TimeParameters& timeParameters,
-        Decision* decision, const DualTemplate<NestedAD>& point, bool ignoreSpot, 
+        Decision* decision, const DualTemplate<NestedAD>& point, bool ignoreSpot,
         double l2RegConstant, DualTemplate<double> mean) {
     throw std::logic_error("Second derivative is not supported");
 }

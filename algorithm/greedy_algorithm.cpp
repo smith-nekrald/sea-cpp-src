@@ -211,8 +211,8 @@ DecisionManagerPtr GreedyAlgorithm::makeSpotDecision() {
             timeParameters.doneDecision = true;
             // update state
             for (unsigned routeId : eventNow.relatedItineraryIds) {
-                assert(state.takenOnRoute[routeId] == 0);
-                state.takenOnRoute[routeId] += decision->nonEmptyContainersQ[routeId];
+                assert(state.carriedOnRoute[routeId] == 0);
+                state.carriedOnRoute[routeId] += decision->nonEmptyContainersQ[routeId];
                 assert(decision->emptyContainersZ[routeId] == 0);
                 for (unsigned contractId = 0; contractId < input.allotments.size(); ++contractId) {
                     if (links.allotmentItineraryToPlace[contractId].find(routeId) !=
@@ -225,7 +225,7 @@ DecisionManagerPtr GreedyAlgorithm::makeSpotDecision() {
                                 contractId][placeIndex].first);
                         auto amountQ = decision->allotmentContainersQ[
                             contractId][placeIndex].second;
-                        state.takenOnRoute[routeId] += amountQ;
+                        state.carriedOnRoute[routeId] += amountQ;
                     }
                 }
             }
@@ -414,3 +414,4 @@ void GreedyAlgorithm::processOffhiring(const InputData::Event& event) {
 
 } // namespace algo
 } // namespace sea
+

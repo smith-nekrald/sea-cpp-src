@@ -63,9 +63,9 @@ ConstDecisionManagerPtr AbstractSpotMarketStrategy::makeDecision() {
             timeParameters.doneDecision = true;
             // update state
             for (unsigned routeId : eventNow.relatedItineraryIds) {
-                assert(state.takenOnRoute[routeId] == 0);
-                state.takenOnRoute[routeId] += decision->nonEmptyContainersQ[routeId];
-                state.takenOnRoute[routeId] += decision->emptyContainersZ[routeId];
+                assert(state.carriedOnRoute[routeId] == 0);
+                state.carriedOnRoute[routeId] += decision->nonEmptyContainersQ[routeId];
+                state.carriedOnRoute[routeId] += decision->emptyContainersZ[routeId];
                 for (unsigned contractId = 0; contractId < input.allotments.size(); ++contractId) {
                     if (links.allotmentItineraryToPlace[contractId].find(routeId) !=
                             links.allotmentItineraryToPlace[contractId].end()) {
@@ -77,7 +77,7 @@ ConstDecisionManagerPtr AbstractSpotMarketStrategy::makeDecision() {
                                 contractId][placeIndex].first);
                         auto amountQ = decision->allotmentContainersQ[
                             contractId][placeIndex].second;
-                        state.takenOnRoute[routeId] += amountQ;
+                        state.carriedOnRoute[routeId] += amountQ;
                     }
                 }
             }

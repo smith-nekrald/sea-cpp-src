@@ -272,31 +272,31 @@ void Evaluator::processCutoffDecision(const Event& event) {
     for (auto itineraryId : event.relatedItineraryIds) {
         const auto& itinerary = input.itineraries[itineraryId];
 
-        auto takenContainers = decision->nonEmptyContainersQ[itineraryId];
-        statistics.spotContainerCount += takenContainers;
+        auto shippedContainers = decision->nonEmptyContainersQ[itineraryId];
+        statistics.spotContainerCount += shippedContainers;
 
         auto emptyContainers = decision->emptyContainersZ[itineraryId];
         statistics.emptyContainerCount += emptyContainers;
 
-        assert(action->spotMarketDemandN[itineraryId] >= takenContainers);
-        assert(takenContainers >= 0);
+        assert(action->spotMarketDemandN[itineraryId] >= shippedContainers);
+        assert(shippedContainers >= 0);
         assert(action->spotMarketDemandN[itineraryId] >= 0);
 
         double diff = static_cast<double>(
-                action->spotMarketDemandN[itineraryId]) - takenContainers;
+                action->spotMarketDemandN[itineraryId]) - shippedContainers;
 
         const double EPS_ABOVE_ZERO = 1e-8;
         assert(diff + EPS_ABOVE_ZERO >= 0);
 
-        // Pay for not taken products.
+        // Pay for declined products.
         double paidDeclineCost = itinerary.declineCost * diff;
         statistics.spotProfit -= paidDeclineCost;
         assert(itinerary.declineCost >= 0);
 
         // Pay transfer cost for non-empty containers.
-        double nonEmptyTransferCost = takenContainers * itinerary.cost;
+        double nonEmptyTransferCost = shippedContainers * itinerary.cost;
         statistics.spotProfit -= nonEmptyTransferCost;
-        assert(takenContainers >= 0);
+        assert(shippedContainers >= 0);
         assert(itinerary.cost >= 0);
 
         // Pay transfer cost for empty containers.
@@ -305,17 +305,17 @@ void Evaluator::processCutoffDecision(const Event& event) {
 
         // Pay for waiting in port until departure.
         double waitingCost = port.storageCost * event.duration
-            * (takenContainers + emptyContainers);
+            * (shippedContainers + emptyContainers);
         statistics.containerProfit -= waitingCost;
 
         // Update assigned containers.
         assert(containersAssignedOnItineraries[itineraryId] == 0);
-        containersAssignedOnItineraries[itineraryId] = takenContainers + emptyContainers;
-        assert(containersInPorts[port.id] >= takenContainers + emptyContainers);
-        containersInPorts[port.id] -= (takenContainers + emptyContainers);
+        containersAssignedOnItineraries[itineraryId] = shippedContainers + emptyContainers;
+        assert(containersInPorts[port.id] >= shippedContainers + emptyContainers);
+        containersInPorts[port.id] -= (shippedContainers + emptyContainers);
 
         // Logging the process.
-        logItinerarySpotInProcessCutoffDecision(itineraryId, takenContainers, emptyContainers,
+        logItinerarySpotInProcessCutoffDecision(itineraryId, shippedContainers, emptyContainers,
                 diff, paidDeclineCost, nonEmptyTransferCost, emptyTransferCost,  waitingCost);
     }
 
@@ -329,30 +329,30 @@ void Evaluator::processCutoffDecision(const Event& event) {
 
             auto place = inputLinks.allotmentItineraryToPlace.at(contractId).at(itineraryId);
             auto showAmountN = action->allotmentDemandN[contractId][place].second;
-            auto takenContainersQ = decision->allotmentContainersQ[contractId][place].second;
-            statistics.allotmentContainerCount += takenContainersQ;
+            auto shippedContainersQ = decision->allotmentContainersQ[contractId][place].second;
+            statistics.allotmentContainerCount += shippedContainersQ;
 
             auto entryId = inputLinks.allotmentItineraryToEntry.at(contractId).at(itineraryId);
             const auto& entry = input.allotmentEntries[entryId];
 
-            statistics.allotmentProfit += takenContainersQ * entry.price;
-            assert(takenContainersQ >= 0);
+            statistics.allotmentProfit += shippedContainersQ * entry.price;
+            assert(shippedContainersQ >= 0);
             assert(entry.price >= 0);
-            assert(showAmountN >= takenContainersQ);
-            statistics.allotmentProfit -= (showAmountN - takenContainersQ) * itinerary.declineCost;
+            assert(showAmountN >= shippedContainersQ);
+            statistics.allotmentProfit -= (showAmountN - shippedContainersQ) * itinerary.declineCost;
 
             // Pay transfer cost for non-empty containers.
             assert(itinerary.cost >= 0);
-            statistics.allotmentProfit -= takenContainersQ * itinerary.cost;
+            statistics.allotmentProfit -= shippedContainersQ * itinerary.cost;
             // Pay for waiting in port until departure.
             assert(event.duration >= 0);
             assert(port.storageCost >= 0);
-            statistics.allotmentProfit -= port.storageCost * event.duration * takenContainersQ;
+            statistics.allotmentProfit -= port.storageCost * event.duration * shippedContainersQ;
 
             // Update containers.
-            containersAssignedOnItineraries[itineraryId] += takenContainersQ;
-            assert(containersInPorts[port.id] >= takenContainersQ);
-            containersInPorts[port.id] -= takenContainersQ;
+            containersAssignedOnItineraries[itineraryId] += shippedContainersQ;
+            assert(containersInPorts[port.id] >= shippedContainersQ);
+            containersInPorts[port.id] -= shippedContainersQ;
         }
         for (unsigned idArc : itinerary.orderedArcs) {
             const auto& arc = input.arcs[idArc];

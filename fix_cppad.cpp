@@ -1,5 +1,5 @@
 // Implements method which is required for linking with CppAD.
-// Probably the problem is due to some mistake in the current CppAD implementation.
+// Probably the problem is due to some error in the current CppAD implementation.
 
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
