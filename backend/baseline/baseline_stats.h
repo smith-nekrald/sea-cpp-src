@@ -1,0 +1,25 @@
+#include <vector>
+
+namespace sea {
+namespace baseline {
+
+/**
+ * @brief Specific to Baseline set of structures and state.
+ */
+struct BaselineStats {
+    /// @brief Approximation on the available capacity per arc. This approximation is relevant
+    /// for making greedy decisions and tracking approximate capacity utilization.
+    std::vector<double> availableArcCapacity;
+    /// @brief For tracking real capacity allocations at cutoff events. This tracking allows
+    /// to avoid allocating more than arc capacity.
+    std::vector<size_t> freeArcCapacity;
+    /// @brief Stores the amount of greedily allocated capacity per route.
+    std::vector<double> allocatedSpotRouteCapacity;
+    /// @brief Stores the amount of greedily allocated capacity per allotment entry.
+    std::vector<double> allocatedLongEntryCapacity;
+    /// @brief Tracks if each select-one group has already some allotment selected.
+    std::vector<bool> ifSelectedFromGroup;
+};
+
+} // namespace baseline
+} // namespace sea

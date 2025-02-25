@@ -36,23 +36,6 @@ struct GreedyConfig {
     bool ignoreLongMarket;
 };
 
-/**
- * @brief Specific to Greedy Algorithm set of structures and state.
- */
-struct GreedyStats {
-    /// @brief Approximation on the available capacity per arc. This approximation is relevant
-    /// for making greedy decisions and tracking approximate capacity utilization.
-    std::vector<double> availableArcCapacity;
-    /// @brief For tracking real capacity allocations at cutoff events. This tracking allows
-    /// to avoid allocating more than arc capacity.
-    std::vector<size_t> freeArcCapacity;
-    /// @brief Stores the amount of greedily allocated capacity per route.
-    std::vector<double> allocatedSpotRouteCapacity;
-    /// @brief Stores the amount of greedily allocated capacity per allotment entry.
-    std::vector<double> allocatedLongEntryCapacity;
-    /// @brief Tracks if each select-one group has already some allotment selected.
-    std::vector<bool> ifSelectedFromGroup;
-};
 
 /**
  * @brief Greedy algorithm. Allotments are selected on the first-come-first-served if fits,
@@ -182,7 +165,7 @@ private:
     /// @brief State for tracking trajectory evaluation.
     State state;
     /// @brief Statistics and structures specific to greedy algorithm.
-    GreedyStats greedyStats;
+    BaselineStats greedyStats;
     /// @brief If allotment decision is already made.
     bool allotmentsAsked;
 

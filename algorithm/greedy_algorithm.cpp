@@ -97,12 +97,13 @@ std::map<std::string, std::vector<double>> GreedyAlgorithm::getStory() const {
     return story;
 }
 
-double GreedyAlgorithm::computeGreedyCapacityForItinerary(size_t idxItinerary) const {
+double computeExpectedAvailableCapacityForItinerary(
+        const InputData& input, const BaselineStats& stats, size_t idxItinerary) {
     const auto& itinerary = input.itineraries[idxItinerary];
     double minimalCapacity = std::numeric_limits<double>::max();
     for (size_t idArc: itinerary.orderedArcs) {
         minimalCapacity = std::min<double>(
-                greedyStats.availableArcCapacity[idArc], minimalCapacity);
+                stats.availableArcCapacity[idArc], minimalCapacity);
     }
     const double ONE_TEU = 1.;
     if (minimalCapacity < ONE_TEU) {
@@ -111,13 +112,24 @@ double GreedyAlgorithm::computeGreedyCapacityForItinerary(size_t idxItinerary) c
     return minimalCapacity;
 }
 
-size_t GreedyAlgorithm::computeAllocationCapacityForItinerary(size_t idxRoute) const {
+size_t computeExactAllocationCapacityForItinerary(
+        const InputData& input, const BaselineStats& stats, size_t idxRoute) {
     const auto& route = input.itineraries[idxRoute];
     size_t freeCapacity = std::numeric_limits<size_t>::max();
     for (size_t idArc: route.orderedArcs) {
-        freeCapacity = std::min<size_t>(greedyStats.freeArcCapacity[idArc], freeCapacity);
+        freeCapacity = std::min<size_t>(stats.freeArcCapacity[idArc], freeCapacity);
     }
     return freeCapacity;
+}
+
+
+
+double GreedyAlgorithm::computeGreedyCapacityForItinerary(size_t idxItinerary) const {
+    return computeExpectedAvailableCapacityForItinerary(input, greedyStats, idxItinerary);
+}
+
+size_t GreedyAlgorithm::computeAllocationCapacityForItinerary(size_t idxRoute) const {
+    return computeExactAllocationCapacityForItinerary(input, greedyStats, idxRoute);
 }
 
 void GreedyAlgorithm::allocateCapacityForItinerary(size_t idxRoute, size_t amount) {
@@ -337,7 +349,7 @@ void GreedyAlgorithm::processPricing(const InputData::Event& event) {
         const InputData::Arc& finalArc = input.arcs[idxFinalArc];
         const InputData::Node& finalNode = input.nodes[finalArc.toNode];
         const InputData::Port& finalPort = input.ports[finalNode.portId];
-        shippingCost += finalPort.hiringCost;
+        shippingCost += finalPort.offHiringCost;
 
         // Find optimal price and demand.
         double optimalDemand = 0.;
