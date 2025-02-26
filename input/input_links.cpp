@@ -23,6 +23,7 @@ using ArcType = InputData::Arc::Type;
 
 void createInputLinks(const InputData& input, InputLinks* linksPtr) {
     const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
+    const double MAX_DOUBLE = std::numeric_limits<double>::max();
 
     assert(linksPtr != nullptr);
     InputLinks& links = *linksPtr;
@@ -124,6 +125,20 @@ void createInputLinks(const InputData& input, InputLinks* linksPtr) {
         groupVector.shrink_to_fit();
     }
     links.allotmentToGroups.shrink_to_fit();
+
+    // Filling itineraryIdToCutoffDuration
+    links.itineraryIdToCutoffDuration.assign(input.itineraries.size(), MAX_DOUBLE);
+    for (const auto& event: input.events) {
+        if (event.type == EventType::cutoff) {
+            for (unsigned idItinerary : event.relatedItineraryIds) {
+                links.itineraryIdToCutoffDuration[idItinerary] = event.duration;
+            }
+        }
+    }
+    for (unsigned idItinerary = 0; idItinerary < input.itineraries.size(); ++idItinerary) {
+        assert(links.itineraryIdToCutoffDuration[idItinerary] != MAX_DOUBLE);
+    }
+    links.itineraryIdToCutoffDuration.shrink_to_fit();
 }
 
 unsigned get2dVectorSize(const vector<vector<unsigned>>& target) {
