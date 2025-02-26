@@ -1,7 +1,11 @@
+#pragma once
+
+#include "../../input/input_data.h"
+
 #include <vector>
 
 namespace sea {
-namespace baseline {
+namespace backend {
 
 /**
  * @brief Specific to Baseline set of structures and state.
@@ -21,5 +25,8 @@ struct BaselineStats {
     std::vector<bool> ifSelectedFromGroup;
 };
 
-} // namespace baseline
+void initBaselineStats(BaselineStats* stats, const InputData& input);
+
+
+} // namespace backend
 } // namespace sea

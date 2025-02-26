@@ -3,18 +3,22 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 //
-#include <cmath>
-#include <cassert>
 
 #include "greedy_algorithm.h"
 #include "../interaction/protocol.h"
 #include "../manager.h"
 
+#include <cmath>
+#include <cassert>
+#include <memory>
+
 namespace sea {
 namespace algo {
 
 using EventType=InputData::Event::Type;
+using BaselineStats=backend::BaselineStats;
 
 GreedyAlgorithm::GreedyAlgorithm(const GreedyConfig& aConfig)
         : allotmentsAsked(false)
@@ -24,6 +28,8 @@ GreedyAlgorithm::GreedyAlgorithm(const GreedyConfig& aConfig)
         , ignoreSpotMarket(aConfig.ignoreSpotMarket)
         , ignoreLongMarket(aConfig.ignoreLongMarket)
         , memoryOptimization(aConfig.memoryOptimization) {
+    backend::AllotmentSorterConfig sorterConfig({aConfig.inputManager, aConfig.linksManager});
+    sorter = std::make_unique<backend::LongCompositeSorter>(sorterConfig);
     reset();
 }
 
@@ -70,20 +76,7 @@ ConstDecisionManagerPtr GreedyAlgorithm::makeDecision() {
 
 void GreedyAlgorithm::reset() {
     allotmentsAsked = false;
-    const double FLOAT_INF = std::numeric_limits<double>::max();
-    greedyStats.availableArcCapacity.assign(input.arcs.size(), FLOAT_INF);
-    const size_t LONG_INF = std::numeric_limits<size_t>::max();
-    greedyStats.freeArcCapacity.assign(input.arcs.size(), LONG_INF);
-    greedyStats.allocatedSpotRouteCapacity.assign(input.itineraries.size(), 0);
-    greedyStats.allocatedLongEntryCapacity.assign(input.allotmentEntries.size(), 0);
-    greedyStats.ifSelectedFromGroup.assign(input.allotmentGroups.size(), false);
-    for (const auto& arc: input.arcs) {
-        if (arc.type == InputData::Arc::Type::travel) {
-            auto& vessel = input.vessels[arc.vesselId.value()];
-            greedyStats.availableArcCapacity[arc.id] = vessel.capacity;
-            greedyStats.freeArcCapacity[arc.id] = static_cast<size_t>(std::floor(vessel.capacity));
-        }
-    }
+    backend::initBaselineStats(&greedyStats, input);
     state = State();
     initState(input, &state);
     story.clear();
@@ -97,68 +90,20 @@ std::map<std::string, std::vector<double>> GreedyAlgorithm::getStory() const {
     return story;
 }
 
-double computeExpectedAvailableCapacityForItinerary(
-        const InputData& input, const BaselineStats& stats, size_t idxItinerary) {
-    const auto& itinerary = input.itineraries[idxItinerary];
-    double minimalCapacity = std::numeric_limits<double>::max();
-    for (size_t idArc: itinerary.orderedArcs) {
-        minimalCapacity = std::min<double>(
-                stats.availableArcCapacity[idArc], minimalCapacity);
-    }
-    const double ONE_TEU = 1.;
-    if (minimalCapacity < ONE_TEU) {
-        minimalCapacity = 0.;
-    }
-    return minimalCapacity;
-}
-
-size_t computeExactAllocationCapacityForItinerary(
-        const InputData& input, const BaselineStats& stats, size_t idxRoute) {
-    const auto& route = input.itineraries[idxRoute];
-    size_t freeCapacity = std::numeric_limits<size_t>::max();
-    for (size_t idArc: route.orderedArcs) {
-        freeCapacity = std::min<size_t>(stats.freeArcCapacity[idArc], freeCapacity);
-    }
-    return freeCapacity;
-}
-
-
-
 double GreedyAlgorithm::computeGreedyCapacityForItinerary(size_t idxItinerary) const {
-    return computeExpectedAvailableCapacityForItinerary(input, greedyStats, idxItinerary);
+    return backend::computeExpectedAvailableCapacityForItinerary(input, greedyStats, idxItinerary);
 }
 
 size_t GreedyAlgorithm::computeAllocationCapacityForItinerary(size_t idxRoute) const {
-    return computeExactAllocationCapacityForItinerary(input, greedyStats, idxRoute);
+    return backend::computeExactAllocationCapacityForItinerary(input, greedyStats, idxRoute);
 }
 
 void GreedyAlgorithm::allocateCapacityForItinerary(size_t idxRoute, size_t amount) {
-    const auto& route = input.itineraries[idxRoute];
-    for (size_t idArc: route.orderedArcs) {
-        assert(greedyStats.freeArcCapacity[idArc] >= amount);
-        greedyStats.freeArcCapacity[idArc] -= amount;
-    }
+    backend::allocatePreciseCapacityForItinerary(&greedyStats, input, idxRoute, amount);
 }
 
-
 bool GreedyAlgorithm::checkIfAllotmentAvailable(size_t idxAllotment) const {
-    const auto& allotment = input.allotments[idxAllotment];
-    for (size_t groupIdx = 0; groupIdx < input.allotmentGroups.size(); ++groupIdx) {
-        const std::vector<unsigned>& group = input.allotmentGroups[groupIdx];
-        for (unsigned allotmentIndex: group) {
-            if (allotmentIndex == allotment.id && greedyStats.ifSelectedFromGroup[groupIdx]) {
-                return false;
-            }
-        }
-    }
-    for (const auto& entry: input.allotmentEntries) {
-        size_t idxItinerary = entry.itinerary;
-        double availableCapacity = computeGreedyCapacityForItinerary(idxItinerary);
-        if (availableCapacity < entry.productAmount * entry.showRate.estimatedProba) {
-            return false;
-        }
-    }
-    return true;
+    return backend::checkIfAllotmentAvailable(input, greedyStats, idxAllotment);
 }
 
 DecisionManagerPtr GreedyAlgorithm::provideAllotments() {
@@ -170,28 +115,13 @@ DecisionManagerPtr GreedyAlgorithm::provideAllotments() {
     if (ignoreLongMarket) {
         return result;
     }
-    for (const auto& allotment: input.allotments) {
+    auto allotmentOrder = sorter->selectOrder();
+    for (unsigned idxAllotment : allotmentOrder) {
+        auto& allotment = input.allotments[idxAllotment];
         bool allotmentAvailable = checkIfAllotmentAvailable(allotment.id);
         decision.allotmentAccepted[allotment.id] = allotmentAvailable;
         if (allotmentAvailable) {
-            for (size_t idxGroup = 0; idxGroup < input.allotmentGroups.size(); ++idxGroup) {
-                for (size_t idxAllotmentInGroup: input.allotmentGroups[idxGroup]) {
-                    if (idxAllotmentInGroup == allotment.id) {
-                        greedyStats.ifSelectedFromGroup[idxGroup] = true;
-                    }
-                }
-            }
-            for (const auto& entry: input.allotmentEntries) {
-                const InputData::Itinerary& route = input.itineraries[entry.itinerary];
-                double expectedCapacity = entry.productAmount * entry.showRate.estimatedProba;
-                greedyStats.allocatedLongEntryCapacity[entry.id] += expectedCapacity;
-                for (unsigned idxArc : route.orderedArcs) {
-                    const InputData::Arc& arc = input.arcs[idxArc];
-                    if (arc.type == InputData::Arc::Type::travel) {
-                        greedyStats.availableArcCapacity[arc.id] -= expectedCapacity;
-                    }
-                }
-            }
+            backend::updateStatsAtAllotmentSelection(&greedyStats, input, allotment.id);
         }
     }
     return result;
@@ -231,8 +161,7 @@ DecisionManagerPtr GreedyAlgorithm::makeSpotDecision() {
                             links.allotmentItineraryToPlace[contractId].end()) {
                         unsigned placeIndex = links.allotmentItineraryToPlace[
                             contractId].at(routeId);
-                        const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
-                        assert(placeIndex != MAX_INDEX);
+                        assert(placeIndex != std::numeric_limits<unsigned>::max());
                         assert(routeId == decision->allotmentContainersQ[
                                 contractId][placeIndex].first);
                         auto amountQ = decision->allotmentContainersQ[
@@ -344,6 +273,7 @@ void GreedyAlgorithm::processPricing(const InputData::Event& event) {
         const InputData::Node& startNode = input.nodes[startArc.fromNode];
         const InputData::Port& startPort = input.ports[startNode.portId];
         shippingCost += startPort.hiringCost;
+        shippingCost += links.itineraryIdToCutoffDuration[idxRoute] * startPort.storageCost;
 
         size_t idxFinalArc = route.orderedArcs.back();
         const InputData::Arc& finalArc = input.arcs[idxFinalArc];
@@ -375,7 +305,6 @@ void GreedyAlgorithm::processPricing(const InputData::Event& event) {
             prices[idx].second = optimalPrice;
             optimalDemand = demand.additive + optimalPrice * demand.multiplicative;
             assert(optimalDemand + EPS >= 0. && optimalDemand <= demand.additive + EPS);
-
         } else {
             throw std::logic_error("Unexpected demand type!");
         }
@@ -415,7 +344,7 @@ void GreedyAlgorithm::processOffhiring(const InputData::Event& event) {
     unsigned eventTime = event.relativeTime;
     auto* decision = decisionManager->get();
     auto& containersInPorts = state.containersInPorts;
-    for (unsigned idPort = 0; idPort < input.ports.size(); ++idPort)  {
+    for (unsigned idPort = 0; idPort < input.ports.size(); ++idPort) {
         // Since the policy is greedy, offhire everything.
         decision->offHiredInPortS[eventTime][idPort] = containersInPorts[idPort];
         assert(input.ports[idPort].finalContainerCount == 0);

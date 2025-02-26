@@ -5,15 +5,17 @@
  * the first-come-first-serve basis, and makes pricing decisions greedily on the basis
  * of local optimality.
  * @copyright (c) Smith School of Business, 2023
+ * @copyright (c) Smith School of Business, 2025
  */
 #pragma once
 
-#include <vector>
-#include <map>
-
 #include "ialgorithm.h"
 #include "state.h"
+#include "../backend/backend_general.h"
 
+#include <vector>
+#include <map>
+#include <memory>
 
 namespace sea {
 namespace algo {
@@ -165,9 +167,12 @@ private:
     /// @brief State for tracking trajectory evaluation.
     State state;
     /// @brief Statistics and structures specific to greedy algorithm.
-    BaselineStats greedyStats;
+    backend::BaselineStats greedyStats;
+
     /// @brief If allotment decision is already made.
     bool allotmentsAsked;
+    /// @brief Entity to decide on allotment consideration order.
+    std::unique_ptr<backend::IAllotmentSorter> sorter;
 
     /// @brief Manager with decision.
     DecisionManagerPtr decisionManager;

@@ -11,13 +11,14 @@
 #include "ipopt/ipopt_backend.h"
 #include "det_cut_plane/dcp_backend.h"
 #include "lagrangian_relaxation/lagrangian_relaxation_backend.h"
+#include "baseline/backend.h"
 
 #include <memory>
 
 namespace sea {
 
 /**
- * @brief Holder with fields for all backends. Typically, only those which are required 
+ * @brief Holder with fields for all backends. Typically, only those which are required
  * are filled.
  */
 struct BackendHolder {
@@ -33,7 +34,7 @@ struct BackendHolder {
 
 /**
  * @brief Unsets backends. Sets pointers in a Backend Holder to nullptr.
- * 
+ *
  * @param[out] backends The Holder to process.
  */
 inline void unsetBackends(BackendHolder& backends) {
@@ -45,7 +46,7 @@ inline void unsetBackends(BackendHolder& backends) {
 
 /**
  * @brief Generic initialization for backend.
- * 
+ *
  * @tparam Backend The type of backend.
  * @tparam Config The type of backend configuration.
  * @param backend_ptr Pointer to a backend object.
@@ -60,7 +61,7 @@ inline void initBackend(std::shared_ptr<Backend>& backend_ptr, const Config& con
 
 /**
  * @brief Generic backend initialization with setting utilization ratio.
- * 
+ *
  * @tparam Backend The Type of Backend to initialize.
  * @tparam Config The Type of Backend configuration.
  * @param backend_ptr Pointer to backend.
