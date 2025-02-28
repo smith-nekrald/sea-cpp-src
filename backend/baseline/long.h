@@ -15,19 +15,34 @@ struct AllotmentSorterConfig {
     ConstLinksManagerPtr linksManager;
 };
 
-class ByTotalProfit: public IAllotmentSorter {
+class ByTotalExpectedProfit: public IAllotmentSorter {
 public:
-    ByTotalProfit(const AllotmentSorterConfig& config);
+    ByTotalExpectedProfit(const AllotmentSorterConfig& config);
     virtual std::vector<unsigned> selectOrder() override final;
-    virtual ~ByTotalProfit() {};
+    virtual ~ByTotalExpectedProfit() {};
 
 private:
-    double getTotalProfit(unsigned allotmentId) const;
+    double getTotalExpectedProfit(unsigned allotmentId) const;
 
 private:
     const InputData& input;
     const InputLinks& links;
 };
+
+class ByUnitExpectedProfit: public IAllotmentSorter {
+public:
+    ByUnitExpectedProfit(const AllotmentSorterConfig& config);
+    virtual std::vector<unsigned> selectOrder() override final;
+    virtual ~ByUnitExpectedProfit() {};
+
+private:
+    double getUnitExpectedProfit(unsigned allotmentId) const;
+
+private:
+    const InputData& input;
+    const InputLinks& links;
+};
+
 
 
 class EstimatedProfitMetric: public IAllotmentOrderMetric {
