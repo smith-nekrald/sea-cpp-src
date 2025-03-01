@@ -26,8 +26,8 @@ protected:
     virtual double getAllotmentMetric(unsigned allotmentId) const = 0;
 
 protected:
-    const InputData& input;
-    const InputLinks& links;
+    ConstInputManagerPtr inputManager;
+    ConstLinksManagerPtr linksManager;
 };
 
 class ByTotalExpectedProfit: public AbstractAllotmentSorter {
@@ -57,8 +57,8 @@ public:
     virtual ~EstimatedProfitMetric() {};
 
 private:
-    const InputData& input;
-    const InputLinks& links;
+    ConstInputManagerPtr inputManager;
+    ConstLinksManagerPtr linksManager;
 };
 
 class LongCompositeSorter: public IAllotmentSorter {
@@ -70,8 +70,8 @@ public:
 private:
     std::vector<std::unique_ptr<IAllotmentSorter>> sorters;
     std::unique_ptr<IAllotmentOrderMetric> metric;
-    const InputData& input;
-    const InputLinks& links;
+    ConstInputManagerPtr inputManager;
+    ConstLinksManagerPtr linksManager;
 };
 
 

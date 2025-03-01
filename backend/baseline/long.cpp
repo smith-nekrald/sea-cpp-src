@@ -10,10 +10,11 @@ namespace backend {
 namespace allotment {
 
 AbstractAllotmentSorter::AbstractAllotmentSorter(const AllotmentSorterConfig& config)
-    : input(config.inputManager->getConstData())
-    , links(config.linksManager->getConstData()) {}
+    : inputManager(config.inputManager)
+    , linksManager(config.linksManager) {}
 
 std::vector<unsigned> AbstractAllotmentSorter::selectOrder() const {
+    const auto& input = inputManager->getConstData();
     std::vector<unsigned> allotmentOrder(input.allotments.size());
     std::iota(std::begin(allotmentOrder), std::end(allotmentOrder), 0);
     std::sort(std::begin(allotmentOrder), std::end(allotmentOrder),
@@ -28,6 +29,7 @@ ByTotalExpectedProfit::ByTotalExpectedProfit(const AllotmentSorterConfig& config
     : AbstractAllotmentSorter(config) {}
 
 double ByTotalExpectedProfit::getAllotmentMetric(unsigned allotmentId) const {
+    const auto& input = inputManager->getConstData();
     const auto& allotment = input.allotments[allotmentId];
     double expectedProfit = 0.;
     for (const unsigned idxEntry: allotment.entries) {
@@ -45,6 +47,7 @@ ByUnitExpectedProfit::ByUnitExpectedProfit(const AllotmentSorterConfig& config)
     : AbstractAllotmentSorter(config) {}
 
 double ByUnitExpectedProfit::getAllotmentMetric(unsigned allotmentId) const {
+    const auto& input = inputManager->getConstData();
     const auto& allotment = input.allotments[allotmentId];
     double expectedProfit = 0.;
     size_t nEntries = 0.;
@@ -61,10 +64,11 @@ double ByUnitExpectedProfit::getAllotmentMetric(unsigned allotmentId) const {
 
 
 EstimatedProfitMetric::EstimatedProfitMetric(const AllotmentSorterConfig& config)
-    : input(config.inputManager->getConstData())
-    , links(config.linksManager->getConstData()) {}
+    : inputManager(config.inputManager)
+    , linksManager(config.linksManager) {}
 
 double EstimatedProfitMetric::score(const std::vector<unsigned>& allotmentOrder) const {
+    const auto& input = inputManager->getConstData();
     BaselineStats stats;
     initBaselineStats(&stats, input);
     double totalExpectedProfit = 0.;
@@ -87,8 +91,8 @@ double EstimatedProfitMetric::score(const std::vector<unsigned>& allotmentOrder)
 
 
 LongCompositeSorter::LongCompositeSorter(const AllotmentSorterConfig& config)
-        : input(config.inputManager->getConstData())
-        , links(config.linksManager->getConstData()) {
+        : inputManager(config.inputManager)
+        , linksManager(config.linksManager) {
     metric = std::make_unique<EstimatedProfitMetric>(config);
     sorters.push_back(std::make_unique<ByTotalExpectedProfit>(config));
     sorters.push_back(std::make_unique<ByUnitExpectedProfit>(config));
