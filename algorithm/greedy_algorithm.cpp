@@ -9,6 +9,7 @@
 #include "greedy_algorithm.h"
 #include "../interaction/protocol.h"
 #include "../manager.h"
+#include "../logging/logging.h"
 
 #include <cmath>
 #include <cassert>
@@ -118,6 +119,7 @@ DecisionManagerPtr GreedyAlgorithm::provideAllotments() {
     }
     auto allotmentOrder = sorter->selectOrder();
     for (unsigned idxAllotment : allotmentOrder) {
+        assert(idxAllotment < input.allotments.size());
         auto& allotment = input.allotments[idxAllotment];
         bool allotmentAvailable = checkIfAllotmentAvailable(allotment.id);
         decision.allotmentAccepted[allotment.id] = allotmentAvailable;
@@ -125,7 +127,17 @@ DecisionManagerPtr GreedyAlgorithm::provideAllotments() {
             backend::updateStatsAtAllotmentSelection(&greedyStats, input, allotment.id);
         }
     }
+    logAllotmentSelection(decision.allotmentAccepted);
     return result;
+}
+
+void GreedyAlgorithm::logAllotmentSelection(const std::vector<bool>& acceptedAllotments) const {
+    auto& logger = logging::getAlgorithmLogger();
+    auto stream = logger.getStream(log4cpp::Priority::INFO);
+    stream << "Greedy Algorithm. These are the accepted allotments: " << "\n";
+    for (auto value : acceptedAllotments) {
+        stream << value << " ";
+    }
 }
 
 DecisionManagerPtr GreedyAlgorithm::makeSpotDecision() {
@@ -240,6 +252,7 @@ void GreedyAlgorithm::processCutoff(const InputData::Event& event) {
     }
 }
 
+
 void GreedyAlgorithm::processPricing(const InputData::Event& event) {
     assert(event.type == InputData::Event::Type::pricing);
     assert(event.demands.size() == event.relatedItineraryIds.size());
@@ -267,22 +280,7 @@ void GreedyAlgorithm::processPricing(const InputData::Event& event) {
             continue;
         }
         // Compute complete shipping cost.
-        double shippingCost = route.cost;
-
-        size_t idxStartArc = route.orderedArcs.front();
-        const InputData::Arc& startArc = input.arcs[idxStartArc];
-        const InputData::Node& startNode = input.nodes[startArc.fromNode];
-        const InputData::Port& startPort = input.ports[startNode.portId];
-        shippingCost += startPort.hiringCost;
-        shippingCost += links.itineraryIdToCutoffDuration[idxRoute] * startPort.storageCost;
-
-        size_t idxFinalArc = route.orderedArcs.back();
-        const InputData::Arc& finalArc = input.arcs[idxFinalArc];
-        const InputData::Node& finalNode = input.nodes[finalArc.toNode];
-        const InputData::Port& finalPort = input.ports[finalNode.portId];
-        shippingCost += finalPort.offHiringCost;
-
-
+        double shippingCost = backend::computeUnitShippingCost(input, links, idxRoute);
         // Find optimal price and demand.
         double optimalDemand = 0.;
         double optimalPrice = INF;

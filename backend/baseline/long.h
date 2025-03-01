@@ -68,10 +68,10 @@ public:
     virtual ~LongCompositeSorter() {};
 
 private:
-    std::vector<std::unique_ptr<IAllotmentSorter>> sorters;
-    std::unique_ptr<IAllotmentOrderMetric> metric;
     ConstInputManagerPtr inputManager;
     ConstLinksManagerPtr linksManager;
+    std::unique_ptr<IAllotmentOrderMetric> metric;
+    std::vector<std::unique_ptr<IAllotmentSorter>> sorters;
 };
 
 

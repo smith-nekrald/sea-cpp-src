@@ -162,6 +162,12 @@ private:
      * @param amount The amount loaded for itinerary.
      */
     void allocateCapacityForItinerary(size_t idxRoute, size_t amount);
+    /**
+     * @brief Logs selected allotments.
+     *
+     * @param selectedAllotments The vector with selected allotments.
+     */
+    void logAllotmentSelection(const std::vector<bool>& selectedAllotments) const;
 
 private:
     /// @brief State for tracking trajectory evaluation.

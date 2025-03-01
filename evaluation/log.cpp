@@ -3,20 +3,14 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "evaluator.h"
 #include "launcher.h"
 #include "../logging/logging.h"
 
-#include <cassert>
-#include <algorithm>
-#include <sstream>
-#include <iostream>
 
 namespace sea {
-
-using std::cout;
-using std::endl;
 
 using Event = InputData::Event;
 using EventType = Event::Type;

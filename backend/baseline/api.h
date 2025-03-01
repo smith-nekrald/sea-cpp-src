@@ -1,6 +1,7 @@
 #pragma once
 #include "baseline_stats.h"
 #include "../../input/input_data.h"
+#include "../../input/input_links.h"
 
 namespace sea {
 namespace backend {
@@ -19,6 +20,9 @@ bool checkIfAllotmentAvailable(
 
 void updateStatsAtAllotmentSelection(
         BaselineStats* stats, const InputData& input, size_t idxAllotment);
+
+double computeUnitShippingCost(
+        const InputData& input, const InputLinks& links, size_t idxRoute);
 
 } // namespace sea
 } // namespace backend
