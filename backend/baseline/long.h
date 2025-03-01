@@ -9,38 +9,43 @@
 
 namespace sea {
 namespace backend {
+namespace allotment {
 
 struct AllotmentSorterConfig {
     ConstInputManagerPtr inputManager;
     ConstLinksManagerPtr linksManager;
 };
 
-class ByTotalExpectedProfit: public IAllotmentSorter {
+class AbstractAllotmentSorter: public IAllotmentSorter {
 public:
-    ByTotalExpectedProfit(const AllotmentSorterConfig& config);
-    virtual std::vector<unsigned> selectOrder() override final;
-    virtual ~ByTotalExpectedProfit() {};
+    AbstractAllotmentSorter(const AllotmentSorterConfig& config);
+    virtual std::vector<unsigned> selectOrder() const override;
+    virtual ~AbstractAllotmentSorter() {};
 
-private:
-    double getTotalExpectedProfit(unsigned allotmentId) const;
+protected:
+    virtual double getAllotmentMetric(unsigned allotmentId) const = 0;
 
-private:
+protected:
     const InputData& input;
     const InputLinks& links;
 };
 
-class ByUnitExpectedProfit: public IAllotmentSorter {
+class ByTotalExpectedProfit: public AbstractAllotmentSorter {
+public:
+    ByTotalExpectedProfit(const AllotmentSorterConfig& config);
+    virtual ~ByTotalExpectedProfit() {};
+
+private:
+    virtual double getAllotmentMetric(unsigned allotmentId) const;
+};
+
+class ByUnitExpectedProfit: public AbstractAllotmentSorter {
 public:
     ByUnitExpectedProfit(const AllotmentSorterConfig& config);
-    virtual std::vector<unsigned> selectOrder() override final;
     virtual ~ByUnitExpectedProfit() {};
 
 private:
-    double getUnitExpectedProfit(unsigned allotmentId) const;
-
-private:
-    const InputData& input;
-    const InputLinks& links;
+    virtual double getAllotmentMetric(unsigned allotmentId) const;
 };
 
 
@@ -48,7 +53,7 @@ private:
 class EstimatedProfitMetric: public IAllotmentOrderMetric {
 public:
     EstimatedProfitMetric(const AllotmentSorterConfig& config);
-    virtual double score(const std::vector<unsigned>& allotmentOrder) override final;
+    virtual double score(const std::vector<unsigned>& allotmentOrder) const override final;
     virtual ~EstimatedProfitMetric() {};
 
 private:
@@ -59,19 +64,19 @@ private:
 class LongCompositeSorter: public IAllotmentSorter {
 public:
     LongCompositeSorter(const AllotmentSorterConfig& config);
-    virtual std::vector<unsigned> selectOrder() override final;
+    virtual std::vector<unsigned> selectOrder() const override final;
     virtual ~LongCompositeSorter() {};
 
 private:
-    const InputData& input;
-    const InputLinks& links;
     std::vector<std::unique_ptr<IAllotmentSorter>> sorters;
     std::unique_ptr<IAllotmentOrderMetric> metric;
+    const InputData& input;
+    const InputLinks& links;
 };
 
 
 
-
-} // namespace sea
+} // namespace long
 } // namespace backend
+} // namespace sea
 

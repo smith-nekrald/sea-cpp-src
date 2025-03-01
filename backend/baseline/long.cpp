@@ -7,12 +7,27 @@
 
 namespace sea {
 namespace backend {
+namespace allotment {
 
-ByTotalExpectedProfit::ByTotalExpectedProfit(const AllotmentSorterConfig& config)
+AbstractAllotmentSorter::AbstractAllotmentSorter(const AllotmentSorterConfig& config)
     : input(config.inputManager->getConstData())
     , links(config.linksManager->getConstData()) {}
 
-double ByTotalExpectedProfit::getTotalExpectedProfit(unsigned allotmentId) const {
+std::vector<unsigned> AbstractAllotmentSorter::selectOrder() const {
+    std::vector<unsigned> allotmentOrder(input.allotments.size());
+    std::iota(std::begin(allotmentOrder), std::end(allotmentOrder), 0);
+    std::sort(std::begin(allotmentOrder), std::end(allotmentOrder),
+            [&](unsigned lhs, unsigned rhs) {
+                return getAllotmentMetric(lhs) > getAllotmentMetric(rhs);
+            });
+    return allotmentOrder;
+}
+
+
+ByTotalExpectedProfit::ByTotalExpectedProfit(const AllotmentSorterConfig& config)
+    : AbstractAllotmentSorter(config) {}
+
+double ByTotalExpectedProfit::getAllotmentMetric(unsigned allotmentId) const {
     const auto& allotment = input.allotments[allotmentId];
     double expectedProfit = 0.;
     for (const unsigned idxEntry: allotment.entries) {
@@ -25,21 +40,11 @@ double ByTotalExpectedProfit::getTotalExpectedProfit(unsigned allotmentId) const
     return expectedProfit;
 }
 
-std::vector<unsigned> ByTotalExpectedProfit::selectOrder() {
-    std::vector<unsigned> allotmentOrder(input.allotments.size());
-    std::iota(std::begin(allotmentOrder), std::end(allotmentOrder), 0);
-    std::sort(std::begin(allotmentOrder), std::end(allotmentOrder),
-            [&](unsigned lhs, unsigned rhs) {
-                return getTotalExpectedProfit(lhs) > getTotalExpectedProfit(rhs);
-            });
-    return allotmentOrder;
-}
 
 ByUnitExpectedProfit::ByUnitExpectedProfit(const AllotmentSorterConfig& config)
-    : input(config.inputManager->getConstData())
-    , links(config.linksManager->getConstData()) {}
+    : AbstractAllotmentSorter(config) {}
 
-double ByUnitExpectedProfit::getUnitExpectedProfit(unsigned allotmentId) const {
+double ByUnitExpectedProfit::getAllotmentMetric(unsigned allotmentId) const {
     const auto& allotment = input.allotments[allotmentId];
     double expectedProfit = 0.;
     size_t nEntries = 0.;
@@ -54,21 +59,12 @@ double ByUnitExpectedProfit::getUnitExpectedProfit(unsigned allotmentId) const {
     return expectedProfit / nEntries;
 }
 
-std::vector<unsigned> ByUnitExpectedProfit::selectOrder() {
-    std::vector<unsigned> allotmentOrder(input.allotments.size());
-    std::iota(std::begin(allotmentOrder), std::end(allotmentOrder), 0);
-    std::sort(std::begin(allotmentOrder), std::end(allotmentOrder),
-            [&](unsigned lhs, unsigned rhs) {
-                return getUnitExpectedProfit(lhs) > getUnitExpectedProfit(rhs);
-            });
-    return allotmentOrder;
-}
 
 EstimatedProfitMetric::EstimatedProfitMetric(const AllotmentSorterConfig& config)
     : input(config.inputManager->getConstData())
     , links(config.linksManager->getConstData()) {}
 
-double EstimatedProfitMetric::score(const std::vector<unsigned>& allotmentOrder) {
+double EstimatedProfitMetric::score(const std::vector<unsigned>& allotmentOrder) const {
     BaselineStats stats;
     initBaselineStats(&stats, input);
     double totalExpectedProfit = 0.;
@@ -89,6 +85,7 @@ double EstimatedProfitMetric::score(const std::vector<unsigned>& allotmentOrder)
     return totalExpectedProfit;
 }
 
+
 LongCompositeSorter::LongCompositeSorter(const AllotmentSorterConfig& config)
         : input(config.inputManager->getConstData())
         , links(config.linksManager->getConstData()) {
@@ -97,7 +94,7 @@ LongCompositeSorter::LongCompositeSorter(const AllotmentSorterConfig& config)
     sorters.push_back(std::make_unique<ByUnitExpectedProfit>(config));
 }
 
-std::vector<unsigned> LongCompositeSorter::selectOrder() {
+std::vector<unsigned> LongCompositeSorter::selectOrder() const {
     std::vector<unsigned> selectedOrder;
     std::iota(std::begin(selectedOrder), std::end(selectedOrder), 0);
     double selectedScore = metric->score(selectedOrder);
@@ -116,5 +113,6 @@ std::vector<unsigned> LongCompositeSorter::selectOrder() {
     return selectedOrder;
 }
 
-} // namespace sea
+} // namespace allotment
 } // namespace backend
+} // namespace sea

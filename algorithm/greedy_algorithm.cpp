@@ -28,8 +28,9 @@ GreedyAlgorithm::GreedyAlgorithm(const GreedyConfig& aConfig)
         , ignoreSpotMarket(aConfig.ignoreSpotMarket)
         , ignoreLongMarket(aConfig.ignoreLongMarket)
         , memoryOptimization(aConfig.memoryOptimization) {
-    backend::AllotmentSorterConfig sorterConfig({aConfig.inputManager, aConfig.linksManager});
-    sorter = std::make_unique<backend::LongCompositeSorter>(sorterConfig);
+    backend::allotment::AllotmentSorterConfig sorterConfig(
+            {aConfig.inputManager, aConfig.linksManager});
+    sorter = std::make_unique<backend::allotment::LongCompositeSorter>(sorterConfig);
     reset();
 }
 
