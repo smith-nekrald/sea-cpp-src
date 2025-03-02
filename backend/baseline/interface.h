@@ -1,3 +1,7 @@
+#pragma once
+
+#include "baseline_stats.h"
+
 #include <vector>
 #include <string>
 
@@ -13,12 +17,28 @@ public:
     virtual ~IAllotmentSorter() {};
 };
 
-
 class IAllotmentOrderMetric {
 public:
     IAllotmentOrderMetric() {};
     virtual double score(const std::vector<unsigned>& allotmentOrder) const = 0;
     virtual ~IAllotmentOrderMetric() {};
+};
+
+class ISpotSorter {
+public:
+    ISpotSorter() {};
+    virtual std::vector<unsigned> selectOrder(
+            const InputData::Event& event, const BaselineStats& stats) const = 0;
+    virtual std::string getName() const = 0;
+    virtual ~ISpotSorter() {};
+};
+
+class ISpotSorterMetric {
+public:
+    ISpotSorterMetric() {};
+    virtual double score(const std::vector<unsigned>& spotOrder,
+            const InputData::Event& event, const BaselineStats& stats) const = 0;
+    virtual ~ISpotSorterMetric() {};
 };
 
 } // namespace backend
