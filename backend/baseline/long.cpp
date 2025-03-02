@@ -1,32 +1,72 @@
 #include "long.h"
 #include "api.h"
 #include "baseline_stats.h"
+#include "../../logging/logging.h"
+#include "../../input/input_data.h"
 
 #include <numeric>
 #include <algorithm>
+#include <sstream>
 
 namespace sea {
 namespace backend {
 namespace allotment {
 
-AbstractAllotmentSorter::AbstractAllotmentSorter(const AllotmentSorterConfig& config)
-    : inputManager(config.inputManager)
-    , linksManager(config.linksManager) {}
+AbstractAllotmentSorter::AbstractAllotmentSorter(
+        const AllotmentSorterConfig& config,
+        const std::string& sorterName)
+        : name(sorterName)
+        , inputManager(config.inputManager)
+        , linksManager(config.linksManager) {}
+
+std::string AbstractAllotmentSorter::getName() const {
+    return name;
+}
 
 std::vector<unsigned> AbstractAllotmentSorter::selectOrder() const {
     const auto& input = inputManager->getConstData();
+    std::vector<double> metricValues;
+    for (const auto& allotment : input.allotments) {
+        metricValues.push_back(getAllotmentMetric(allotment.id));
+    }
+    logMetricValues(metricValues);
     std::vector<unsigned> allotmentOrder(input.allotments.size(), 0);
     std::iota(std::begin(allotmentOrder), std::end(allotmentOrder), 0);
     std::sort(std::begin(allotmentOrder), std::end(allotmentOrder),
             [&](unsigned lhs, unsigned rhs) {
-                return getAllotmentMetric(lhs) > getAllotmentMetric(rhs);
+                return metricValues[lhs] > metricValues[rhs];
             });
     return allotmentOrder;
 }
 
+void AbstractAllotmentSorter::logMetricValues(const std::vector<double>& metricValues) const {
+    auto& logger = logging::getBackendLogger();
+    logger.info("Allotment Sorter: " + getName());
+    logger.info("Sort Metric Values Per Allotment Id");
+    for (unsigned idx = 0; idx < metricValues.size(); ++idx) {
+        logger.info("Allotment Id: " + std::to_string(idx)
+                + " Metric Value: " + std::to_string(metricValues[idx]));
+    }
+}
+
+
+TrivialSorter::TrivialSorter(const AllotmentSorterConfig& config)
+    : inputManager(config.inputManager) {}
+
+std::vector<unsigned> TrivialSorter::selectOrder() const {
+    const auto& input = inputManager->getConstData();
+    std::vector<unsigned> allotmentOrder(input.allotments.size(), 0);
+    std::iota(std::begin(allotmentOrder), std::end(allotmentOrder), 0);
+    return allotmentOrder;
+}
+
+std::string TrivialSorter::getName() const {
+    return "TrivialSorter";
+}
+
 
 ByTotalExpectedProfit::ByTotalExpectedProfit(const AllotmentSorterConfig& config)
-    : AbstractAllotmentSorter(config) {}
+    : AbstractAllotmentSorter(config, "ByTotalExpectedProfit") {}
 
 double ByTotalExpectedProfit::getAllotmentMetric(unsigned allotmentId) const {
     const auto& input = inputManager->getConstData();
@@ -46,7 +86,7 @@ double ByTotalExpectedProfit::getAllotmentMetric(unsigned allotmentId) const {
 
 
 ByUnitExpectedProfit::ByUnitExpectedProfit(const AllotmentSorterConfig& config)
-    : AbstractAllotmentSorter(config) {}
+    : AbstractAllotmentSorter(config, "ByUnitExpectedProfit") {}
 
 double ByUnitExpectedProfit::getAllotmentMetric(unsigned allotmentId) const {
     const auto& input = inputManager->getConstData();
@@ -79,6 +119,7 @@ double EstimatedProfitMetric::score(const std::vector<unsigned>& allotmentOrder)
     double totalExpectedProfit = 0.;
     for (const auto& allotmentId: allotmentOrder) {
         const auto& allotment = input.allotments[allotmentId];
+        assert(allotment.id == allotmentId);
         bool allotmentAvailable = checkIfAllotmentAvailable(input, stats, allotmentId);
         if (allotmentAvailable) {
             updateStatsAtAllotmentSelection(&stats, input, allotmentId);
@@ -103,6 +144,7 @@ LongCompositeSorter::LongCompositeSorter(const AllotmentSorterConfig& config)
     metric = std::make_unique<EstimatedProfitMetric>(config);
     sorters.push_back(std::make_unique<ByTotalExpectedProfit>(config));
     sorters.push_back(std::make_unique<ByUnitExpectedProfit>(config));
+    sorters.push_back(std::make_unique<TrivialSorter>(config));
 }
 
 std::vector<unsigned> LongCompositeSorter::selectOrder() const {
@@ -110,19 +152,43 @@ std::vector<unsigned> LongCompositeSorter::selectOrder() const {
     std::vector<unsigned> selectedOrder(input.allotments.size(), 0) ;
     std::iota(std::begin(selectedOrder), std::end(selectedOrder), 0);
     double selectedScore = metric->score(selectedOrder);
+
     for (const auto& orderer: sorters) {
-        auto selectedOrder = orderer->selectOrder();
-        auto reversedOrder = selectedOrder;
-        std::reverse(std::begin(selectedOrder), std::end(selectedOrder));
-        for (const auto& candidateOrder: {selectedOrder, reversedOrder}) {
+        auto providedOrder = orderer->selectOrder();
+        auto reversedOrder = providedOrder;
+        std::reverse(std::begin(providedOrder), std::end(providedOrder));
+        for (bool reverseFlag: {true, false}) {
+            auto candidateOrder = reverseFlag ? reversedOrder : providedOrder;
             double candidateScore = metric->score(candidateOrder);
+            logSortScore(candidateOrder, orderer->getName(), reverseFlag, candidateScore);
             if (candidateScore > selectedScore) {
                 selectedScore = candidateScore;
                 selectedOrder = candidateOrder;
             }
         }
     }
+    logSortScore(selectedOrder, getName(), false, selectedScore);
     return selectedOrder;
+}
+
+void LongCompositeSorter::logSortScore(
+        const std::vector<unsigned>& allotmentOrder,
+        const std::string& sorterName,
+        bool reverseOrder,
+        double score) const {
+    auto& logger = logging::getBackendLogger();
+    std::ostringstream stream;
+    std::copy(allotmentOrder.begin(), allotmentOrder.end(),
+            std::ostream_iterator<unsigned>(stream, " "));
+    logger.info(
+            "Allotment Sequence: " + stream.str()
+            + " Sorter: " + sorterName
+            + " Reverse Order: " + std::to_string(reverseOrder)
+            + " Sort Score: " + std::to_string(score));
+}
+
+std::string LongCompositeSorter::getName() const {
+    return "Long Composite Sorter";
 }
 
 } // namespace allotment

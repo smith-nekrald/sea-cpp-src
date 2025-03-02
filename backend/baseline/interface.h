@@ -1,4 +1,5 @@
 #include <vector>
+#include <string>
 
 namespace sea {
 namespace backend {
@@ -8,6 +9,7 @@ class IAllotmentSorter {
 public:
     IAllotmentSorter() {};
     virtual std::vector<unsigned> selectOrder() const = 0;
+    virtual std::string getName() const = 0;
     virtual ~IAllotmentSorter() {};
 };
 

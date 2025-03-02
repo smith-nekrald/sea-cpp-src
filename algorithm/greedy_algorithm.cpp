@@ -10,8 +10,9 @@
 #include "../interaction/protocol.h"
 #include "../manager.h"
 #include "../logging/logging.h"
+#include "../backend/baseline/plan.h"
 
-#include <cmath>
+
 #include <cassert>
 #include <memory>
 
@@ -20,6 +21,7 @@ namespace algo {
 
 using EventType=InputData::Event::Type;
 using BaselineStats=backend::BaselineStats;
+using ItineraryPlan=backend::spot::ItineraryPlan;
 
 GreedyAlgorithm::GreedyAlgorithm(const GreedyConfig& aConfig)
         : allotmentsAsked(false)
@@ -267,71 +269,16 @@ void GreedyAlgorithm::processPricing(const InputData::Event& event) {
         return;
     }
     for (size_t idx = 0; idx < nPricesToSet; ++idx) {
-        // Find maximal available capacity.
         size_t idxRoute = event.relatedItineraryIds[idx];
-        const InputData::Itinerary& route = input.itineraries[idxRoute];
         assert(prices[idx].first == idxRoute);
+        const InputData::Itinerary& route = input.itineraries[idxRoute];
         auto demand = event.demands[idx];
-        double freeCapacity = computeGreedyCapacityForItinerary(idxRoute);
-        double maxCapacity = freeCapacity / route.showRate.estimatedProba;
-        const double ONE_TEU = 1.;
-        if (maxCapacity < ONE_TEU) {
-            prices[idx].second = INF;
-            continue;
-        }
-        // Compute complete shipping cost.
-        double shippingCost = backend::computeUnitShippingCost(input, links, idxRoute);
-        // Find optimal price and demand.
-        double optimalDemand = 0.;
-        double optimalPrice = INF;
-        const double EPS = 1e-3;
-        if (demand.type == Demand::Type::exponential) {
-            optimalDemand = demand.scale / std::exp(
-                    route.showRate.estimatedProba
-                        * (1 + shippingCost * demand.sensitivity)
-                    + (1 - route.showRate.estimatedProba)
-                        * (1 + route.returnPrice * demand.sensitivity));
-            optimalDemand = std::min(optimalDemand, maxCapacity);
-            const double LOG_EPS = 1e-50;
-            optimalPrice = 1. / demand.sensitivity * std::log(
-                    LOG_EPS + demand.scale / optimalDemand);
-            assert(optimalDemand <= demand.scale + EPS);
-        } else if (demand.type == Demand::Type::linear) {
-            assert(demand.multiplicative < 0.);
-            optimalPrice = 0.5 * (
-                    shippingCost * route.showRate.estimatedProba
-                    + route.returnPrice * (1 - route.showRate.estimatedProba)
-                    - demand.additive / demand.multiplicative);
-            optimalPrice = std::max(optimalPrice,
-                    (demand.additive - maxCapacity) / (-demand.multiplicative));
-            optimalPrice = std::min(optimalPrice, demand.additive / (-demand.multiplicative));
-            optimalDemand = demand.additive + optimalPrice * demand.multiplicative;
-            assert(optimalDemand + EPS >= 0. && optimalDemand <= demand.additive + EPS);
-        } else {
-            throw std::logic_error("Unexpected demand type!");
-
-        }
-        // Robustness in prices and demand.
-        optimalPrice += EPS;
-        optimalDemand += EPS;
-        assert(optimalPrice >= 0);
-
-        // Revenue-based verification.
-        double expectedRevenue
-            = route.showRate.estimatedProba * optimalDemand
-                * (optimalPrice - shippingCost)
-            + (1 - route.showRate.estimatedProba) * optimalDemand
-                * (optimalPrice - route.returnPrice);
-        if (expectedRevenue + EPS < 0.) {
-            optimalPrice = INF;
-            optimalDemand = EPS;
-        }
-
-        // Setting field values.
-        prices[idx].second = optimalPrice;
-
+        // Setting field value.
+        ItineraryPlan optimalPlan = backend::spot::buildItineraryPlan(
+                input, links, greedyStats, route, demand);
+        prices[idx].second = optimalPlan.price;
         // Update greedy stats.
-        double expectedAmount = optimalDemand * route.showRate.estimatedProba;
+        double expectedAmount = optimalPlan.demand * route.showRate.estimatedProba;
         for (unsigned idxArc : route.orderedArcs) {
             greedyStats.availableArcCapacity[idxArc] -= expectedAmount;
         }
