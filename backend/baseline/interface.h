@@ -1,6 +1,7 @@
 #pragma once
 
 #include "baseline_stats.h"
+#include "../../input/input_data.h"
 
 #include <vector>
 #include <string>
