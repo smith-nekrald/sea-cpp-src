@@ -174,11 +174,13 @@ private:
     State state;
     /// @brief Statistics and structures specific to greedy algorithm.
     backend::BaselineStats greedyStats;
+    /// @brief Entity to decide on itinerary consideration order at pricing.
+    std::unique_ptr<backend::ISpotSorter> spotSorter;
 
     /// @brief If allotment decision is already made.
     bool allotmentsAsked;
     /// @brief Entity to decide on allotment consideration order.
-    std::unique_ptr<backend::IAllotmentSorter> sorter;
+    std::unique_ptr<backend::IAllotmentSorter> allotmentSorter;
 
     /// @brief Manager with decision.
     DecisionManagerPtr decisionManager;

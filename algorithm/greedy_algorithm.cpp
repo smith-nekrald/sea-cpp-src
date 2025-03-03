@@ -11,10 +11,14 @@
 #include "../manager.h"
 #include "../logging/logging.h"
 #include "../backend/baseline/plan.h"
+#include "../backend/baseline/spot.h"
+#include "../backend/baseline/long.h"
 
 
 #include <cassert>
 #include <memory>
+#include <map>
+#include <ranges>
 
 namespace sea {
 namespace algo {
@@ -31,9 +35,12 @@ GreedyAlgorithm::GreedyAlgorithm(const GreedyConfig& aConfig)
         , ignoreSpotMarket(aConfig.ignoreSpotMarket)
         , ignoreLongMarket(aConfig.ignoreLongMarket)
         , memoryOptimization(aConfig.memoryOptimization) {
-    backend::allotment::AllotmentSorterConfig sorterConfig(
+    backend::allotment::AllotmentSorterConfig longSorterConfig(
             {aConfig.inputManager, aConfig.linksManager});
-    sorter = std::make_unique<backend::allotment::LongCompositeSorter>(sorterConfig);
+    allotmentSorter = std::make_unique<backend::allotment::LongCompositeSorter>(longSorterConfig);
+    backend::spot::SpotSorterConfig spotSorterConfig(
+            {aConfig.inputManager, aConfig.linksManager});
+    spotSorter = std::make_unique<backend::spot::CompositeSpotSorter>(spotSorterConfig);
     reset();
 }
 
@@ -119,7 +126,7 @@ DecisionManagerPtr GreedyAlgorithm::provideAllotments() {
     if (ignoreLongMarket) {
         return result;
     }
-    auto allotmentOrder = sorter->selectOrder();
+    auto allotmentOrder = allotmentSorter->selectOrder();
     for (unsigned idxAllotment : allotmentOrder) {
         assert(idxAllotment < input.allotments.size());
         auto& allotment = input.allotments[idxAllotment];
@@ -268,8 +275,14 @@ void GreedyAlgorithm::processPricing(const InputData::Event& event) {
         }
         return;
     }
-    for (size_t idx = 0; idx < nPricesToSet; ++idx) {
-        size_t idxRoute = event.relatedItineraryIds[idx];
+    std::map<unsigned, unsigned> itineraryIdToIndex;
+    for (auto [index, idxRoute] : std::views::enumerate(event.relatedItineraryIds)) {
+        itineraryIdToIndex[idxRoute] = index;
+    }
+    auto itineraryOrder = spotSorter->selectOrder(event, greedyStats);
+    for (const auto& idxRoute: itineraryOrder) {
+        unsigned idx = itineraryIdToIndex[idxRoute];
+        assert(idxRoute == event.relatedItineraryIds[idx]);
         assert(prices[idx].first == idxRoute);
         const InputData::Itinerary& route = input.itineraries[idxRoute];
         auto demand = event.demands[idx];

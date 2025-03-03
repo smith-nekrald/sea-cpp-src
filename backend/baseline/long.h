@@ -14,6 +14,7 @@ struct AllotmentSorterConfig {
     ConstLinksManagerPtr linksManager;
 };
 
+
 class AbstractAllotmentSorter: public IAllotmentSorter {
 public:
     AbstractAllotmentSorter(const AllotmentSorterConfig& config, const std::string& sorterName);

@@ -7,6 +7,8 @@
 #include <numeric>
 #include <algorithm>
 #include <sstream>
+#include <tuple>
+#include <iterator>
 
 namespace sea {
 namespace backend {
@@ -162,8 +164,7 @@ std::vector<unsigned> LongCompositeSorter::selectOrder() const {
             double candidateScore = metric->score(candidateOrder);
             logSortScore(candidateOrder, orderer->getName(), reverseFlag, candidateScore);
             if (candidateScore > selectedScore) {
-                selectedScore = candidateScore;
-                selectedOrder = candidateOrder;
+                std::tie(selectedScore, selectedOrder) = std::tie(candidateScore, candidateOrder);
             }
         }
     }

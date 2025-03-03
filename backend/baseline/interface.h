@@ -34,12 +34,12 @@ public:
     virtual ~ISpotSorter() {};
 };
 
-class ISpotSorterMetric {
+class ISpotOrderMetric {
 public:
-    ISpotSorterMetric() {};
+    ISpotOrderMetric() {};
     virtual double score(const std::vector<unsigned>& spotOrder,
             const InputData::Event& event, const BaselineStats& stats) const = 0;
-    virtual ~ISpotSorterMetric() {};
+    virtual ~ISpotOrderMetric() {};
 };
 
 } // namespace backend
