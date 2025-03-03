@@ -44,9 +44,10 @@ void AbstractSpotSorter::logMetricValues(
     message += "Event: " + std::to_string(event.relativeTime) + ". \n";
     for (const auto& [routeIdx, metricValue] : metricValues) {
         message += "Itinerary " + std::to_string(routeIdx) + ": "
-            + std::to_string(metricValue) + "\n ";
+            + std::to_string(metricValue) + "\n";
     }
-    logger.debug(message);
+    message.pop_back();
+    logger.info(message);
 }
 
 std::string AbstractSpotSorter::getName() const {
