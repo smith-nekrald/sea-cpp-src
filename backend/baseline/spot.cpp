@@ -143,7 +143,6 @@ double SpotEventProfitMetric::score(
         const InputData::Event& event,
         const BaselineStats& stats) const {
     auto localStats = stats;
-    size_t nPlaces = event.demands.size();
     std::map<unsigned, unsigned> itineraryIdToIndex;
     for (auto [index, idxRoute] : std::views::enumerate(event.relatedItineraryIds)) {
         itineraryIdToIndex[idxRoute] = index;
