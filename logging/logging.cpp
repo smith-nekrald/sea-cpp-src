@@ -1,8 +1,9 @@
-// Implements methods defined in logging.h. 
+// Implements methods defined in logging.h.
 
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "logging.h"
 
@@ -57,9 +58,6 @@ log4cpp::Category& getAllotmentStrategyLogger(const sea::AllotmentStrategyType& 
     } else if (type == sea::AllotmentStrategyType::BENDERS) {
         return log4cpp::Category::getInstance(std::string(
             "algorithmLogger.strategyLogger.bendersAllotmentStrategyLogger"));
-    } else if (type == sea::AllotmentStrategyType::DET_CUT_PLANE) {
-        return log4cpp::Category::getInstance(std::string(
-            "algorithmLogger.strategyLogger.detCutPlaneAllotmentStrategyLogger"));
     } else if (type == sea::AllotmentStrategyType::ZERO_IPOPT) {
         return log4cpp::Category::getInstance(std::string(
             "algorithmLogger.strategyLogger.zeroAllotmentStrategyLogger"));
@@ -90,9 +88,6 @@ log4cpp::Category& getBackendSubLogger(const sea::BackendType& type) {
     if (type == sea::BackendType::LR) {
         return log4cpp::Category::getInstance(std::string(
             "backendLogger.lrBackendLogger"));
-    } else if (type == sea::BackendType::DET_CUT_PLANE) {
-        return log4cpp::Category::getInstance(std::string(
-            "backendLogger.detCutPlaneBackendLogger"));
     } else if (type == sea::BackendType::IPOPT) {
         return log4cpp::Category::getInstance(std::string(
             "backendLogger.ipoptBackendLogger"));

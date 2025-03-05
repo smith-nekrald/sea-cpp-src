@@ -3,6 +3,7 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include <limits>
 
@@ -57,7 +58,6 @@ void LRBasedSpotMarketStrategy::reset() {
     initBackend(
             backends.ipoptBackend, backendConfigs.ipoptConfig, config.utilizationRatio.value());
     backends.bendersBackend = nullptr;
-    backends.dcpBackend = nullptr;
     const double INF = std::numeric_limits<double>::max();
     lastUpdate = -INF;
     lastSoftUpdateTime = -INF;
@@ -71,7 +71,6 @@ void LRBasedSpotMarketStrategy::setBackends(const BackendHolder& holder)  {
     if (holder.lrBackend != nullptr) {
         backends.lrBackend = holder.lrBackend;
     }
-    backends.dcpBackend = nullptr;
     backends.bendersBackend = nullptr;
 }
 

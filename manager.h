@@ -4,22 +4,20 @@
  * @brief Implements DataProxy and DataManager. DataProxy is an entity for manual RAM memory
  * control by dumping structures when RAM-instensive computations are ongoing.
  * @copyright (c) Smith School of Business, 2023
+ * @copyright (c) Smith School of Business, 2025
  */
 #pragma once
 
 #include <memory>
 #include <string>
-#include <chrono>
 #include <experimental/filesystem>
 #include <cassert>
 
 #include "common.h"
 #include "interaction/protocol.h"
 #include "backend/ipopt/index_map.h"
-#include "backend/det_cut_plane/index_map.h"
 #include "backend/lagrangian_relaxation/index.h"
 #include "input/io_functions.h"
-#include "logging/logging.h"
 
 namespace sea {
 
@@ -395,11 +393,6 @@ using MarketManagerPtr=std::shared_ptr<DataManager<MarketData>>;
 using ConstIpoptIndexManagerPtr=std::shared_ptr<const DataManager<backend::IpoptIndexMap>>;
 /// @brief Simplified type name for shared pointer to constant IpoptIndexMap Manager.
 using IpoptIndexManagerPtr=std::shared_ptr<DataManager<backend::IpoptIndexMap>>;
-
-/// @brief Simplified type name for shared pointer to constant DcpIndexMap Manager.
-using ConstDcpIndexManagerPtr=std::shared_ptr<const DataManager<backend::DcpIndexMap>>;
-/// @brief Simplified type name for shared pointer to DcpIndexMap Manager.
-using DcpIndexManagerPtr=std::shared_ptr<DataManager<backend::DcpIndexMap>>;
 
 /// @brief Simplified type name for shared pointer to constant LR Index Manager.
 using ConstLRIndexManagerPtr=std::shared_ptr<

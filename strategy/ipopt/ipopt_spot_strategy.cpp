@@ -3,10 +3,10 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 
 #include "ipopt_spot_strategy.h"
-#include "../../logging/logging.h"
 
 namespace sea {
 namespace strategy {
@@ -79,7 +79,6 @@ void IpoptSpotMarketStrategy::reset() {
     initBackend(backends.ipoptBackend,
             backendConfigs.ipoptConfig,
             config.utilizationRatio.value());
-    backends.dcpBackend = nullptr;
     backends.bendersBackend = nullptr;
     backends.lrBackend = nullptr;
 }
@@ -89,7 +88,6 @@ void IpoptSpotMarketStrategy::setBackends(const BackendHolder& holder) {
         backends.ipoptBackend = holder.ipoptBackend;
         backends.ipoptBackend->setUtilizationRatio(config.utilizationRatio.value());
     }
-    backends.dcpBackend = nullptr;
     backends.lrBackend = nullptr;
     backends.bendersBackend = nullptr;
 }

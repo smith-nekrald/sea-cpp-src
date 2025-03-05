@@ -4,6 +4,7 @@
  * @brief Implements configuration parsing and related API.
  * The entry point is the function start().
  * @copyright (c) Smith School of Business, 2023
+ * @copyright (c) Smith School of Business, 2025
  */
 #pragma once
 
@@ -27,7 +28,6 @@ using std::size_t;
 using sea::backend::IpoptBackendConfig;
 using sea::backend::LagrangianRelaxationBackendConfig;
 using sea::backend::BendersAllotmentBackendConfig;
-using sea::backend::DetCutPlaneBackendConfig;
 
 /**
  * @brief Reads IpoptBackendConfig from JSON root.
@@ -50,14 +50,6 @@ void fillBackendConfig(const json::Value& configRoot, LagrangianRelaxationBacken
  * @param config The config to read.
  */
 void fillBackendConfig(const json::Value& configRoot, BendersAllotmentBackendConfig& config);
-/**
- * @brief Reads DCP backend config from JSON root.
- *
- * @param configRoot The root of JSON configuration.
- * @param config The config to read.
- */
-void fillBackendConfig(const json::Value& configRoot, DetCutPlaneBackendConfig& config);
-
 /**
  * @brief Looks for market data files in directory dataPath and creates a vector with those.
  *

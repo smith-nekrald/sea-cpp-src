@@ -3,6 +3,7 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 #include "hybrid_spot_market_strategy.h"
 
 namespace sea {
@@ -36,7 +37,6 @@ void HybridSpotMarketStrategy::reset() {
             config.utilizationRatio.value());
     initBackend(backends.lrBackend,
             backendConfigs.lrConfig);
-    backends.dcpBackend = nullptr;
     backends.bendersBackend = nullptr;
     const double INF = std::numeric_limits<double>::max();
     lastUpdate=-INF;
@@ -50,7 +50,6 @@ void HybridSpotMarketStrategy::setBackends(const sea::BackendHolder& holder) {
     if (holder.lrBackend != nullptr) {
         backends.lrBackend = holder.lrBackend;
     }
-    backends.dcpBackend = nullptr;
     backends.bendersBackend = nullptr;
 }
 

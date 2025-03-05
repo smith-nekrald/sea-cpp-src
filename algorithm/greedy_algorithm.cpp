@@ -13,6 +13,7 @@
 #include "../backend/baseline/plan.h"
 #include "../backend/baseline/spot.h"
 #include "../backend/baseline/long.h"
+#include "../backend/baseline/api.h"
 
 
 #include <cassert>

@@ -4,14 +4,13 @@
  * @brief Common structures and methods for backends. Holders for all backends and configurations
  * to simplify function declaration.
  * @copyright (c) Smith School of Business, 2023
+ * @copyright (c) Smith School of Business, 2025
  */
 #pragma once
 
 #include "benders/benders_allotment_backend.h"
 #include "ipopt/ipopt_backend.h"
-#include "det_cut_plane/dcp_backend.h"
 #include "lagrangian_relaxation/lagrangian_relaxation_backend.h"
-#include "baseline/backend.h"
 
 #include <memory>
 
@@ -26,8 +25,6 @@ struct BackendHolder {
     std::shared_ptr<backend::IpoptBackend> ipoptBackend = nullptr;
     /// @brief Pointer to LR Backend.
     std::shared_ptr<backend::LagrangianRelaxationBackend> lrBackend = nullptr;
-    /// @brief Pointer to Deterministic Cutting Plane allotment backend.
-    std::shared_ptr<backend::DetCutPlaneBackend> dcpBackend = nullptr;
     /// @brief Pointer to Benders allotment backend.
     std::shared_ptr<backend::BendersAllotmentBackend> bendersBackend = nullptr;
 };
@@ -40,7 +37,6 @@ struct BackendHolder {
 inline void unsetBackends(BackendHolder& backends) {
     backends.ipoptBackend = nullptr;
     backends.lrBackend = nullptr;
-    backends.dcpBackend = nullptr;
     backends.bendersBackend = nullptr;
 }
 
@@ -83,8 +79,6 @@ struct BackendConfigHolder {
     backend::IpoptBackendConfig ipoptConfig;
     /// @brief Configuration for LR Backend.
     backend::LagrangianRelaxationBackendConfig lrConfig;
-    /// @brief Configuration for DCP Backend.
-    backend::DetCutPlaneBackendConfig dcpConfig;
     /// @brief Configuration for Benders Backend.
     backend::BendersAllotmentBackendConfig bendersConfig;
 };

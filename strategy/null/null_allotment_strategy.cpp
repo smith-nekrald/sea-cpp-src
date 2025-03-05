@@ -3,9 +3,9 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "null_allotment_strategy.h"
-#include "../../logging/logging.h"
 
 #include <limits>
 
@@ -52,7 +52,6 @@ DecisionManagerPtr NullAllotmentStrategy::provideAllotments() {
 
 void NullAllotmentStrategy::reset() {
     backends.ipoptBackend = nullptr;
-    backends.dcpBackend = nullptr;
     backends.bendersBackend = nullptr;
     backends.lrBackend = nullptr;
 }

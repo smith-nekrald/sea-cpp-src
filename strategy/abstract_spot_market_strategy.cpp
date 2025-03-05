@@ -3,15 +3,14 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "../manager.h"
 #include "../algorithm/state.h"
-#include "../common.h"
 #include "abstract_spot_market_strategy.h"
 
 
 #include <cassert>
-#include <iostream>
 #include <limits>
 
 
@@ -71,7 +70,8 @@ ConstDecisionManagerPtr AbstractSpotMarketStrategy::makeDecision() {
                             links.allotmentItineraryToPlace[contractId].end()) {
                         unsigned placeIndex = links.allotmentItineraryToPlace[
                             contractId].at(routeId);
-                        const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
+                        [[maybe_unused]] const unsigned MAX_INDEX
+                            = std::numeric_limits<unsigned>::max();
                         assert(placeIndex != MAX_INDEX);
                         assert(routeId == decision->allotmentContainersQ[
                                 contractId][placeIndex].first);
@@ -206,7 +206,6 @@ void AbstractSpotMarketStrategy::initialize() {
 }
 
 void AbstractSpotMarketStrategy::hardReset() {
-    backends.dcpBackend = nullptr;
     backends.lrBackend = nullptr;
     backends.ipoptBackend = nullptr;
     backends.bendersBackend = nullptr;

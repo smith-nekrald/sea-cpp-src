@@ -10,21 +10,17 @@ log4cpp.category.backendLogger=DEBUG, backendAppender
 log4cpp.category.backendLogger.ipoptBackendLogger=DEBUG, ipoptBackendAppender
 log4cpp.category.backendLogger.lrBackendLogger=DEBUG, lrBackendAppender
 log4cpp.category.backendLogger.bendersBackendLogger=DEBUG, bendersBackendAppender
-log4cpp.category.backendLogger.detCutPlaneBackendLogger=DEBUG, detCutPlaneBackendAppender
 
 log4cpp.category.algorithmLogger=DEBUG, algorithmAppender
 
 log4cpp.category.algorithmLogger.strategyLogger=DEBUG, strategyAppender
 log4cpp.category.algorithmLogger.strategyLogger.bendersAllotmentStrategyLogger=DEBUG, bendersAllotmentStrategyAppender
-log4cpp.category.algorithmLogger.strategyLogger.detCutPlaneAllotmentStrategyLogger=DEBUG, detCutPlaneAllotmentStrategyAppender
 log4cpp.category.algorithmLogger.strategyLogger.ipoptAllotmentStrategyLogger=DEBUG, ipoptAllotmentStrategyAppender
 log4cpp.category.algorithmLogger.strategyLogger.zeroAllotmentStrategyLogger=DEBUG, zeroAllotmentStrategyAppender
 log4cpp.category.algorithmLogger.strategyLogger.nullAllotmentStrategyLogger=DEBUG, nullAllotmentStrategyAppender
 log4cpp.category.algorithmLogger.strategyLogger.hybridSpotStrategyLogger=DEBUG, hybridSpotStrategyAppender
 log4cpp.category.algorithmLogger.strategyLogger.ipoptSpotStrategyLogger=DEBUG, ipoptSpotStrategyAppender
 log4cpp.category.algorithmLogger.strategyLogger.lrSpotStrategyLogger=DEBUG, lrSpotStrategyAppender
-
-
 
 
 log4cpp.appender.rootFileAppender=FileAppender
@@ -75,19 +71,11 @@ log4cpp.appender.bendersBackendAppender.threshold=INFO
 log4cpp.appender.bendersBackendAppender.layout=PatternLayout
 log4cpp.appender.bendersBackendAppender.layout.ConversionPattern=%d [%p] %m%n 
 
-log4cpp.appender.detCutPlaneBackendAppender=FileAppender
-log4cpp.appender.detCutPlaneBackendAppender.fileName=detCutPlaneBackend.log
-log4cpp.appender.detCutPlaneBackendAppender.threshold=INFO
-log4cpp.appender.detCutPlaneBackendAppender.layout=PatternLayout
-log4cpp.appender.detCutPlaneBackendAppender.layout.ConversionPattern=%d [%p] %m%n 
-
-
 log4cpp.appender.evaluationAppender=FileAppender
 log4cpp.appender.evaluationAppender.fileName=evaluation.log
 log4cpp.appender.evaluationAppender.threshold=INFO
 log4cpp.appender.evaluationAppender.layout=PatternLayout
 log4cpp.appender.evaluationAppender.layout.ConversionPattern=%d [%p] %m%n 
-
 
 log4cpp.appender.memoryAppender=FileAppender
 log4cpp.appender.memoryAppender.fileName=memory.log
@@ -113,12 +101,6 @@ log4cpp.appender.bendersAllotmentStrategyAppender.fileName=bendersAllotmentStrat
 log4cpp.appender.bendersAllotmentStrategyAppender.threshold=INFO
 log4cpp.appender.bendersAllotmentStrategyAppender.layout=PatternLayout
 log4cpp.appender.bendersAllotmentStrategyAppender.layout.ConversionPattern=%d [%p] %m%n 
-
-log4cpp.appender.detCutPlaneAllotmentStrategyAppender=FileAppender
-log4cpp.appender.detCutPlaneAllotmentStrategyAppender.fileName=detCutPlaneAllotmentStrategy.log
-log4cpp.appender.detCutPlaneAllotmentStrategyAppender.threshold=INFO
-log4cpp.appender.detCutPlaneAllotmentStrategyAppender.layout=PatternLayout
-log4cpp.appender.detCutPlaneAllotmentStrategyAppender.layout.ConversionPattern=%d [%p] %m%n 
 
 log4cpp.appender.ipoptAllotmentStrategyAppender=FileAppender
 log4cpp.appender.ipoptAllotmentStrategyAppender.fileName=ipoptAllotmentStrategy.log

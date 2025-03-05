@@ -3,10 +3,9 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
-#include <iostream>
 #include <fstream>
-#include <chrono>
 #include <cassert>
 #include <filesystem>
 #include <regex>
@@ -207,26 +206,6 @@ void fillBackendConfig(const json::Value& configRoot, BendersAllotmentBackendCon
     config.cbcLogLevel = config.cbcFileLogLevel;
 }
 
-void fillBackendConfig(const json::Value& configRoot, DetCutPlaneBackendConfig& config) {
-    auto backendsConfig = configRoot["backends_config"];
-    if (!backendsConfig.isMember("det_cut_plane_backend_config")) {
-        logNoDCPBackendConfiguration();
-        return;
-    }
-    auto dcpRoot = backendsConfig["det_cut_plane_backend_config"];
-    config.needMemory = configRoot["launch_config"]["need_memory"].asBool();
-    config.cbcFileLogLevel = dcpRoot["file_log_level"].asInt();
-    config.cbcLogLevel = config.cbcFileLogLevel;
-    config.defaultUtilizationRatio = dcpRoot["default_utilization"].asDouble();
-    config.initialPlanes = dcpRoot["initial_planes_count"].asInt();
-    config.integerTolerance = dcpRoot["integer_tolerance"].asDouble();
-    config.iterations = dcpRoot["max_iterations"].asInt();
-    config.needError = dcpRoot["need_error"].asDouble();
-    config.seed = dcpRoot["seed"].asInt();
-    config.stopOnInfeasible = dcpRoot["stop_on_infeasible"].asBool();
-    config.tolerateConstraints = dcpRoot["tolerate_constraints"].asBool();
-}
-
 std::vector<std::string> getMarketDataFiles(std::string dataPath, std::size_t count_limit) {
     std::vector<std::string> market_data_files;
     for (auto& entry: fs::directory_iterator(dataPath)) {
@@ -299,16 +278,10 @@ void prepareBackendConfigHolder(const json::Value& configRoot,
     bendersBackendConfig.linksManager = linksManager;
     fillBackendConfig(configRoot, lrBackendConfig);
 
-    DetCutPlaneBackendConfig dcpBackendConfig;
-    dcpBackendConfig.inputManager = inputManager;
-    dcpBackendConfig.linksManager = linksManager;
-    fillBackendConfig(configRoot, dcpBackendConfig);
-
     sea::BackendConfigHolder& holder = *holderPtr;
     holder.bendersConfig = bendersBackendConfig;
     holder.ipoptConfig = ipoptBackendConfig;
     holder.lrConfig = lrBackendConfig;
-    holder.dcpConfig = dcpBackendConfig;
 }
 
 void prepareSpotStrategies(
@@ -483,17 +456,6 @@ void prepareAllotmentStrategies(const json::Value& configRoot,
             allotmentStrategies[longName] = std::make_shared<
                 sea::strategy::BendersLRAllotmentStrategy>(config);
             strategyConfigs.bendersAllotment = config;
-        } else if (longName == "det_cut_plane") {
-            sea::strategy::DetCutPlaneAllotmentStrategyConfig config;
-            config.abstractConfig = commonLongConfig;
-
-            auto dcpJsonConfig = allotmentStrategyConfig["det_cut_plane_strategy_config"];
-            config.backendConfigs = holder;
-            config.abstractConfig.type = sea::AllotmentStrategyType::DET_CUT_PLANE;
-            config.abstractConfig.defaultUtilizationRatio = dcpJsonConfig[
-                "default_utilization_ratio"].asDouble();
-            allotmentStrategies[longName] = std::make_shared<
-                sea::strategy::DetCutPlaneAllotmentStrategy>(config);
         } else if (longName == "zero") {
             sea::strategy::ZeroAllotmentStrategyConfig config;
             config.abstractConfig = commonLongConfig;

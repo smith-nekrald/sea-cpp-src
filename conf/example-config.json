@@ -60,17 +60,6 @@
         "benders_backend_config": {
             "file_log_level" : 3
         },
-        "det_cut_plane_backend_config": {
-            "file_log_level" : 3,
-            "initial_planes_count": 30,
-            "integer_tolerance": 0.01,
-            "max_iterations": 1000,
-            "need_error": 1e-2,
-            "seed": 12345,
-            "stop_on_infeasible": false,
-            "tolerate_constraints": false,
-            "default_utilization": 1.0
-        }
     },
     "launch_config" : {
         "launch_mode" : "debug",

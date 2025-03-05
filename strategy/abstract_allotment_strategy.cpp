@@ -3,6 +3,7 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "abstract_allotment_strategy.h"
 
@@ -26,7 +27,6 @@ void AbstractAllotmentStrategy::hardReset() {
 
     backends.ipoptBackend = nullptr;
     backends.lrBackend = nullptr;
-    backends.dcpBackend = nullptr;
     backends.bendersBackend = nullptr;
 
     decisionCopy.clear();

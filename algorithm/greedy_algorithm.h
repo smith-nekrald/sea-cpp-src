@@ -11,7 +11,8 @@
 
 #include "ialgorithm.h"
 #include "state.h"
-#include "../backend/backend_general.h"
+#include "../backend/baseline/baseline_stats.h"
+#include "../backend/baseline/interface.h"
 
 #include <vector>
 #include <map>

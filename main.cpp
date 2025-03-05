@@ -3,8 +3,8 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
-#include <iostream>
 #include <fstream>
 #include <cassert>
 #include <filesystem>
@@ -23,7 +23,7 @@ namespace json = Json;
  * @param argv The array with CLI arguments.
  * @return The program exit code.
  */
-int main(int argc, char* argv[]) {
+int main([[maybe_unused]] int argc, char* argv[]) {
     assert(argc == 2);
     std::string configPath = argv[1];
     std::ifstream configStream(configPath);

@@ -3,6 +3,7 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "benders_lr_allotment_strategy.h"
 #include "../../algorithm/state.h"
@@ -116,7 +117,6 @@ void BendersLRAllotmentStrategy::reset() {
     initBackend(backends.ipoptBackend, backendConfigs.ipoptConfig, utilizationRatio);
     initBackend(backends.lrBackend, backendConfigs.lrConfig);
     initBackend(backends.bendersBackend, backendConfigs.bendersConfig);
-    backends.dcpBackend = nullptr;
 }
 
 } //namespace strategy
