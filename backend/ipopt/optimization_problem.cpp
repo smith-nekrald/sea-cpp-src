@@ -3,9 +3,9 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "optimization_problem.h"
-#include "../../logging/logging.h"
 
 #include <cppad/ipopt/solve.hpp>
 

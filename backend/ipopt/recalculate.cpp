@@ -3,25 +3,21 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "ipopt_backend.h"
 #include "optimization_problem.h"
 #include "../lagrangian_relaxation/index.h"
-#include "../../logging/logging.h"
 
 #include <string>
 #include <limits>
-#include <memory>
 #include <cassert>
 
 namespace sea {
 namespace backend {
 
-using std::unordered_map;
 using EventType = InputData::Event::Type;
 using ArcType = InputData::Arc::Type;
-using std::cout;
-using std::endl;
 using std::size_t;
 
 
@@ -359,7 +355,7 @@ void IpoptBackend::writeSolutionToDecision(
                 assert(price >= 0.);
                 auto& target = decision->prices[event.relativeTime][index];
                 assert(target.first == itineraryId);
-                target.second = price;
+                target.second = std::max(price, input.itineraries[itineraryId].returnPrice);
             }
         } else if (event.type == EventType::arrival) {
             const auto& arc = input.arcs[event.basedArc.value()];

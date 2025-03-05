@@ -3,24 +3,19 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "ipopt_backend.h"
-#include "optimization_problem.h"
 #include "../lagrangian_relaxation/index.h"
-#include "../../logging/logging.h"
 
-#include <string>
 #include <limits>
-#include <memory>
+#include <cmath>
 
 namespace sea {
 namespace backend {
 
-using std::unordered_map;
 using EventType = InputData::Event::Type;
 using ArcType = InputData::Arc::Type;
-using std::cout;
-using std::endl;
 using std::size_t;
 
 
@@ -77,12 +72,17 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
                     relativeTime][idItinerary];
                 double& lower = vlower[variableIndex];
                 double& upper = vupper[variableIndex];
+                const auto& itinerary = input.itineraries[idItinerary];
 
                 updateLower(lower, ZERO);
                 if (demand.type == Demand::Type::linear) {
                     updateUpper(upper, demand.additive);
+                    updateUpper(upper, std::max(0., demand.additive
+                                + demand.multiplicative * itinerary.returnPrice));
                 } else if (demand.type == Demand::Type::exponential) {
                     updateUpper(upper, demand.scale);
+                    updateUpper(upper, std::max(0., demand.scale
+                                * std::exp(-itinerary.returnPrice * demand.sensitivity)));
                 } else {
                     throw std::logic_error("Unsupported demand type");
                 }
