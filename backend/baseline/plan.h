@@ -24,6 +24,9 @@ ItineraryPlan buildItineraryPlan(
         const InputData::Itinerary& route,
         const Demand& demand);
 
+double computeRevenueProxy(
+        double price, double amount, double shippingCost, double returnPrice, double showProba);
+
 }
 }
 }

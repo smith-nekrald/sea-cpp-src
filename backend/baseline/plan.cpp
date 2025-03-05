@@ -4,10 +4,18 @@
 #include <limits>
 #include <cmath>
 #include <cassert>
+#include <ranges>
 
 namespace sea {
 namespace backend {
 namespace spot {
+
+
+double computeRevenueProxy(
+        double price, double amount, double shippingCost, double returnPrice, double showProba) {
+    return amount * (
+            showProba * (price - shippingCost) + (1. - showProba) * (price - returnPrice));
+}
 
 ItineraryPlan buildItineraryPlan(
         const InputData& input,
@@ -27,51 +35,77 @@ ItineraryPlan buildItineraryPlan(
     }
     // Compute complete shipping cost.
     double shippingCost = backend::computeUnitShippingCost(input, links, idxRoute);
+
     // Find optimal price and demand.
-    double optimalDemand = 0.;
-    double optimalPrice = INF;
-    const double EPS = 1e-3;
+    double optimalDemand = 0., optimalPrice = INF;
+    std::vector<double> borderPrices, borderDemands;
+    const double EPS = 1e-10;
     if (demand.type == Demand::Type::exponential) {
+        const double LOG_EPS = 1e-30;
+        double refundDemand = demand.scale * std::exp(-demand.sensitivity * route.returnPrice);
+        double shippingDemand = demand.scale * std::exp(-demand.sensitivity * shippingCost);
+        double maxDemand = std::min({demand.scale, refundDemand, shippingDemand, maxCapacity});
+        double priceAtMax = std::max(0., 1. / (demand.sensitivity + EPS)
+            * std::log(LOG_EPS + demand.scale / (maxDemand + EPS)));
+        double minDemand = 0.;
+        double priceAtMin = INF;
+
+        borderPrices = {priceAtMin, priceAtMax};
+        borderDemands = {minDemand, maxDemand};
+
         optimalDemand = demand.scale / std::exp(
             route.showRate.estimatedProba * (1 + shippingCost * demand.sensitivity)
             + (1 - route.showRate.estimatedProba) * (1 + route.returnPrice * demand.sensitivity));
-        optimalDemand = std::min(optimalDemand, maxCapacity);
-        const double LOG_EPS = 1e-50;
-        optimalPrice = 1. / demand.sensitivity * std::log(
-                LOG_EPS + demand.scale / optimalDemand);
+        optimalDemand = std::min(maxDemand, optimalDemand);
+        optimalDemand = std::max(optimalDemand, minDemand);
         assert(optimalDemand <= demand.scale + EPS);
+        optimalPrice = std::max(0., 1. / (demand.sensitivity + EPS) * std::log(
+                LOG_EPS + demand.scale / (optimalDemand + EPS)));
+
     } else if (demand.type == Demand::Type::linear) {
         assert(demand.multiplicative < 0.);
         optimalPrice = 0.5 * (
             shippingCost * route.showRate.estimatedProba
             + route.returnPrice * (1 - route.showRate.estimatedProba)
-            - demand.additive / demand.multiplicative);
-        optimalPrice = std::max(optimalPrice,
-            (demand.additive - maxCapacity) / (-demand.multiplicative));
-        optimalPrice = std::min(optimalPrice, demand.additive / (-demand.multiplicative));
-        optimalDemand = demand.additive + optimalPrice * demand.multiplicative;
+            - demand.additive / (-EPS + demand.multiplicative));
+        double capacityPrice = (demand.additive - maxCapacity) / (-demand.multiplicative);
+        double zeroDemandPrice = demand.additive / (-demand.multiplicative);
+
+        double minPrice = std::max({route.returnPrice, capacityPrice, 0., shippingCost});
+        double demandAtMin = std::max(0., demand.additive + minPrice * demand.multiplicative);
+
+        double maxPrice = std::max(zeroDemandPrice, minPrice);
+        double demandAtMax = std::max(0., demand.additive + maxPrice * demand.multiplicative);
+
+        borderPrices = {minPrice, maxPrice};
+        borderDemands = {demandAtMin, demandAtMax};
+
+        optimalPrice = std::min(optimalPrice, maxPrice);
+        optimalPrice = std::max(optimalPrice, minPrice);
+        optimalDemand = std::max(0., demand.additive + optimalPrice * demand.multiplicative);
+
         assert(optimalDemand + EPS >= 0. && optimalDemand <= demand.additive + EPS);
     } else {
         throw std::logic_error("Unexpected demand type!");
     }
-    // Robustness in prices and demand.
-    optimalPrice += EPS;
-    optimalDemand += EPS;
-    assert(optimalPrice >= 0);
-
-    // Revenue-based verification.
-    double expectedRevenue
-        = route.showRate.estimatedProba * optimalDemand * (optimalPrice - shippingCost)
-        + (1 - route.showRate.estimatedProba) * optimalDemand * (optimalPrice - route.returnPrice);
-    if (expectedRevenue + EPS < 0.) {
-        optimalPrice = INF;
-        optimalDemand = EPS;
-        expectedRevenue = 0.;
+    double optimalRevenue = computeRevenueProxy(
+            optimalPrice, optimalDemand, shippingCost,
+            route.returnPrice, route.showRate.estimatedProba);
+    for (auto [price, amount] : std::views::zip(borderPrices, borderDemands)) {
+        double revenue = computeRevenueProxy(
+                price, amount, shippingCost, route.returnPrice, route.showRate.estimatedProba);
+        if (revenue > optimalRevenue) {
+            std::tie(optimalPrice, optimalDemand, optimalRevenue) = {price, amount, revenue};
+        }
     }
-    return {idxRoute, optimalPrice, optimalDemand, expectedRevenue};
+
+    assert(optimalPrice >= 0 && optimalRevenue >= 0 and optimalDemand >= 0);
+    assert(optimalPrice + EPS >= shippingCost && optimalPrice + EPS >= route.returnPrice);
+    return {idxRoute, optimalPrice, optimalDemand, optimalRevenue};
 }
 
 
 } // namespace spot
 } // namespace backend
 } // namespace sea
+
