@@ -41,13 +41,15 @@ void OptimizationProblem::processPricing(const unsigned timeNow,
             auto* decision = &config.decisionManager->getConstData();
             revenue = decision->prices[timeNow][relatedIndex].second * demandVar;
         } else {
+            const double EPS = 1e-10;
             if (demand.type == Demand::Type::linear) {
-                revenue = demandVar * (demandVar - demand.additive) / demand.multiplicative;
+                revenue = demandVar * (demandVar - demand.additive)
+                    / (demand.multiplicative - EPS);
             } else if (demand.type == Demand::Type::exponential) {
                 assert(demand.scale > 0);
-                const double LOG_EPS = 1e-40;
-                revenue = demandVar * ( -1.0 / demand.sensitivity
-                    * log(LOG_EPS + demandVar / demand.scale));
+                const double LOG_EPS = 1e-20;
+                revenue = demandVar * ( -1.0 / (demand.sensitivity + EPS )
+                    * log(LOG_EPS + demandVar / (demand.scale + EPS)));
             } else {
                 throw std::logic_error("Demand is of strange type!");
             }
