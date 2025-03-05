@@ -3,11 +3,9 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "sea_constraints.h"
-
-#include <numeric>
-#include <limits>
 
 namespace sea {
 namespace backend {

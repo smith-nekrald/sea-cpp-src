@@ -3,9 +3,11 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "functions.h"
 #include "lagrangian_relaxation_backend.h"
+#include "log.hpp"
 #include "../../logging/logging.h"
 
 namespace sea {

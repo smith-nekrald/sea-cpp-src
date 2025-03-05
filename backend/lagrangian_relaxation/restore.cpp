@@ -3,6 +3,7 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "functions.h"
 
@@ -10,6 +11,7 @@
 #include <filesystem>
 #include <cmath>
 #include <stdio.h>
+#include <cassert>
 
 
 namespace sea {
@@ -235,7 +237,7 @@ void byItineraryRestore(
         for (unsigned ind = 0; ind < objective.size(); ++ind) {
             // Otherwise, this entry in the solution is irrelevant for allotments.
             if (correspondingAllotments[ind] != -1) {
-                double longCount = floor(solution[ind] + FLOOR_EPS);
+                [[maybe_unused]] double longCount = floor(solution[ind] + FLOOR_EPS);
                 assert(longCount >= 0);
                 unsigned loadNow = static_cast<unsigned> (solution[ind]);
                 shippedSum += loadNow;
@@ -302,7 +304,7 @@ void byItineraryRestore(
             const auto& arc = input.arcs[arcId];
             if (arc.type == ArcType::travel) {
                 state->usedCapacity[arcId] += shippedSum;
-                const auto& vessel = input.vessels[arc.vesselId.value()];
+                [[maybe_unused]] const auto& vessel = input.vessels[arc.vesselId.value()];
                 assert(state->usedCapacity[arcId] <= vessel.capacity);
             }
         }

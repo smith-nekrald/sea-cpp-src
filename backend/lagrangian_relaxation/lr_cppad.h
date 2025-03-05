@@ -6,11 +6,10 @@
  */
 #pragma once
 
-#include "lagrangian_relaxation_backend.h"
 #include "structures.h"
-#include "index.h"
+#include "../../manager.h"
+#include "../../algorithm/state.h"
 
-#include <stdexcept>
 #include <cppad/cppad.hpp>
 #include <cppad/core/value.hpp>
 #include <cppad/core/var2par.hpp>
@@ -20,21 +19,21 @@ namespace backend {
 
 /**
  * @brief Uniform method to extract double value. Implementation for double.
- * 
+ *
  * @param entry The entry to consider.
  * @return double The double value. In this case, equals to entry.
  */
 double Value(const double& entry);
 /**
  * @brief Uniform method to extract double value. Implementation for CppAD<double>.
- * 
+ *
  * @param entry The entry to consider.
  * @return double The double value, extracted (or computed) from entry.
  */
 double Value(const CppAD::AD<double>& entry);
 /**
  * @brief Uniform method to extract double value. Implementation for CppAD<CppAD<double>>.
- * 
+ *
  * @param entry The entry to consider.
  * @return double The double value, extracted or computed from entry.
  */
@@ -42,7 +41,7 @@ double Value(const CppAD::AD<CppAD::AD<double>>& entry);
 
 /**
  * @brief Evaluate LR objective function in point.
- * 
+ *
  * @param point The point in dual space for evaluation.
  * @param state The trajectory evaluation state..
  * @param inputManager The Manager with InputData.
@@ -67,7 +66,7 @@ double evaluateFunctionInPoint(
 
 /**
  * @brief Computes subgradient with CppAD.
- * 
+ *
  * @param point The DualVariables point.
  * @param state The state of trajectory evaluation.
  * @param inputManager The Manager with InputData.

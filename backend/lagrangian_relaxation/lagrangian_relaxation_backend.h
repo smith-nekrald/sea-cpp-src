@@ -9,13 +9,9 @@
 
 #include "gm_sea/gm_src/gm_types.h"
 #include "../../manager.h"
-#include "../../common.h"
 #include "../../algorithm/state.h"
-#include "index.h"
 #include "structures.h"
 
-#include <vector>
-#include <unordered_map>
 #include <random>
 #include <deque>
 #include <experimental/optional>
@@ -75,7 +71,7 @@ struct LagrangianRelaxationBackendConfig {
     /// @brief Manager with InputLinks.
     ConstLinksManagerPtr linksManager = nullptr;
     /// @brief Whether fancy memory optimization is applied. Typically set to false.
-    optional<bool> needMemory; 
+    optional<bool> needMemory;
 
     // Entries related to initialization and bounds.
 
@@ -87,42 +83,42 @@ struct LagrangianRelaxationBackendConfig {
     // Entries related to randomization.
 
     /// @brief Initialization strategy. Normal, Uniform, or Both. Typical value is Both.
-    optional<RandomInitType> initStrategy; 
+    optional<RandomInitType> initStrategy;
     /// @brief Minimal uniform generation range. Typical value = 0.0
-    optional<double> uniformMin; 
+    optional<double> uniformMin;
     /// @brief Maximal uniform generation range. Typical value = 2.0
     optional<double> uniformMax; // = 2.0;
     /// @brief Expected value for normal distribution. Typical value = 0.0
-    optional<double> normalMean; 
+    optional<double> normalMean;
     /// @brief Standard deviation for normal distribution. Typical value = 2.0
     optional<double> normalStd;
     /// @brief Probability for bernoulli distribution. Typical value = 0.01
-    optional<double> bernoullyProba; 
+    optional<double> bernoullyProba;
     /// @brief Seed for reproducible randomization. Typical value = 3.
-    optional<size_t> seed; 
+    optional<size_t> seed;
 
     // Debug info.
 
     /// @brief CLP log level. Typical value = 3.
-    optional<size_t> clpLogLevel; 
+    optional<size_t> clpLogLevel;
     /// @brief Whether to keep history with measurements. Typical value = false.
-    optional<bool> keepStory; 
+    optional<bool> keepStory;
 
     // Common optimization method parameters.
 
     /// @brief Optimization algorithm family. Cutting Plane or Gradient Optimization.
-    optional<OptimizationAlgo> optimizationAlgo; 
+    optional<OptimizationAlgo> optimizationAlgo;
     /// @brief Maximal number of iterations. Typical value is 800.
     optional<size_t> maxSubgradientIterations;
     /// @brief Precision for subgradient methods. Typical value = 1e-5.
     optional<double> subgradientPrecision;
     /// @brief Regularization coefficient. Typical value = 0.001.
-    optional<double> coeffReg; 
+    optional<double> coeffReg;
 
     // Common backend parameters.
 
     /// @brief Type of decision at cutoff. Typically CutOffDecisionType::BY_ITINERARY.
-    optional<CutoffDecisionType> cutoffDecisionType; 
+    optional<CutoffDecisionType> cutoffDecisionType;
     /// @brief Method to use for CLP linear programming. Typically ClpSolutionConfig::CLP_PRIMAL.
     optional<ClpSolutionConfig> clpMethod;
     /// @brief Default precision.
@@ -135,15 +131,15 @@ struct LagrangianRelaxationBackendConfig {
     /// @brief Minimal number of subgradient iterations in cutting plane method. Typically 15.
     optional<size_t> minSubgradientIterations;
     /// @brief Number of initialization points. Typically 15.
-    optional<size_t> initPointCount; 
+    optional<size_t> initPointCount;
     /// @brief Size of deque with cutting plane points. Typically 1000.
     optional<size_t> deque_size;
     /// @brief Whether to use equations restart. Typically true.
     optional<bool> useEquationsRestart;
     /// @brief Whether to restart only once. Typically true.
-    optional<bool> singleRestart; 
+    optional<bool> singleRestart;
     /// @brief Number of iterations before restart. Typically 2000.
-    optional<size_t> restartPeriod; 
+    optional<size_t> restartPeriod;
     /// @brief Maximal number of immortal points in dualHistory deque. Typically 100.
     optional<size_t> immortalLimit;
     /// @brief Maximal number of immortal points in dual deque from those generated randomly.
@@ -151,11 +147,11 @@ struct LagrangianRelaxationBackendConfig {
 
     // GM-related configurations and tweaks.
     /// @brief Initial value of L. Typically set to 100., or 1/"gradient_step".
-    optional<double> L0; 
+    optional<double> L0;
     /// @brief Type of gradient optimizer. Current the most efficient is UFGM.
-    optional<gm::GradientFamily> gradientOptimizer; 
+    optional<gm::GradientFamily> gradientOptimizer;
     /// @brief UFGM prox-function. Currently L2SQUARED is the typical vallue.
-    optional<gm::GmProxType> ufgmProxType; 
+    optional<gm::GmProxType> ufgmProxType;
     /// @brief UFGM regularizer. Currently L2SQUARED is the typical value.
     optional<gm::GmRegularizerType> ufgmRegType; // L2SQUARED
 };
@@ -187,14 +183,14 @@ class LagrangianRelaxationBackend {
 public:
     /**
      * @brief Constructor for the Lagrangian Relaxation Backend.
-     * 
+     *
      * @param config Configuration for LR backend.
      */
     LagrangianRelaxationBackend(
             const LagrangianRelaxationBackendConfig& config);
     /**
      * @brief Computes dual variables, aka shadow price of capacity.
-     * 
+     *
      * @param[in] state The state of trajectory evaluation.
      * @param[out] decisionManager The manager with Decision.
      * @param[out] uCoeff Place for writing Benders Decomposition coefficients, if relevant.
@@ -207,9 +203,9 @@ public:
             UCoefficients* uCoeff = nullptr,
             double* objectiveEstimation = nullptr) const;
     /**
-     * @brief Makes decision for cut-off stage given dual variables storing shadow price of 
+     * @brief Makes decision for cut-off stage given dual variables storing shadow price of
      * capacity.
-     * 
+     *
      * @param[in] event Current cutoff event to process.
      * @param[in] duals Dual variables storing the shadow price of capacity.
      * @param[in] actionManager Manager with Action.
@@ -223,18 +219,18 @@ public:
             DecisionManagerPtr decisionManager,
             State* state) const;
     /**
-     * @brief Set ignoreSpot boolean to a specific value. When true, this enforces the 
+     * @brief Set ignoreSpot boolean to a specific value. When true, this enforces the
      * algorithm to ignore spot market.
-     * 
+     *
      * @param value The value to assign.
      */
     void setIgnoreSpot(bool value) {
         ignoreSpot = value;
     }
     /**
-     * @brief Provides algorithm with Ipopt-computed dual variables. A good initialization may 
+     * @brief Provides algorithm with Ipopt-computed dual variables. A good initialization may
      * accelerate convergence.
-     * 
+     *
      * @param duals The DualVariables object computed with Fluid approximation, e.g. via Ipopt.
      */
     void provideIpoptDuals(const DualVariables& duals) {
@@ -275,7 +271,7 @@ private:
     void logLRConstruction() const;
     /**
      * @brief Logs progress in provideDuals.
-     * 
+     *
      * @param decisionManager The Manager with Decision.
      * @param duals The computed dual variables to log.
      */
@@ -283,7 +279,7 @@ private:
             ConstDecisionManagerPtr decisionManager, const DualVariables& duals) const;
     /**
      * @brief Logs making cut-off decision with duals.
-     * 
+     *
      * @param duals The supplied dual variables.
      */
     void logMakeCutoffDecisionWithDuals(const DualVariables& duals) const;

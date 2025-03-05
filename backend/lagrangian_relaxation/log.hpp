@@ -6,7 +6,6 @@
  */
 #pragma once
 
-#include "lr_cppad.h"
 #include "../../logging/logging.h"
 
 namespace sea {
@@ -14,10 +13,10 @@ namespace backend {
 
 /**
  * @brief Template method to print one-dimensional vector to backend log.
- * 
+ *
  * @tparam Type The type of the element in the vector.
  * @param array The vector with elements to print.
- * @param type The backend type. 
+ * @param type The backend type.
  */
 template<typename Type>
 void printArrayToBackendLog(const std::vector<Type> array, BackendType typeBackend) {

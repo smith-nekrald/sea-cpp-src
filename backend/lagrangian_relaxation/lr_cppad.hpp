@@ -155,6 +155,7 @@ inline Type computeFunctionValue(const InputData& input,
                             assert(demand.additive >= 0 && demand.multiplicative <= 0);
                             Type leftPrice = 0.,
                                  rightPrice = -demand.additive / demand.multiplicative;
+                            rightPrice = std::min<Type>(rightPrice, Type(itinerary.returnPrice));
 
                             optimalPrice = std::max<Type>(leftPrice,
                                     -(demand.additive + demand.multiplicative * yr) /
@@ -177,7 +178,10 @@ inline Type computeFunctionValue(const InputData& input,
                                 + optimalPrice * demand.multiplicative;
                         } else if (demand.type == Demand::Type::exponential) {
                             assert(demand.sensitivity >= 0 && demand.scale >= 0);
-                            optimalPrice = std::max(Type(0.), 1. / demand.sensitivity - yr);
+                            optimalPrice = std::max<Type>(
+                                    Type(0.), 1. / demand.sensitivity - yr);
+                            optimalPrice = std::max<Type>(
+                                    optimalPrice, Type(itinerary.returnPrice));
                             demandValue = demand.scale * exp(
                                     -demand.sensitivity * optimalPrice);
                         } else {
@@ -189,6 +193,8 @@ inline Type computeFunctionValue(const InputData& input,
                             demandValue = 0.;
                             if (demand.type == Demand::Type::linear) {
                                 optimalPrice = -demand.additive / demand.multiplicative;
+                                optimalPrice = std::max<Type>(
+                                        optimalPrice, Type(itinerary.returnPrice));
                             } else {
                                 const double INF = std::numeric_limits<double>::max();
                                 optimalPrice = INF;
@@ -295,7 +301,7 @@ inline Type computeFunctionValue(const InputData& input,
                     event.duration * port.storageCost * localContainersInPorts[port.id];
             }
         }
-        for (const auto& port : input.ports) {
+        for ([[maybe_unused]] const auto& port : input.ports) {
             assert(localContainersInPorts[port.id] >= 0);
         }
     }
@@ -335,10 +341,16 @@ using NestedAD=CppAD::AD<CppAD::AD<double>>;
  * throws an exception, since second derivative is not needed and is not supported.
  */
 template<> inline NestedAD computeFunctionValue<NestedAD>(
-        const InputData& input, const InputLinks& links, const State& state,
-        const LagrangianRelaxationIndex& lrIndex, const TimeParameters& timeParameters,
-        Decision* decision, const DualTemplate<NestedAD>& point, bool ignoreSpot,
-        double l2RegConstant, DualTemplate<double> mean) {
+        [[maybe_unused]] const InputData& input,
+        [[maybe_unused]] const InputLinks& links,
+        [[maybe_unused]] const State& state,
+        [[maybe_unused]] const LagrangianRelaxationIndex& lrIndex,
+        [[maybe_unused]] const TimeParameters& timeParameters,
+        [[maybe_unused]] Decision* decision,
+        [[maybe_unused]] const DualTemplate<NestedAD>& point,
+        [[maybe_unused]] bool ignoreSpot,
+        [[maybe_unused]] double l2RegConstant,
+        [[maybe_unused]] DualTemplate<double> mean) {
     throw std::logic_error("Second derivative is not supported");
 }
 

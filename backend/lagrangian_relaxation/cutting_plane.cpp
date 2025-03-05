@@ -3,12 +3,13 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "functions.h"
 #include "lagrangian_relaxation_backend.h"
 
 #include <limits>
-#include<filesystem>
+#include <filesystem>
 #include <stdio.h>
 
 namespace sea {
@@ -122,7 +123,7 @@ bool checkIfFeasible(
 }
 
 void processMinValue(const std::vector<double>& lower,
-                     const std::vector<double>& upper,
+                     [[maybe_unused]] const std::vector<double>& upper,
                      DualVariables* target) {
     double minLowerValue = COIN_DBL_MAX;
     for (unsigned idMu = 0; idMu < target->muVariables.size(); ++idMu) {
@@ -357,7 +358,8 @@ void prepareSimplex(
                     const auto& arc = input.arcs[idArc];
                     if (arc.type == ArcType::travel) {
                         unsigned place = lrIndex.arcToLambdaIndex[idArc];
-                        const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
+                        [[maybe_unused]] const unsigned MAX_INDEX
+                            = std::numeric_limits<unsigned>::max();
                         assert(place != MAX_INDEX);
                         double value = 1.0;
                         elementByRow.push_back(value);
@@ -757,7 +759,7 @@ void doCuttingPlaneOptimization(
                 (iter % configIter.restartPeriod.value() ==
                     (configIter.restartPeriod.value() - 1))) {
             if (!configIter.singleRestart || !restartCount) {
-                const double CERTAINTY_COEF = 3.;
+                [[maybe_unused]] const double CERTAINTY_COEF = 3.;
                 assert(configIter.deque_size.value()
                         >= configIter.restartPeriod.value() / CERTAINTY_COEF);
                 logRestartSimplexFromDeque();
