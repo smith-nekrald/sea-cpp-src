@@ -39,14 +39,15 @@ ItineraryPlan buildItineraryPlan(
     // Find optimal price and demand.
     double optimalDemand = 0., optimalPrice = INF;
     std::vector<double> borderPrices, borderDemands;
-    const double EPS = 1e-10;
+    const double DIVIDE_EPS = 1e-30;
+    const double COMPARE_EPS = 1e-3;
     if (demand.type == Demand::Type::exponential) {
-        const double LOG_EPS = 1e-30;
+        const double LOG_EPS = 1e-50;
         double refundDemand = demand.scale * std::exp(-demand.sensitivity * route.returnPrice);
         double shippingDemand = demand.scale * std::exp(-demand.sensitivity * shippingCost);
         double maxDemand = std::min({demand.scale, refundDemand, shippingDemand, maxCapacity});
-        double priceAtMax = std::max(0., 1. / (demand.sensitivity + EPS)
-            * std::log(LOG_EPS + demand.scale / (maxDemand + EPS)));
+        double priceAtMax = std::max(0., 1. / (demand.sensitivity + DIVIDE_EPS)
+            * std::log(LOG_EPS + demand.scale / (maxDemand + DIVIDE_EPS)));
         double minDemand = 0.;
         double priceAtMin = INF;
 
@@ -58,16 +59,16 @@ ItineraryPlan buildItineraryPlan(
             + (1 - route.showRate.estimatedProba) * (1 + route.returnPrice * demand.sensitivity));
         optimalDemand = std::min(maxDemand, optimalDemand);
         optimalDemand = std::max(optimalDemand, minDemand);
-        assert(optimalDemand <= demand.scale + EPS);
-        optimalPrice = std::max(0., 1. / (demand.sensitivity + EPS) * std::log(
-                LOG_EPS + demand.scale / (optimalDemand + EPS)));
+        assert(optimalDemand <= demand.scale + COMPARE_EPS);
+        optimalPrice = std::max(0., 1. / (demand.sensitivity + DIVIDE_EPS) * std::log(
+                LOG_EPS + demand.scale / (optimalDemand + DIVIDE_EPS)));
 
     } else if (demand.type == Demand::Type::linear) {
         assert(demand.multiplicative < 0.);
         optimalPrice = 0.5 * (
             shippingCost * route.showRate.estimatedProba
             + route.returnPrice * (1 - route.showRate.estimatedProba)
-            - demand.additive / (-EPS + demand.multiplicative));
+            - demand.additive / (-DIVIDE_EPS + demand.multiplicative));
         double capacityPrice = (demand.additive - maxCapacity) / (-demand.multiplicative);
         double zeroDemandPrice = demand.additive / (-demand.multiplicative);
 
@@ -84,7 +85,8 @@ ItineraryPlan buildItineraryPlan(
         optimalPrice = std::max(optimalPrice, minPrice);
         optimalDemand = std::max(0., demand.additive + optimalPrice * demand.multiplicative);
 
-        assert(optimalDemand + EPS >= 0. && optimalDemand <= demand.additive + EPS);
+        assert(optimalDemand + COMPARE_EPS >= 0.
+                && optimalDemand <= demand.additive + COMPARE_EPS);
     } else {
         throw std::logic_error("Unexpected demand type!");
     }
@@ -100,7 +102,8 @@ ItineraryPlan buildItineraryPlan(
     }
 
     assert(optimalPrice >= 0 && optimalRevenue >= 0 and optimalDemand >= 0);
-    assert(optimalPrice + EPS >= shippingCost && optimalPrice + EPS >= route.returnPrice);
+    assert(optimalPrice + COMPARE_EPS >= shippingCost
+            && optimalPrice + COMPARE_EPS >= route.returnPrice);
     return {idxRoute, optimalPrice, optimalDemand, optimalRevenue};
 }
 

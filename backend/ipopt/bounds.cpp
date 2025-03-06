@@ -80,9 +80,11 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
                     updateUpper(upper, std::max(0., demand.additive
                                 + demand.multiplicative * itinerary.returnPrice));
                 } else if (demand.type == Demand::Type::exponential) {
+                    const double EXP_LOWER = 1e-100;
                     updateUpper(upper, demand.scale);
-                    updateUpper(upper, std::max(0., demand.scale
+                    updateUpper(upper, std::max(EXP_LOWER, demand.scale
                                 * std::exp(-itinerary.returnPrice * demand.sensitivity)));
+                    updateLower(lower, EXP_LOWER);
                 } else {
                     throw std::logic_error("Unsupported demand type");
                 }
@@ -109,9 +111,9 @@ void IpoptBackend::initBoundsLR(vector<double>* vlowerPtr, vector<double>* vuppe
                     unsigned idItinerary = event.relatedItineraryIds[index];
                     unsigned variableIndex =
                         indexMap.timeItineraryToDemandIndex[relativeTime][idItinerary];
-                    vlower[variableIndex] = vupper[variableIndex] = 0;
+                    const double EPS = 1e-100;
+                    vlower[variableIndex] = vupper[variableIndex] = EPS;
                     if (event.demands[index].type == Demand::Type::exponential) {
-                        const double EPS = 1e-40;
                         vupper[variableIndex] = EPS;
                     }
                 }

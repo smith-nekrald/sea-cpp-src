@@ -2,6 +2,8 @@
 
 #include <cassert>
 #include <limits>
+#include <map>
+#include <set>
 
 namespace sea {
 namespace backend {
@@ -51,12 +53,29 @@ bool checkIfAllotmentAvailable(
             }
         }
     }
-    for (const auto& entry: input.allotmentEntries) {
+    std::map<unsigned, double> arcToRequiredCapacity;
+    std::set<unsigned> involvedItineraries, involvedArcs;
+    for (const auto& idxEntry: allotment.entries) {
+        const auto& entry = input.allotmentEntries[idxEntry];
         size_t idxItinerary = entry.itinerary;
-        double availableCapacity = backend::computeExpectedAvailableCapacityForItinerary(
-                input, stats, idxItinerary);
-        if (availableCapacity < entry.productAmount * entry.showRate.estimatedProba) {
-            return false;
+        assert(involvedItineraries.find(idxItinerary) == involvedItineraries.end());
+        involvedItineraries.insert(idxItinerary);
+        double capacityConsumption = entry.productAmount * entry.showRate.estimatedProba;
+        const auto& route = input.itineraries[idxItinerary];
+        for (unsigned idxArc: route.orderedArcs) {
+            involvedArcs.insert(idxArc);
+            arcToRequiredCapacity[idxArc] += capacityConsumption;
+        }
+    }
+    for (unsigned idxArc: involvedArcs) {
+        const InputData::Arc& arc = input.arcs[idxArc];
+        if (arc.type == InputData::Arc::Type::travel) {
+            double requiredCapacity = arcToRequiredCapacity[idxArc];
+            double availableCapacity = stats.availableArcCapacity[idxArc];
+            const double EPS = 1e-3;
+            if (availableCapacity < requiredCapacity + EPS) {
+                return false;
+            }
         }
     }
     return true;
@@ -72,13 +91,16 @@ void updateStatsAtAllotmentSelection(
             }
         }
     }
-    for (const auto& entry: input.allotmentEntries) {
-        const InputData::Itinerary& route = input.itineraries[entry.itinerary];
+    for (unsigned idxEntry: allotment.entries) {
+        const auto& entry = input.allotmentEntries[idxEntry];
         double expectedCapacity = entry.productAmount * entry.showRate.estimatedProba;
         stats->allocatedLongEntryCapacity[entry.id] += expectedCapacity;
+        const InputData::Itinerary& route = input.itineraries[entry.itinerary];
         for (unsigned idxArc : route.orderedArcs) {
             const InputData::Arc& arc = input.arcs[idxArc];
             if (arc.type == InputData::Arc::Type::travel) {
+                [[maybe_unused]] const double EPS = 1e-5;
+                assert(stats->availableArcCapacity[arc.id] >= EPS + expectedCapacity);
                 stats->availableArcCapacity[arc.id] -= expectedCapacity;
             }
         }
