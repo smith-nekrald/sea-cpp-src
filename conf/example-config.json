@@ -59,7 +59,7 @@
         },
         "benders_backend_config": {
             "file_log_level" : 3
-        },
+        }
     },
     "launch_config" : {
         "launch_mode" : "debug",
