@@ -39,17 +39,19 @@ ItineraryPlan buildItineraryPlan(
     // Find optimal price and demand.
     double optimalDemand = 0., optimalPrice = INF;
     std::vector<double> borderPrices, borderDemands;
-    const double DIVIDE_EPS = 1e-30;
+    const double DIVIDE_EPS = 1e-100;
     const double COMPARE_EPS = 1e-3;
     if (demand.type == Demand::Type::exponential) {
-        const double LOG_EPS = 1e-50;
+        const double LOG_EPS = 1e-300;
         double refundDemand = demand.scale * std::exp(-demand.sensitivity * route.returnPrice);
         double shippingDemand = demand.scale * std::exp(-demand.sensitivity * shippingCost);
         double maxDemand = std::min({demand.scale, refundDemand, shippingDemand, maxCapacity});
         double priceAtMax = std::max(0., 1. / (demand.sensitivity + DIVIDE_EPS)
             * std::log(LOG_EPS + demand.scale / (maxDemand + DIVIDE_EPS)));
+        priceAtMax = std::max({priceAtMax, route.returnPrice, shippingCost});
         double minDemand = 0.;
         double priceAtMin = INF;
+        assert(minDemand <= maxDemand);
 
         borderPrices = {priceAtMin, priceAtMax};
         borderDemands = {minDemand, maxDemand};
@@ -77,6 +79,7 @@ ItineraryPlan buildItineraryPlan(
 
         double maxPrice = std::max(zeroDemandPrice, minPrice);
         double demandAtMax = std::max(0., demand.additive + maxPrice * demand.multiplicative);
+        assert (minPrice <= maxPrice);
 
         borderPrices = {minPrice, maxPrice};
         borderDemands = {demandAtMin, demandAtMax};
