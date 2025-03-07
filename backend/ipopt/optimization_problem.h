@@ -5,12 +5,23 @@
  * and constraints in a CppAD-friendly format.
  *
  * @copyright Smith School of Business (c) 2023
+ * @copyright Smith School of Business (c) 2025
  */
 #pragma once
 
 #include "../../manager.h"
-#include "index_map.h"
+#if defined NDEBUG
+    #define NOUNDEF
+#else
+    #define NDEBUG
+#endif
 #include <cppad/ipopt/solve.hpp>
+#if defined NOUNDEF
+    #undef NOUNDEF
+#else
+    #undef NDEBUG
+#endif
+
 
 namespace sea {
 namespace backend {

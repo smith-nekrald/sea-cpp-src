@@ -7,7 +7,19 @@
 
 #include "optimization_problem.h"
 
+#if defined NDEBUG
+    #define NOUNDEF
+#else
+    #define NDEBUG
+#endif
 #include <cppad/ipopt/solve.hpp>
+#if defined NOUNDEF
+    #undef NOUNDEF
+#else
+    #undef NDEBUG
+#endif
+
+#include <cassert>
 
 namespace sea {
 namespace backend {
@@ -47,13 +59,20 @@ void OptimizationProblem::processPricing(const unsigned timeNow,
                     / (demand.multiplicative - EPS);
             } else if (demand.type == Demand::Type::exponential) {
                 assert(demand.scale > 0);
-                const double LOG_EPS = 1e-20;
-                revenue = demandVar * ( -1.0 / (demand.sensitivity + EPS )
-                    * log(LOG_EPS + demandVar / (demand.scale + EPS)));
+                const double LOG_EPS = 1e-50;
+                auto logArgument = LOG_EPS + demandVar / (demand.scale + EPS);
+                const double EPS_COMPARE = 1e-60;
+                assert(CppAD::Value(CppAD::Var2Par(logArgument)) > EPS_COMPARE);
+                assert(demand.sensitivity > EPS_COMPARE);
+                assert(demand.scale > EPS_COMPARE);
+                revenue = demandVar * (-1.0 / (demand.sensitivity + EPS)
+                    * log(logArgument));
             } else {
                 throw std::logic_error("Demand is of strange type!");
             }
         }
+        assert(CppAD::Value<double>(CppAD::Var2Par(demandVar) >= 0.));
+        assert(CppAD::Value<double>(CppAD::Var2Par(revenue) >= 0.));
         bookings[idItinerary] += demandVar;
         objective += revenue;
     }
@@ -281,12 +300,13 @@ void OptimizationProblem::operator()(ADvector& functions, const ADvector& variab
     auto& input = config.inputManager->getConstData();
     auto& indexMap = config.indexManager->getConstData();
 
-    functions.assign(indexMap.constraintCount + 1, 0.0);
+    const double EPS_INIT = 1e-10;
+    functions.assign(indexMap.constraintCount + 1, EPS_INIT);
 
     // State variables.
-    vector<AD<double>> bookings(input.itineraries.size(), 0.);
-    vector<AD<double>> carried(input.itineraries.size(), 0.);
-    vector<AD<double>> containers(input.ports.size(), 0.);
+    vector<AD<double>> bookings(input.itineraries.size(), EPS_INIT);
+    vector<AD<double>> carried(input.itineraries.size(), EPS_INIT);
+    vector<AD<double>> containers(input.ports.size(), EPS_INIT);
 
     // Initial container counts.
     for (unsigned portId = 0; portId < input.ports.size(); ++portId) {

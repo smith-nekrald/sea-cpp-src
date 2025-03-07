@@ -5,6 +5,7 @@
 // (c) Smith School of Business, 2023
 // (c) Smith School of Business, 2025
 
+
 #include "ipopt_backend.h"
 #include "optimization_problem.h"
 #include "../lagrangian_relaxation/index.h"
@@ -22,7 +23,6 @@ using std::size_t;
 
 
 void IpoptBackend::formDuals(const vector<double>& lambdas, DualVariables* duals) const {
-
     if (duals != nullptr) {
         const auto& input = config.inputManager->getConstData();
         const auto& links = config.linksManager->getConstData();
@@ -45,7 +45,6 @@ void IpoptBackend::formDuals(const vector<double>& lambdas, DualVariables* duals
 
 void IpoptBackend::initializeSuppliedAllotments(ConstDecisionManagerPtr decisionManager,
         vector<double>* vlowerPtr, vector<double>* vupperPtr, vector<double>* variablesPtr) const {
-
     const auto& input =  config.inputManager->getConstData();
     const auto& indexMap = indexManager->getConstData();
     for (unsigned idAllotment = 0; idAllotment < input.allotments.size(); ++idAllotment) {
@@ -184,7 +183,7 @@ void IpoptBackend::initVariables(const vector<double>& vlower,
         assert(indexManager->getConstData().variableCount == lastVariables.size());
         *variablesPtr = lastVariables;
     } else {
-        const double VARIABLES_INIT = 1e-4;
+        const double VARIABLES_INIT = 1e-5;
         const double INF = std::numeric_limits<double>::max();
         size_t variableCount = indexManager->getConstData().variableCount;
         variablesPtr->assign(variableCount, VARIABLES_INIT);
@@ -196,7 +195,7 @@ void IpoptBackend::initVariables(const vector<double>& vlower,
             }
             if (vlower[idx] == -INF && vupper[idx] == INF) {
                 variablesPtr->at(idx) = VARIABLES_INIT;
-            };
+            }
         }
     }
 }

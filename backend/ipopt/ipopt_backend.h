@@ -3,6 +3,7 @@
  * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
  * @brief Describes IpoptBackend entity and corresponding API.
  * @copyright (c) Smith School of Business, 2023
+ * @copyright (c) Smith School of Business, 2025
  */
 #pragma once
 
@@ -11,7 +12,17 @@
 #include "../../algorithm/state.h"
 #include "../dual_variables.h"
 
+#if defined NDEBUG
+    #define NOUNDEF
+#else
+    #define NDEBUG
+#endif
 #include <cppad/ipopt/solve.hpp>
+#if defined NOUNDEF
+    #undef NOUNDEF
+#else
+    #undef NDEBUG
+#endif
 
 namespace sea {
 namespace backend {
