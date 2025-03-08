@@ -1,3 +1,9 @@
+// Implements baseline allotment sorters and allotment order metrics.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2025
+
 #include "long.h"
 #include "api.h"
 #include "baseline_stats.h"
@@ -15,7 +21,7 @@ namespace backend {
 namespace allotment {
 
 AbstractAllotmentSorter::AbstractAllotmentSorter(
-        const AllotmentSorterConfig& config,
+        const BaselineAllotmentConfig& config,
         const std::string& sorterName)
         : name(sorterName)
         , inputManager(config.inputManager)
@@ -52,7 +58,7 @@ void AbstractAllotmentSorter::logMetricValues(const std::vector<double>& metricV
 }
 
 
-TrivialSorter::TrivialSorter(const AllotmentSorterConfig& config)
+TrivialSorter::TrivialSorter(const BaselineAllotmentConfig& config)
     : inputManager(config.inputManager) {}
 
 std::vector<unsigned> TrivialSorter::selectOrder() const {
@@ -67,7 +73,7 @@ std::string TrivialSorter::getName() const {
 }
 
 
-ByTotalExpectedProfit::ByTotalExpectedProfit(const AllotmentSorterConfig& config)
+ByTotalExpectedProfit::ByTotalExpectedProfit(const BaselineAllotmentConfig& config)
     : AbstractAllotmentSorter(config, "ByTotalExpectedProfit") {}
 
 double ByTotalExpectedProfit::getAllotmentMetric(unsigned allotmentId) const {
@@ -87,7 +93,7 @@ double ByTotalExpectedProfit::getAllotmentMetric(unsigned allotmentId) const {
 }
 
 
-ByUnitExpectedProfit::ByUnitExpectedProfit(const AllotmentSorterConfig& config)
+ByUnitExpectedProfit::ByUnitExpectedProfit(const BaselineAllotmentConfig& config)
     : AbstractAllotmentSorter(config, "ByUnitExpectedProfit") {}
 
 double ByUnitExpectedProfit::getAllotmentMetric(unsigned allotmentId) const {
@@ -109,7 +115,7 @@ double ByUnitExpectedProfit::getAllotmentMetric(unsigned allotmentId) const {
 }
 
 
-EstimatedProfitMetric::EstimatedProfitMetric(const AllotmentSorterConfig& config)
+EstimatedProfitMetric::EstimatedProfitMetric(const BaselineAllotmentConfig& config)
     : inputManager(config.inputManager)
     , linksManager(config.linksManager) {}
 
@@ -139,7 +145,7 @@ double EstimatedProfitMetric::score(const std::vector<unsigned>& allotmentOrder)
 }
 
 
-LongCompositeSorter::LongCompositeSorter(const AllotmentSorterConfig& config)
+LongCompositeSorter::LongCompositeSorter(const BaselineAllotmentConfig& config)
         : inputManager(config.inputManager)
         , linksManager(config.linksManager)
         , metric(nullptr) {

@@ -36,10 +36,10 @@ GreedyAlgorithm::GreedyAlgorithm(const GreedyConfig& aConfig)
         , ignoreSpotMarket(aConfig.ignoreSpotMarket)
         , ignoreLongMarket(aConfig.ignoreLongMarket)
         , memoryOptimization(aConfig.memoryOptimization) {
-    backend::allotment::AllotmentSorterConfig longSorterConfig(
+    backend::allotment::BaselineAllotmentConfig longSorterConfig(
             {aConfig.inputManager, aConfig.linksManager});
     allotmentSorter = std::make_unique<backend::allotment::LongCompositeSorter>(longSorterConfig);
-    backend::spot::SpotSorterConfig spotSorterConfig(
+    backend::spot::BaselineSpotConfig spotSorterConfig(
             {aConfig.inputManager, aConfig.linksManager});
     spotSorter = std::make_unique<backend::spot::CompositeSpotSorter>(spotSorterConfig);
     reset();

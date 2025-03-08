@@ -1,3 +1,9 @@
+// Implements commonly used functions in the baseline algorithm.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2025
+
 #include "api.h"
 
 #include <cassert>
@@ -127,7 +133,6 @@ double computeUnitShippingCost(
 
     return shippingCost;
 }
-
 
 } // namespace sea
 } // namespace backend

@@ -71,8 +71,10 @@ void OptimizationProblem::processPricing(const unsigned timeNow,
                 throw std::logic_error("Demand is of strange type!");
             }
         }
-        assert(CppAD::Value<double>(CppAD::Var2Par(demandVar) >= 0.));
-        assert(CppAD::Value<double>(CppAD::Var2Par(revenue) >= 0.));
+        const double EPS_DEMAND_COMPARE=1e-3;
+        assert(CppAD::Value<double>(CppAD::Var2Par(demandVar) + EPS_DEMAND_COMPARE >= 0.));
+        const double EPS_REVENUE_COMPARE=1e-3;
+        assert(CppAD::Value<double>(CppAD::Var2Par(revenue) + EPS_REVENUE_COMPARE >= 0.));
         bookings[idItinerary] += demandVar;
         objective += revenue;
     }

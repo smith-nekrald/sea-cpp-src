@@ -1,3 +1,9 @@
+// Implements Spot Itinerary Sorters and Order Metrics.
+
+// Author: Aliaksandr Nekrashevich
+// Email: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2025
+
 #include "spot.h"
 #include "plan.h"
 #include "../../logging/logging.h"
@@ -15,7 +21,7 @@ namespace spot {
 using EventType=InputData::Event::Type;
 
 AbstractSpotSorter::AbstractSpotSorter(
-        const SpotSorterConfig& config, const std::string& sorterName)
+        const BaselineSpotConfig& config, const std::string& sorterName)
     : name(sorterName)
     , inputManager(config.inputManager)
     , linksManager(config.linksManager) {}
@@ -55,7 +61,7 @@ std::string AbstractSpotSorter::getName() const {
 }
 
 
-ByExpectedTotalProfit::ByExpectedTotalProfit(const SpotSorterConfig& config)
+ByExpectedTotalProfit::ByExpectedTotalProfit(const BaselineSpotConfig& config)
     : AbstractSpotSorter(config, "ByExpectedTotalProfit") {}
 
 double ByExpectedTotalProfit::getRouteMetric(
@@ -83,7 +89,7 @@ std::string TrivialItineraryOrder::getName() const {
 
 
 CompositeSpotSorter::CompositeSpotSorter(
-        const SpotSorterConfig& config)
+        const BaselineSpotConfig& config)
         : inputManager(config.inputManager)
         , linksManager(config.linksManager)
         , metric(nullptr) {
@@ -134,7 +140,7 @@ void CompositeSpotSorter::logScorePerOrder(
 }
 
 
-SpotEventProfitMetric::SpotEventProfitMetric(const SpotSorterConfig& config)
+SpotEventProfitMetric::SpotEventProfitMetric(const BaselineSpotConfig& config)
     : inputManager(config.inputManager)
     , linksManager(config.linksManager) {}
 

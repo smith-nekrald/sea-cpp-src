@@ -1,3 +1,9 @@
+// Implements API related to baseline stats.
+
+// Author: Aliaksandr Nekrashevich
+// E-mail: aliaksandr.nekrashevich@queensu.ca
+// (c) Smith School of Business, 2025
+
 #include "baseline_stats.h"
 
 #include <limits>
@@ -22,7 +28,6 @@ void initBaselineStats(BaselineStats* stats, const InputData& input) {
         }
     }
 }
-
 
 } // namespace backend
 } // namespace sea

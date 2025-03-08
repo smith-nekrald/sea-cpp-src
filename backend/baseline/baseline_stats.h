@@ -1,3 +1,9 @@
+/**
+ * @file baseline_stats.h
+ * @author Aliaksandr Nekrashevich (aliaksandr.nekrashevich@queensu.ca)
+ * @brief Defines Baseline Stats and initialization API.
+ * @copyright (c) Smith School of Business, 2025 
+ */
 #pragma once
 
 #include "../../input/input_data.h"
@@ -25,6 +31,12 @@ struct BaselineStats {
     std::vector<bool> ifSelectedFromGroup;
 };
 
+/**
+ * @brief Initializes the baseline stats using the input data.
+ * 
+ * @param stats The baselines stats to initialize.
+ * @param input The input data. Containts configuration and statistical information.
+ */
 void initBaselineStats(BaselineStats* stats, const InputData& input);
 
 
