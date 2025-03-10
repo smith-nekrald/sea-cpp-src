@@ -155,7 +155,8 @@ inline Type computeFunctionValue(const InputData& input,
                             assert(demand.additive >= 0 && demand.multiplicative <= 0);
                             Type leftPrice = 0.,
                                  rightPrice = -demand.additive / demand.multiplicative;
-                            rightPrice = std::min<Type>(rightPrice, Type(itinerary.returnPrice));
+                            leftPrice = std::max<Type>(leftPrice, Type(itinerary.returnPrice));
+                            rightPrice = std::max<Type>(leftPrice, rightPrice);
 
                             optimalPrice = std::max<Type>(leftPrice,
                                     -(demand.additive + demand.multiplicative * yr) /
@@ -174,8 +175,8 @@ inline Type computeFunctionValue(const InputData& input,
                                     (demand.additive + rightPrice * demand.multiplicative)) {
                                 optimalPrice = rightPrice;
                             }
-                            demandValue = demand.additive
-                                + optimalPrice * demand.multiplicative;
+                            demandValue = std::max<Type>(Type(0.), demand.additive
+                                + optimalPrice * demand.multiplicative);
                         } else if (demand.type == Demand::Type::exponential) {
                             assert(demand.sensitivity >= 0 && demand.scale >= 0);
                             optimalPrice = std::max<Type>(
@@ -231,7 +232,7 @@ inline Type computeFunctionValue(const InputData& input,
                             qri += entry.price;
                             Type showMultiplier =
                                 entry.showRate.estimatedProba * entry.productAmount;
-                            Type objectiveAdd = std::max<Type>(0., qri - mu_r);
+                            Type objectiveAdd = std::max<Type>(Type(0.), qri - mu_r);
                             Type addFunctionValue = (showMultiplier *
                                 (-itinerary.declineCost - entry.cancellationPrice
                                 + objectiveAdd) + entry.productAmount * entry.cancellationPrice);
