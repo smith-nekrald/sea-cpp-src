@@ -19,6 +19,17 @@ using std::size_t;
 // Implemented at: functions.cpp.
 
 /**
+ * @brief Computes the capacity bottleneck for itinerary.
+ *
+ * @param input The input data.
+ * @param links The input links.
+ *
+ * @return The computed itinerary capacity bottleneck.
+ *
+ */
+double computeItineraryBottleneck(const InputData& input, unsigned idxRoute);
+
+/**
  * @brief Absolute value sum of vector pointwise difference. L1 norm.
  *
  * @param lhs The first vector.
@@ -522,7 +533,7 @@ void logSubgradient(const SubgradientOptimizationParameters& current);
  * @param hitMu Vector with hitMu.
  * @param hitLambda Vector with hitLambda.
  */
-void logHitMuAndLambda(const vector<int>& hitMu, const vector<int>& hitLambda);
+void logHitMuAndLambda(const std::vector<int>& hitMu, const std::vector<int>& hitLambda);
 
 /**
  * @brief Logs indices where the itinerary planes were hit.
@@ -624,6 +635,7 @@ void logImmortalNorms(const DualDequeInfo& info);
  * @param info Dual deque entry.
  */
 void logImmortalProcessed(bool writeLogOut, const DualDequeInfo& info);
+
 
 } // namespace backend
 } // namespace sea

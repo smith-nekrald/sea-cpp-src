@@ -6,8 +6,23 @@
 
 #include "functions.h"
 
+#include <limits>
+
 namespace sea {
 namespace backend {
+
+double computeItineraryBottleneck(const InputData& input, unsigned idxRoute) {
+    double bottleneckCapacity = std::numeric_limits<double>::max();
+    const auto& route = input.itineraries[idxRoute];
+    for (unsigned idxArc: route.orderedArcs) {
+        const auto& arc = input.arcs[idxArc];
+        unsigned idxVessel = arc.vesselId.value();
+        const auto& vessel = input.vessels[idxVessel];
+        bottleneckCapacity = std::min(vessel.capacity, bottleneckCapacity);
+    }
+    return bottleneckCapacity;
+}
+
 
 double vectorAbsDiffSum(const std::vector<double>& lhs, const std::vector<double>& rhs) {
     assert(lhs.size() == rhs.size());

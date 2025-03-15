@@ -10,6 +10,7 @@
 #include "lagrangian_relaxation_backend.h"
 #include "index.h"
 #include "lr_cppad.h"
+#include "functions.h"
 
 #include <stdexcept>
 #include <cppad/cppad.hpp>
@@ -150,12 +151,18 @@ inline Type computeFunctionValue(const InputData& input,
                         assert(pricingEvent.type == EventType::pricing);
                         assert(pricingEvent.relatedItineraryIds[iter->second] == itinerary.id);
                         const auto& demand = input.events[iter->first].demands[iter->second];
+                        unsigned idxRoute = pricingEvent.relatedItineraryIds[iter->second];
+                        const auto& route = input.itineraries[idxRoute];
                         Type optimalPrice = 0., demandValue = 0.;
                         if (demand.type == Demand::Type::linear) {
                             assert(demand.additive >= 0 && demand.multiplicative <= 0);
+                            double bottleneckDemand = computeItineraryBottleneck(input, idxRoute)
+                                /  route.showRate.estimatedProba;
                             Type leftPrice = 0.,
                                  rightPrice = -demand.additive / demand.multiplicative;
                             leftPrice = std::max<Type>(leftPrice, Type(itinerary.returnPrice));
+                            rightPrice = std::min<Type>(
+                                    rightPrice, -bottleneckDemand / demand.multiplicative);
                             rightPrice = std::max<Type>(leftPrice, rightPrice);
 
                             optimalPrice = std::max<Type>(leftPrice,
@@ -302,7 +309,7 @@ inline Type computeFunctionValue(const InputData& input,
                     event.duration * port.storageCost * localContainersInPorts[port.id];
             }
         }
-        for ([[maybe_unused]] const auto& port : input.ports) {
+        for (const auto& port : input.ports) {
             assert(localContainersInPorts[port.id] >= 0);
         }
     }
