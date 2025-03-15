@@ -133,7 +133,9 @@ DecisionManagerPtr GreedyAlgorithm::provideAllotments() {
         auto& allotment = input.allotments[idxAllotment];
         bool allotmentAvailable = checkIfAllotmentAvailable(allotment.id);
         decision.allotmentAccepted[allotment.id] = allotmentAvailable;
-        if (allotmentAvailable) {
+        double expectedProfit = backend::computeExpectedAllotmentProfit(
+                input, links, idxAllotment);
+        if (allotmentAvailable && expectedProfit > 0.) {
             backend::updateStatsAtAllotmentSelection(&greedyStats, input, allotment.id);
         }
     }

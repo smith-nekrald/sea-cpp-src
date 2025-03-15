@@ -79,17 +79,7 @@ ByTotalExpectedProfit::ByTotalExpectedProfit(const BaselineAllotmentConfig& conf
 double ByTotalExpectedProfit::getAllotmentMetric(unsigned allotmentId) const {
     const auto& input = inputManager->getConstData();
     const auto& links = linksManager->getConstData();
-    const auto& allotment = input.allotments[allotmentId];
-    double expectedProfit = 0.;
-    for (const unsigned idxEntry: allotment.entries) {
-        const auto& entry = input.allotmentEntries[idxEntry];
-        double shippingCost = computeUnitShippingCost(input, links, entry.itinerary);
-        expectedProfit += entry.productAmount * (
-            (entry.price - shippingCost) * entry.showRate.estimatedProba +
-            entry.cancellationPrice * (1. - entry.showRate.estimatedProba)
-        );
-    }
-    return expectedProfit;
+    return computeExpectedAllotmentProfit(input, links, allotmentId);
 }
 
 
@@ -100,15 +90,10 @@ double ByUnitExpectedProfit::getAllotmentMetric(unsigned allotmentId) const {
     const auto& input = inputManager->getConstData();
     const auto& links = linksManager->getConstData();
     const auto& allotment = input.allotments[allotmentId];
-    double expectedProfit = 0.;
+    double expectedProfit = computeExpectedAllotmentProfit(input, links, allotmentId);
     size_t nEntries = 0.;
     for (const unsigned idxEntry: allotment.entries) {
         const auto& entry = input.allotmentEntries[idxEntry];
-        double shippingCost = computeUnitShippingCost(input, links, entry.itinerary);
-        expectedProfit += entry.productAmount * (
-            (entry.price - shippingCost) * entry.showRate.estimatedProba +
-            entry.cancellationPrice * (1. - entry.showRate.estimatedProba)
-        );
         nEntries += entry.productAmount;
     }
     return expectedProfit / nEntries;
@@ -130,14 +115,9 @@ double EstimatedProfitMetric::score(const std::vector<unsigned>& allotmentOrder)
         assert(allotment.id == allotmentId);
         bool allotmentAvailable = checkIfAllotmentAvailable(input, stats, allotmentId);
         if (allotmentAvailable) {
-            updateStatsAtAllotmentSelection(&stats, input, allotmentId);
-            for (unsigned idxEntry = 0; idxEntry < allotment.entries.size(); ++idxEntry) {
-                const auto& entry = input.allotmentEntries[allotment.entries[idxEntry]];
-                double shippingCost = computeUnitShippingCost(input, links, entry.itinerary);
-                totalExpectedProfit += entry.productAmount * (
-                    (entry.price - shippingCost) * entry.showRate.estimatedProba +
-                    entry.cancellationPrice * (1. - entry.showRate.estimatedProba)
-                );
+            double allotmentProfit = computeExpectedAllotmentProfit(input, links, allotmentId);
+            if (allotmentProfit > 0.) {
+                updateStatsAtAllotmentSelection(&stats, input, allotmentId);
             }
         }
     }

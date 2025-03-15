@@ -15,7 +15,7 @@ namespace backend {
 
 /**
  * @brief Allocates precise integer capacity for a given itinerary.
- * 
+ *
  * @param stats The baseline stats to be updated.
  * @param input Input data, contains statistical input information.
  * @param idxRoute The index of the itinerary.
@@ -25,9 +25,9 @@ void allocatePreciseCapacityForItinerary(
         BaselineStats* stats, const InputData& input, size_t idxRoute, size_t amount);
 
 /**
- * @brief Computes the expected spot market allocation 
+ * @brief Computes the expected spot market allocation
  * capacity available for a given itinerary.
- * 
+ *
  * @param input Input data, contains statistical input information.
  * @param stats The current baseline stats.
  * @param idxItinerary The index of the itinerary.
@@ -38,7 +38,7 @@ double computeExpectedAvailableCapacityForItinerary(
 
 /**
  * @brief Computes the exact integer allocation available capacity for a given itinerary.
- * 
+ *
  * @param input Input data, contains statistical input information.
  * @param stats The current baseline stats.
  * @param idxRoute The index of the itinerary.
@@ -49,11 +49,11 @@ size_t computeExactAllocationCapacityForItinerary(
 
 /**
  * @brief Checks if the allotment can be selected given the current baseline stats.
- * 
+ *
  * @param input Input data, contains statistical input information.
  * @param stats The current baseline stats.
  * @param idxAllotment The index of the allotment to be selected.
- * @return True if allotment can be selected without violating expected capacity and 
+ * @return True if allotment can be selected without violating expected capacity and
  *        allotment groups, False otherwise.
  */
 bool checkIfAllotmentAvailable(
@@ -61,7 +61,7 @@ bool checkIfAllotmentAvailable(
 
 /**
  * @brief Updates baseline stats at the allotment selection.
- * 
+ *
  * @param stats The baseline stats to be updated.
  * @param input Input data, contains statistical input information.
  * @param idxAllotment The index of the selected allotment.
@@ -71,14 +71,26 @@ void updateStatsAtAllotmentSelection(
 
 /**
  * @brief Computs shipping cost per TEU for a given itinerary.
- * 
- * @param input Input data, contains statistical input information. 
- * @param links Input links, contains pre-computed structures based on input data. 
- * @param idxRoute The index of the itinerary. 
+ *
+ * @param input Input data, contains statistical input information.
+ * @param links Input links, contains pre-computed structures based on input data.
+ * @param idxRoute The index of the itinerary.
  * @return double The value of unit shipping cost.
  */
 double computeUnitShippingCost(
         const InputData& input, const InputLinks& links, size_t idxRoute);
+
+/**
+ * @brief Computes expected allotment profit on selection assuming future shipping.
+ *
+ * @param input Input data, contains statistical input information.
+ * @param links Input links, contains pre-computed structures based on input data.
+ * @param allotmentId The index of the allotment.
+ * @return double The expected profit from shipping allotment.
+ */
+
+double computeExpectedAllotmentProfit(
+        const InputData& input, const InputLinks& links, unsigned allotmentId);
 
 } // namespace sea
 } // namespace backend

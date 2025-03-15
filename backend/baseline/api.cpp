@@ -134,5 +134,21 @@ double computeUnitShippingCost(
     return shippingCost;
 }
 
+double computeExpectedAllotmentProfit(
+    const InputData& input, const InputLinks& links, unsigned allotmentId) {
+    const auto& allotment = input.allotments[allotmentId];
+    double allotmentExpectedProfit = 0.;
+    for (unsigned idxEntry = 0; idxEntry < allotment.entries.size(); ++idxEntry) {
+        const auto& entry = input.allotmentEntries[allotment.entries[idxEntry]];
+        double shippingCost = computeUnitShippingCost(input, links, entry.itinerary);
+        allotmentExpectedProfit += entry.productAmount * (
+            (entry.price - shippingCost) * entry.showRate.estimatedProba +
+            entry.cancellationPrice * (1. - entry.showRate.estimatedProba)
+        );
+    }
+    return allotmentExpectedProfit;
+}
+
+
 } // namespace sea
 } // namespace backend
