@@ -8,6 +8,7 @@
 #include "index.hpp"
 
 #include <limits>
+#include <fstream>
 
 
 namespace sea {

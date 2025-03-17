@@ -189,9 +189,9 @@ inline Type computeFunctionValue(const InputData& input,
                             assert(demand.scale > 0. && demand.sensitivity > 0.);
                             Type LOG_EPS = 1e-100;
                             Type minPrice = std::max<Type>({
-                                    1. / demand.sensitivity * std::log(
+                                    Type(1. / demand.sensitivity * log(
                                             (demand.scale + LOG_EPS)
-                                            / (bottleneckDemand + LOG_EPS)),
+                                            / (bottleneckDemand + LOG_EPS))),
                                     Type(0.),
                                     Type(itinerary.returnPrice)
                             });
