@@ -59,7 +59,11 @@ struct InputLinks {
     vector<double> itineraryIdToCutoffDuration;
     /// @brief Maps itinerary id to the real time of the corresponding cut-off event.
     /// Indexed by itinerary-id.
-    vector<double> itineraryIdToCutoffTime;
+    vector<double> itineraryIdToRealCutoffTime;
+    /// @brief Maps itinerary id to the relative time of the corresponding cut-off event.
+    /// Indexed by itinerary-id.
+    vector<unsigned> itineraryIdToRelativeCutoffTime;
+
 };
 
 /// @brief Simple notation for shared pointer to InputLinks.

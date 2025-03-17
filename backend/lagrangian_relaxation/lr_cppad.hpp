@@ -153,7 +153,8 @@ inline Type computeFunctionValue(const InputData& input,
                         const auto& demand = input.events[iter->first].demands[iter->second];
                         unsigned idxRoute = pricingEvent.relatedItineraryIds[iter->second];
                         const auto& route = input.itineraries[idxRoute];
-                        double bottleneckDemand = computeItineraryBottleneck(input, idxRoute)
+                        double bottleneckDemand = computeItineraryBottleneck(
+                                input, links, state, timeParameters.timeEvent, idxRoute)
                                 /  route.showRate.estimatedProba;
                         Type optimalPrice = 0., demandValue = 0.;
                         if (demand.type == Demand::Type::linear) {

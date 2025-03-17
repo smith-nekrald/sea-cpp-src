@@ -124,23 +124,28 @@ void createInputLinks(const InputData& input, InputLinks* linksPtr) {
     }
     links.allotmentToGroups.shrink_to_fit();
 
-    // Filling itineraryIdToCutoffDuration and itineraryIdToCutoffTime
+    // Filling itineraryIdToCutoffDuration, itineraryIdToRealCutoffTime,
+    // and itineraryIdToRelativeCutoffTime
     links.itineraryIdToCutoffDuration.assign(input.itineraries.size(), MAX_DOUBLE);
-    links.itineraryIdToCutoffTime.assign(input.itineraries.size(), MAX_DOUBLE);
+    links.itineraryIdToRealCutoffTime.assign(input.itineraries.size(), MAX_DOUBLE);
+    links.itineraryIdToRelativeCutoffTime.assign(input.itineraries.size(), MAX_INDEX);
     for (const auto& event: input.events) {
         if (event.type == EventType::cutoff) {
             for (unsigned idItinerary : event.relatedItineraryIds) {
                 links.itineraryIdToCutoffDuration[idItinerary] = event.duration;
-                links.itineraryIdToCutoffTime[idItinerary] = event.realTime;
+                links.itineraryIdToRealCutoffTime[idItinerary] = event.realTime;
+                links.itineraryIdToRelativeCutoffTime[idItinerary] = event.relativeTime;
             }
         }
     }
     for (unsigned idItinerary = 0; idItinerary < input.itineraries.size(); ++idItinerary) {
         assert(links.itineraryIdToCutoffDuration[idItinerary] != MAX_DOUBLE);
-        assert(links.itineraryIdToCutoffTime[idItinerary] != MAX_DOUBLE);
+        assert(links.itineraryIdToRealCutoffTime[idItinerary] != MAX_DOUBLE);
+        assert(links.itineraryIdToRelativeCutoffTime[idItinerary] != MAX_INDEX);
     }
     links.itineraryIdToCutoffDuration.shrink_to_fit();
-    links.itineraryIdToCutoffTime.shrink_to_fit();
+    links.itineraryIdToRealCutoffTime.shrink_to_fit();
+    links.itineraryIdToRelativeCutoffTime.shrink_to_fit();
 }
 
 unsigned get2dVectorSize(const vector<vector<unsigned>>& target) {

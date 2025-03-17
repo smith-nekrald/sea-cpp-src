@@ -24,6 +24,7 @@ using std::size_t;
  * @param input The input data.
  * @param links The input links.
  * @param state The state of current evaluation.
+ * @param relativeTime Relative time at the consideration.
  * @param idxRoute The index of the route for computing bottleneck capacity.
  *
  *
@@ -34,6 +35,7 @@ double computeItineraryBottleneck(
         const InputData& input,
         const InputLinks& links,
         const State& state,
+        unsigned relativeTime,
         unsigned idxRoute);
 
 /**
