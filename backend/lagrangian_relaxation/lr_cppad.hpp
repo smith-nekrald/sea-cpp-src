@@ -11,6 +11,7 @@
 #include "index.h"
 #include "lr_cppad.h"
 #include "functions.h"
+#include "../baseline/api.h"
 
 #include <stdexcept>
 #include <cppad/cppad.hpp>
@@ -156,14 +157,20 @@ inline Type computeFunctionValue(const InputData& input,
                         double bottleneckDemand = computeItineraryBottleneck(
                                 input, links, state, timeParameters.timeEvent, idxRoute)
                                 /  route.showRate.estimatedProba;
+                        double shippingCost = computeUnitShippingCost(input, links, idxRoute);
                         Type optimalPrice = 0., demandValue = 0.;
                         if (demand.type == Demand::Type::linear) {
                             assert(demand.additive > 0. && demand.multiplicative < 0.);
-                            Type leftPrice = 0.,
-                                 rightPrice = -demand.additive / demand.multiplicative;
-                            leftPrice = std::max<Type>(leftPrice, Type(itinerary.returnPrice));
-                            rightPrice = std::min<Type>(
-                                    rightPrice, -bottleneckDemand / demand.multiplicative);
+                            Type leftPrice = std::max<Type>({
+                                    Type(0.),
+                                    Type(itinerary.returnPrice),
+                                    Type(shippingCost),
+                                    Type((demand.additive - bottleneckDemand)
+                                            / (-demand.multiplicative))
+                            });
+                            Type rightPrice = -demand.additive / demand.multiplicative;
+
+                            // To ensure right >= left.
                             rightPrice = std::max<Type>(leftPrice, rightPrice);
 
                             optimalPrice = std::max<Type>(leftPrice,
@@ -193,7 +200,8 @@ inline Type computeFunctionValue(const InputData& input,
                                             (demand.scale + LOG_EPS)
                                             / (bottleneckDemand + LOG_EPS))),
                                     Type(0.),
-                                    Type(itinerary.returnPrice)
+                                    Type(itinerary.returnPrice),
+                                    Type(shippingCost)
                             });
                             optimalPrice = std::max<Type>(
                                     minPrice, 1. / demand.sensitivity - yr);
