@@ -5,17 +5,11 @@
 // (c) Smith School of Business, 2023
 
 #include "evaluator.h"
-#include "../logging/logging.h"
 
 #include <cassert>
 #include <algorithm>
-#include <sstream>
-#include <iostream>
 
 namespace sea {
-
-using std::cout;
-using std::endl;
 
 using Event = InputData::Event;
 using EventType = Event::Type;

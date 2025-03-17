@@ -153,11 +153,11 @@ inline Type computeFunctionValue(const InputData& input,
                         const auto& demand = input.events[iter->first].demands[iter->second];
                         unsigned idxRoute = pricingEvent.relatedItineraryIds[iter->second];
                         const auto& route = input.itineraries[idxRoute];
+                        double bottleneckDemand = computeItineraryBottleneck(input, idxRoute)
+                                /  route.showRate.estimatedProba;
                         Type optimalPrice = 0., demandValue = 0.;
                         if (demand.type == Demand::Type::linear) {
-                            assert(demand.additive >= 0 && demand.multiplicative <= 0);
-                            double bottleneckDemand = computeItineraryBottleneck(input, idxRoute)
-                                /  route.showRate.estimatedProba;
+                            assert(demand.additive > 0. && demand.multiplicative < 0.);
                             Type leftPrice = 0.,
                                  rightPrice = -demand.additive / demand.multiplicative;
                             leftPrice = std::max<Type>(leftPrice, Type(itinerary.returnPrice));
@@ -185,11 +185,17 @@ inline Type computeFunctionValue(const InputData& input,
                             demandValue = std::max<Type>(Type(0.), demand.additive
                                 + optimalPrice * demand.multiplicative);
                         } else if (demand.type == Demand::Type::exponential) {
-                            assert(demand.sensitivity >= 0 && demand.scale >= 0);
+                            assert(demand.scale > 0. && demand.sensitivity > 0.);
+                            Type LOG_EPS = 1e-100;
+                            Type minPrice = std::max<Type>({
+                                    1. / demand.sensitivity * std::log(
+                                            (demand.scale + LOG_EPS)
+                                            / (bottleneckDemand + LOG_EPS)),
+                                    Type(0.),
+                                    Type(itinerary.returnPrice)
+                            });
                             optimalPrice = std::max<Type>(
-                                    Type(0.), 1. / demand.sensitivity - yr);
-                            optimalPrice = std::max<Type>(
-                                    optimalPrice, Type(itinerary.returnPrice));
+                                    minPrice, 1. / demand.sensitivity - yr);
                             demandValue = demand.scale * exp(
                                     -demand.sensitivity * optimalPrice);
                         } else {

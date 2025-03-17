@@ -23,11 +23,18 @@ using std::size_t;
  *
  * @param input The input data.
  * @param links The input links.
+ * @param state The state of current evaluation.
+ * @param idxRoute The index of the route for computing bottleneck capacity.
+ *
  *
  * @return The computed itinerary capacity bottleneck.
  *
  */
-double computeItineraryBottleneck(const InputData& input, unsigned idxRoute);
+double computeItineraryBottleneck(
+        const InputData& input,
+        const InputLinks& links,
+        const State& state,
+        unsigned idxRoute);
 
 /**
  * @brief Absolute value sum of vector pointwise difference. L1 norm.

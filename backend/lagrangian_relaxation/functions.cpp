@@ -5,24 +5,41 @@
 // (c) Smith School of Business, 2023
 
 #include "functions.h"
+#include "../../input/input_data.h"
 
 #include <limits>
 
 namespace sea {
 namespace backend {
 
-double computeItineraryBottleneck(const InputData& input, unsigned idxRoute) {
+double computeItineraryBottleneck(
+        const InputData& input,
+        const InputLinks& links,
+        const State& state,
+        unsigned idxRoute) {
     double bottleneckCapacity = std::numeric_limits<double>::max();
     const auto& route = input.itineraries[idxRoute];
     for (unsigned idxArc: route.orderedArcs) {
         const auto& arc = input.arcs[idxArc];
-        unsigned idxVessel = arc.vesselId.value();
-        const auto& vessel = input.vessels[idxVessel];
-        bottleneckCapacity = std::min(vessel.capacity, bottleneckCapacity);
+        if (arc.type == InputData::Arc::Type::travel) {
+            unsigned idxVessel = arc.vesselId.value();
+            const auto& vessel = input.vessels[idxVessel];
+            double availableCapacity = vessel.capacity;
+            for (unsigned idxThrough : links.itinerariesWithArc[idxArc]) {
+                const auto& routeThrough = input.itineraries[idxThrough];
+                if (itineraryShipped) {
+                    availableCapacity -= state.carriedOnRoute[idxThrough];
+                } else {
+                    availableCapacity -= state.accumulatedBookings[idxThrough] *
+                        routeThrough.showRate.estimatedProba;
+                }
+            }
+            availableCapacity = std::max(0., availableCapacity);
+            bottleneckCapacity = std::min(availableCapacity, bottleneckCapacity);
+        }
     }
     return bottleneckCapacity;
 }
-
 
 double vectorAbsDiffSum(const std::vector<double>& lhs, const std::vector<double>& rhs) {
     assert(lhs.size() == rhs.size());
