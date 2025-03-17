@@ -3,10 +3,10 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "input_links.h"
 
-#include <algorithm>
 #include <cassert>
 #include <iostream>
 #include <limits>
@@ -16,8 +16,6 @@ namespace sea {
 
 using std::cout;
 using std::endl;
-using std::sort;
-using std::unique;
 using EventType = InputData::Event::Type;
 using ArcType = InputData::Arc::Type;
 
@@ -126,19 +124,23 @@ void createInputLinks(const InputData& input, InputLinks* linksPtr) {
     }
     links.allotmentToGroups.shrink_to_fit();
 
-    // Filling itineraryIdToCutoffDuration
+    // Filling itineraryIdToCutoffDuration and itineraryIdToCutoffTime
     links.itineraryIdToCutoffDuration.assign(input.itineraries.size(), MAX_DOUBLE);
+    links.itineraryIdToCutoffTime.assign(input.itineraries.size(), MAX_DOUBLE);
     for (const auto& event: input.events) {
         if (event.type == EventType::cutoff) {
             for (unsigned idItinerary : event.relatedItineraryIds) {
                 links.itineraryIdToCutoffDuration[idItinerary] = event.duration;
+                links.itineraryIdToCutoffTime[idItinerary] = event.realTime;
             }
         }
     }
     for (unsigned idItinerary = 0; idItinerary < input.itineraries.size(); ++idItinerary) {
         assert(links.itineraryIdToCutoffDuration[idItinerary] != MAX_DOUBLE);
+        assert(links.itineraryIdToCutoffTime[idItinerary] != MAX_DOUBLE);
     }
     links.itineraryIdToCutoffDuration.shrink_to_fit();
+    links.itineraryIdToCutoffTime.shrink_to_fit();
 }
 
 unsigned get2dVectorSize(const vector<vector<unsigned>>& target) {

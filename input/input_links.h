@@ -8,7 +8,6 @@
  */
 #pragma once
 
-#include "../common.h"
 #include "input_data.h"
 
 #include <vector>
@@ -58,6 +57,9 @@ struct InputLinks {
     /// @brief Maps itinerary id to the duration of corresponding cut-off event.
     /// Indexed by itinerary-id.
     vector<double> itineraryIdToCutoffDuration;
+    /// @brief Maps itinerary id to the real time of the corresponding cut-off event.
+    /// Indexed by itinerary-id.
+    vector<double> itineraryIdToCutoffTime;
 };
 
 /// @brief Simple notation for shared pointer to InputLinks.
