@@ -146,9 +146,9 @@ CompositeSpotSorter::CompositeSpotSorter(
     sorters.push_back(std::make_unique<ByExpectedTotalProfit>(config));
     sorters.push_back(std::make_unique<ByExpectedUnitProfit>(config));
     sorters.push_back(std::make_unique<ByExpectedCapacity>(config));
-    const int RANDOM_COUNT = 12;
-    for (unsigned init_seed = 1; init_seed <= RANDOM_COUNT; ++init_seed) {
-        sorters.push_back(std::make_unique<RandomSpotSorter>(init_seed));
+    const size_t RANDOM_COUNT = 12;
+    for (size_t seed = 1; seed <= RANDOM_COUNT; ++seed) {
+        sorters.push_back(std::make_unique<RandomSpotSorter>(seed));
     }
     sorters.push_back(std::make_unique<TrivialItineraryOrder>());
 }
