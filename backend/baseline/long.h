@@ -92,6 +92,43 @@ protected:
 
 
 /**
+ * @brief Random Allotment Sorter. Selects the order of allotments randomly.
+ */
+class RandomAllotmentSorter: public IAllotmentSorter {
+public:
+    /**
+     * @brief Constructor for RandomAllotmentSorter.
+     *
+     * @param randomSeed Random seed.
+     * @param nAllotments Number of allotments.
+     */
+    RandomAllotmentSorter(size_t randomSeed, size_t nAllotments);
+    /**
+     * @brief Selects the order of allotments randomly.
+     *
+     * @return Vector with randomly selected order of allotments.
+     */
+    virtual std::vector<unsigned> selectOrder() const override;
+    /**
+     * @brief Getter for the name of the random allotment sorter.
+     *
+     * @return The name of the random allotment sorter.
+     */
+    virtual std::string getName() const override final;
+    /**
+     * @brief Virtual destructor to ensure correct C++ polymorphism.
+     */
+    virtual ~RandomAllotmentSorter() {};
+
+private:
+    /// @brief Random seed.
+    size_t seed;
+    /// @brief Number of allotments.
+    size_t allotmentCount;
+};
+
+
+/**
  * @brief Trivial Sorter. Selects the order 1, ..., nAllotments.
  * Usually this is the original order of allotments.
  */

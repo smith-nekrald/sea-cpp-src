@@ -15,6 +15,8 @@
 #include <sstream>
 #include <tuple>
 #include <iterator>
+#include <random>
+#include <cassert>
 
 namespace sea {
 namespace backend {
@@ -55,6 +57,24 @@ void AbstractAllotmentSorter::logMetricValues(const std::vector<double>& metricV
         logger.info("Allotment Id: " + std::to_string(idx)
                 + " Metric Value: " + std::to_string(metricValues[idx]));
     }
+}
+
+
+RandomAllotmentSorter::RandomAllotmentSorter(size_t randomSeed, size_t nAllotments)
+    : seed(randomSeed)
+    , allotmentCount(nAllotments) {}
+
+std::vector<unsigned> RandomAllotmentSorter::selectOrder() const {
+    std::vector<unsigned> allotmentOrder(allotmentCount, 0);
+    std::iota(std::begin(allotmentOrder), std::end(allotmentOrder), 0);
+    std::default_random_engine generator(seed);
+    generator.seed(seed);
+    std::shuffle(std::begin(allotmentOrder), std::end(allotmentOrder), generator);
+    return allotmentOrder;
+}
+
+std::string RandomAllotmentSorter::getName() const {
+    return "RandomAllotmentSorter:seed=" + std::to_string(seed);
 }
 
 
@@ -165,6 +185,12 @@ LongCompositeSorter::LongCompositeSorter(const BaselineAllotmentConfig& config)
     sorters.push_back(std::make_unique<ByUnitExpectedProfit>(config));
     sorters.push_back(std::make_unique<ByTotalExpectedCapacity>(config));
     sorters.push_back(std::make_unique<ByTotalOptimisticCapacity>(config));
+    const auto& input = config.inputManager->getConstData();
+    const size_t RANDOM_COUNT = 12;
+    for (size_t seed = 1; seed <= RANDOM_COUNT; ++seed) {
+        sorters.push_back(
+            std::make_unique<RandomAllotmentSorter>(seed, input.allotments.size()));
+    }
     sorters.push_back(std::make_unique<TrivialSorter>(config));
 }
 
