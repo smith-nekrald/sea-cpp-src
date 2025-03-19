@@ -6,6 +6,7 @@
 
 #include "spot.h"
 #include "plan.h"
+#include "api.h"
 #include "../../logging/logging.h"
 
 #include <algorithm>
@@ -75,6 +76,24 @@ double ByExpectedTotalProfit::getRouteMetric(
     return plan.expectedRevenue;
 }
 
+
+ByExpectedUnitProfit::ByExpectedUnitProfit(const BaselineSpotConfig& config)
+    : AbstractSpotSorter(config, "ByExpectedUnitProfit") {}
+
+double ByExpectedUnitProfit::getRouteMetric(
+        const BaselineStats& stats, Demand& demand, unsigned idxItinerary) const {
+    const auto& input = inputManager->getConstData();
+    const auto& links = linksManager->getConstData();
+    const auto& route = input.itineraries[idxItinerary];
+    ItineraryPlan plan = buildItineraryPlan(
+            inputManager->getConstData(),
+            linksManager->getConstData(),
+            stats, route, demand);
+    double shippingCost = computeUnitShippingCost(input, links, idxItinerary);
+    return (plan.price - shippingCost) * (route.showRate.estimatedProba)
+        + (plan.price - route.returnPrice) * (1. - route.showRate.estimatedProba);
+}
+
 TrivialItineraryOrder::TrivialItineraryOrder() {};
 
 std::vector<unsigned> TrivialItineraryOrder::selectOrder(
@@ -95,6 +114,7 @@ CompositeSpotSorter::CompositeSpotSorter(
         , metric(nullptr) {
     metric = std::make_unique<SpotEventProfitMetric>(config);
     sorters.push_back(std::make_unique<ByExpectedTotalProfit>(config));
+    sorters.push_back(std::make_unique<ByExpectedUnitProfit>(config));
     sorters.push_back(std::make_unique<TrivialItineraryOrder>());
 }
 
