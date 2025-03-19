@@ -100,6 +100,36 @@ double ByUnitExpectedProfit::getAllotmentMetric(unsigned allotmentId) const {
 }
 
 
+ByTotalExpectedCapacity::ByTotalExpectedCapacity(const BaselineAllotmentConfig& config)
+    : AbstractAllotmentSorter(config, "ByTotalExpectedCapacity") {}
+
+double ByTotalExpectedCapacity::getAllotmentMetric(unsigned allotmentId) const {
+    const auto& input = inputManager->getConstData();
+    const auto& allotment = input.allotments[allotmentId];
+    double expectedCapacity = 0.;
+    for (unsigned idxEntry = 0; idxEntry < allotment.entries.size(); ++idxEntry) {
+        const auto& entry = input.allotmentEntries[allotment.entries[idxEntry]];
+        expectedCapacity += entry.productAmount * entry.showRate.estimatedProba;
+    }
+    return expectedCapacity;
+}
+
+
+ByTotalOptimisticCapacity::ByTotalOptimisticCapacity(const BaselineAllotmentConfig& config)
+    : AbstractAllotmentSorter(config, "ByTotalOptimisticCapacity") {}
+
+double ByTotalOptimisticCapacity::getAllotmentMetric(unsigned allotmentId) const {
+    const auto& input = inputManager->getConstData();
+    const auto& allotment = input.allotments[allotmentId];
+    double optimisticCapacity = 0.;
+    for (unsigned idxEntry = 0; idxEntry < allotment.entries.size(); ++idxEntry) {
+        const auto& entry = input.allotmentEntries[allotment.entries[idxEntry]];
+        optimisticCapacity += entry.productAmount;
+    }
+    return optimisticCapacity;
+}
+
+
 EstimatedProfitMetric::EstimatedProfitMetric(const BaselineAllotmentConfig& config)
     : inputManager(config.inputManager)
     , linksManager(config.linksManager) {}
@@ -118,6 +148,7 @@ double EstimatedProfitMetric::score(const std::vector<unsigned>& allotmentOrder)
             double allotmentProfit = computeExpectedAllotmentProfit(input, links, allotmentId);
             if (allotmentProfit > 0.) {
                 updateStatsAtAllotmentSelection(&stats, input, allotmentId);
+                totalExpectedProfit += allotmentProfit;
             }
         }
     }
@@ -132,6 +163,8 @@ LongCompositeSorter::LongCompositeSorter(const BaselineAllotmentConfig& config)
     metric = std::make_unique<EstimatedProfitMetric>(config);
     sorters.push_back(std::make_unique<ByTotalExpectedProfit>(config));
     sorters.push_back(std::make_unique<ByUnitExpectedProfit>(config));
+    sorters.push_back(std::make_unique<ByTotalExpectedCapacity>(config));
+    sorters.push_back(std::make_unique<ByTotalOptimisticCapacity>(config));
     sorters.push_back(std::make_unique<TrivialSorter>(config));
 }
 

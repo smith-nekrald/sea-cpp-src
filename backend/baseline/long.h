@@ -17,15 +17,15 @@ namespace allotment {
 
 
 /**
- * @brief Config for baseline allotment 
+ * @brief Config for baseline allotment
  * sorters and allotment order metrics.
  */
 struct BaselineAllotmentConfig {
 public:
-    /// @brief Manager for Input Data. Configuration and 
+    /// @brief Manager for Input Data. Configuration and
     /// statistical information.
     ConstInputManagerPtr inputManager;
-    /// @brief Manager for Input Links. Precomputed indices 
+    /// @brief Manager for Input Links. Precomputed indices
     /// and structures on top of input data.
     ConstLinksManagerPtr linksManager;
 };
@@ -39,20 +39,20 @@ class AbstractAllotmentSorter: public IAllotmentSorter {
 public:
     /**
      * @brief Constructor for AbstractAllotmentSorter.
-     * 
+     *
      * @param config Configuration with input and links managers.
      * @param sorterName The name of the sorter.
      */
     AbstractAllotmentSorter(const BaselineAllotmentConfig& config, const std::string& sorterName);
     /**
      * @brief Orders allotments based on virtual method getAllotmentMetric providing metric proxy.
-     * 
+     *
      * @return Vector with ordered allotment identifiers (indices).
      */
     virtual std::vector<unsigned> selectOrder() const override;
     /**
      * @brief Getter for the name of the sorter.
-     * 
+     *
      * @return The name of the sorter.
      */
     virtual std::string getName() const override final;
@@ -65,7 +65,7 @@ protected:
     /**
      * @brief Computes the metric proxy for the allotment.
      * Examples - expected profit, or consumed capacity.
-     * 
+     *
      * @param allotmentId Identifier of the allotment.
      * @return The metric proxy for the allotment.
      */
@@ -74,7 +74,7 @@ protected:
 private:
     /**
      * @brief Logs the metric values for the allotments.
-     * 
+     *
      * @param metricValues The values of the metric for the allotments.
      */
     void logMetricValues(const std::vector<double>& metricValues) const;
@@ -99,19 +99,19 @@ class TrivialSorter: public IAllotmentSorter {
 public:
     /**
      * @brief Constructor for TrivialSorter.
-     * 
+     *
      * @param config Configuration with input and links managers.
      */
     TrivialSorter(const BaselineAllotmentConfig& config);
     /**
      * @brief Selects the order 1, ..., nAllotments.
-     * 
+     *
      * @return Vector with order <1, ..., nAllotments>.
      */
     virtual std::vector<unsigned> selectOrder() const override;
     /**
      * @brief Getter for the name of the trivial sorter.
-     * 
+     *
      * @return The name of the trivial sorter.
      */
     virtual std::string getName() const override final;
@@ -127,13 +127,13 @@ private:
 
 
 /**
- * @brief Sorter to order allotments by total expected profit. 
+ * @brief Sorter to order allotments by total expected profit.
  */
 class ByTotalExpectedProfit: public AbstractAllotmentSorter {
 public:
     /**
      * @brief Constructor for ByTotalExpectedProfit.
-     * 
+     *
      * @param config Configuration with input and links managers.
      */
     ByTotalExpectedProfit(const BaselineAllotmentConfig& config);
@@ -145,7 +145,7 @@ public:
 private:
     /**
      * @brief Computes the total expected profit for the allotment.
-     * 
+     *
      * @param allotmentId The index of the allotment.
      * @return The total expected profit for the allotment.
      */
@@ -153,13 +153,13 @@ private:
 };
 
 /**
- * @brief Sorter to order allotments by unit expected profit. 
+ * @brief Sorter to order allotments by unit expected profit.
  */
 class ByUnitExpectedProfit: public AbstractAllotmentSorter {
 public:
     /**
      * @brief Constructor for ByUnitExpectedProfit.
-     * 
+     *
      * @param config Configuration with input and links managers.
      */
     ByUnitExpectedProfit(const BaselineAllotmentConfig& config);
@@ -171,9 +171,67 @@ public:
 private:
     /**
      * @brief Computes the unit expected profit for the allotment.
-     * 
+     *
      * @param allotmentId The index of the allotment.
      * @return The unit expected profit for the allotment.
+     */
+    virtual double getAllotmentMetric(unsigned allotmentId) const;
+};
+
+
+/**
+ * @brief Sorter to order allotments by total expected
+ * shipped capacity (if booked, accepted, and not declined).
+ */
+class ByTotalExpectedCapacity: public AbstractAllotmentSorter {
+public:
+    /**
+     * @brief Constructor for ByTotalExpectedCapacity.
+     *
+     * @param config Configuration with input and links managers.
+     */
+    ByTotalExpectedCapacity(const BaselineAllotmentConfig& config);
+    /**
+     * @brief Virtual destructor to ensure correct C++ polymorphism.
+     */
+    virtual ~ByTotalExpectedCapacity() {};
+
+private:
+    /**
+     * @brief Computes the expected shipped capacity if
+     * booked, accepted and not declined for a particular allotment.
+     *
+     * @param allotmentId The index of the allotment.
+     * @return The described above capacity.
+     */
+    virtual double getAllotmentMetric(unsigned allotmentId) const;
+};
+
+
+/**
+ * @brief Sorter to order allotments by total
+ * capacity (if booked, accepted, all arrive, no declines).
+ */
+class ByTotalOptimisticCapacity: public AbstractAllotmentSorter {
+public:
+    /**
+     * @brief Constructor for ByTotalOptimisticCapacity.
+     *
+     * @param config Configuration with input and links managers.
+     */
+    ByTotalOptimisticCapacity(const BaselineAllotmentConfig& config);
+    /**
+     * @brief Virtual destructor to ensure correct C++ polymorphism.
+     */
+    virtual ~ByTotalOptimisticCapacity() {};
+
+private:
+    /**
+     * @brief Computes the expected shipped if booked, accepted,
+     * all arrive, and no declines for particular allotment.
+     *
+     * @param allotmentId The index of the allotment.
+     * @return The described above capacity.
      */
     virtual double getAllotmentMetric(unsigned allotmentId) const;
 };
@@ -187,15 +245,15 @@ class EstimatedProfitMetric: public IAllotmentOrderMetric {
 public:
     /**
      * @brief Constructor for EstimatedProfitMetric.
-     * 
+     *
      * @param config Configuration with input and links managers.
      */
     EstimatedProfitMetric(const BaselineAllotmentConfig& config);
     /**
      * @brief Computes the total expected profit proxy for the allotment order.
-     * In process, accounts for the allocated in-progress capacity by 
+     * In process, accounts for the allocated in-progress capacity by
      * tracking with local BaselineStats.
-     * 
+     *
      * @param allotmentOrder The order of allotments.
      * @return The computed total expected profit proxy for the allotment order.
      */
@@ -220,20 +278,20 @@ class LongCompositeSorter: public IAllotmentSorter {
 public:
     /**
      * @brief Constructor for LongCompositeSorter.
-     * 
+     *
      * @param config Configuration with input and links managers.
      */
     LongCompositeSorter(const BaselineAllotmentConfig& config);
     /**
-     * @brief Selects the order by sequentially applying different 
+     * @brief Selects the order by sequentially applying different
      * sorters, and selects the order with the highest metric value.
-     * 
+     *
      * @return Vector with the selected order of allotments.
      */
     virtual std::vector<unsigned> selectOrder() const override final;
     /**
      * @brief Getter for the name of the composite sorter.
-     * 
+     *
      * @return The name of the composite sorter.
      */
     virtual std::string getName() const override final;
@@ -245,7 +303,7 @@ public:
 private:
     /**
      * @brief Logs the score and order provided by a particular sorter.
-     * 
+     *
      * @param allotmentOrder The order of allotment indices.
      * @param sorterName The name of the sorter providing the allotment order.
      * @param reverseOrder Whether the original or reversed sorter output is considered.
