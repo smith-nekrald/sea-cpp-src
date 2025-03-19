@@ -14,6 +14,7 @@
 #include <tuple>
 #include <sstream>
 #include <ranges>
+#include <random>
 
 namespace sea {
 namespace backend {
@@ -105,6 +106,24 @@ double ByExpectedCapacity::getRouteMetric(
 }
 
 
+RandomSpotSorter::RandomSpotSorter(size_t randomSeed)
+    : seed(randomSeed) {}
+
+std::vector<unsigned> RandomSpotSorter::selectOrder(
+        const InputData::Event& event, [[maybe_unused]] const BaselineStats& stats) const {
+    assert(event.type == EventType::pricing);
+    std::vector<unsigned> itineraryIds = event.relatedItineraryIds;
+    std::default_random_engine generator(seed);
+    generator.seed(seed);
+    std::shuffle(itineraryIds.begin(), itineraryIds.end(), generator);
+    return itineraryIds;
+}
+
+std::string RandomSpotSorter::getName() const {
+    return "RandomSpotSorter:seed=" + std::to_string(seed);
+}
+
+
 TrivialItineraryOrder::TrivialItineraryOrder() {};
 
 std::vector<unsigned> TrivialItineraryOrder::selectOrder(
@@ -126,6 +145,11 @@ CompositeSpotSorter::CompositeSpotSorter(
     metric = std::make_unique<SpotEventProfitMetric>(config);
     sorters.push_back(std::make_unique<ByExpectedTotalProfit>(config));
     sorters.push_back(std::make_unique<ByExpectedUnitProfit>(config));
+    sorters.push_back(std::make_unique<ByExpectedCapacity>(config));
+    const int RANDOM_COUNT = 12;
+    for (unsigned init_seed = 0; init_seed <= RANDOM_COUNT; ++init_seed) {
+        sorters.push_back(std::make_unique<RandomSpotSorter>(init_seed));
+    }
     sorters.push_back(std::make_unique<TrivialItineraryOrder>());
 }
 

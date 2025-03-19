@@ -197,6 +197,41 @@ private:
 
 
 /**
+ * Sorts pricing itineraries according to a random order with particular seed.
+ */
+class RandomSpotSorter: public ISpotSorter {
+public:
+    /**
+     * @brief Constructor for RandomSpotSorter spot pricing itinerary sorter.
+     *
+     * @param seed Seed for a random engine.
+     */
+    RandomSpotSorter(size_t randomSeed);
+    /**
+     * @brief Sorts pricing itineraries randomly.
+     *
+     * @param event The considered pricing event.
+     * @param stats Baseline stats representing the current state information.
+     * @return The order of corresponding itinerary indices, in random order.
+     */
+    virtual std::vector<unsigned> selectOrder(
+            const InputData::Event& event, const BaselineStats& stats) const override final;
+    /**
+     * @brief Getter for the random spot pricing itinerary sorter name.
+     */
+    virtual std::string getName() const override final;
+    /**
+     * @brief Virtual destructor to ensure correct C++ polymorphism.
+     */
+    virtual ~RandomSpotSorter() {};
+
+private:
+    /// @brief Random engine seed.
+    size_t seed;
+};
+
+
+/**
  * @brief Trivial spot pricing itinerary sorter.
  * Returns sorting in the original order.
  */
