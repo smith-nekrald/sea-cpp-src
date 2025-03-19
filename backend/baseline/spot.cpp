@@ -70,9 +70,7 @@ double ByExpectedTotalProfit::getRouteMetric(
     const auto& input = inputManager->getConstData();
     const auto& route = input.itineraries[idxItinerary];
     ItineraryPlan plan = buildItineraryPlan(
-            inputManager->getConstData(),
-            linksManager->getConstData(),
-            stats, route, demand);
+            input, linksManager->getConstData(), stats, route, demand);
     return plan.expectedRevenue;
 }
 
@@ -86,13 +84,26 @@ double ByExpectedUnitProfit::getRouteMetric(
     const auto& links = linksManager->getConstData();
     const auto& route = input.itineraries[idxItinerary];
     ItineraryPlan plan = buildItineraryPlan(
-            inputManager->getConstData(),
-            linksManager->getConstData(),
-            stats, route, demand);
+            input, links, stats, route, demand);
     double shippingCost = computeUnitShippingCost(input, links, idxItinerary);
     return (plan.price - shippingCost) * (route.showRate.estimatedProba)
         + (plan.price - route.returnPrice) * (1. - route.showRate.estimatedProba);
 }
+
+
+ByExpectedCapacity::ByExpectedCapacity(const BaselineSpotConfig& config)
+    : AbstractSpotSorter(config, "ByExpectedCapacity") {}
+
+double ByExpectedCapacity::getRouteMetric(
+        const BaselineStats& stats, Demand& demand, unsigned idxItinerary) const {
+    const auto& input = inputManager->getConstData();
+    const auto& links = linksManager->getConstData();
+    const auto& route = input.itineraries[idxItinerary];
+    ItineraryPlan plan = buildItineraryPlan(
+            input, links, stats, route, demand);
+    return plan.demand * route.showRate.estimatedProba;
+}
+
 
 TrivialItineraryOrder::TrivialItineraryOrder() {};
 

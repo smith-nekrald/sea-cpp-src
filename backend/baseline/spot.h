@@ -127,7 +127,6 @@ private:
             const BaselineStats& stats,
             Demand& demand,
             unsigned idxItinerary) const override final;
-
 };
 
 
@@ -142,7 +141,6 @@ public:
      *
      * @param config Baseline spot configuration.
      */
-
     ByExpectedUnitProfit(const BaselineSpotConfig& config);
     /**
      * @brief Virtual destructor to ensure correct C++ polymorphism.
@@ -157,6 +155,39 @@ private:
      * @param demand The demand for the considered itinerary at considered pricing event.
      * @param idxItinerary The index of the considered itinerary.
      * @return The score value for a particular itinerary, proxy for local expected unit profit.
+     */
+    virtual double getRouteMetric(
+            const BaselineStats& stats,
+            Demand& demand,
+            unsigned idxItinerary) const override final;
+};
+
+
+/**
+ * @brief Sorts pricing itineraries by expected capacity if priced with estimated price.
+ */
+class ByExpectedCapacity : public AbstractSpotSorter {
+public:
+    /**
+     * @brief Constructor for ByExpectedCapacity spot pricing itinerary sorter.
+     *
+     * @param config Baseline spot configuration.
+     */
+    ByExpectedCapacity(const BaselineSpotConfig& config);
+    /**
+     * @brief Virtual destructor to ensure correct C++ polymorphism.
+     */
+    virtual ~ByExpectedCapacity() {};
+
+private:
+    /**
+     * @brief Scores the itinerary by capacity utilization if priced with estimated price.
+     *
+     * @param stats Baseline stats representing the current state information.
+     * @param demand The demand for the considered itinerary at considered pricing event.
+     * @param idxItinerary The index of the considered itinerary.
+     * @return The score value for a particular itinerary,
+     *      proxy for estimated capacity utilization.
      */
     virtual double getRouteMetric(
             const BaselineStats& stats,
