@@ -74,7 +74,7 @@ protected:
      * @return The score value for a particular itinerary.
      */
     virtual double getRouteMetric(
-            const BaselineStats& stats, Demand& demand, unsigned idxItinerary) const = 0;
+            const BaselineStats& stats, const Demand& demand, unsigned idxItinerary) const = 0;
 
 private:
     /**
@@ -125,7 +125,7 @@ private:
      */
     virtual double getRouteMetric(
             const BaselineStats& stats,
-            Demand& demand,
+            const Demand& demand,
             unsigned idxItinerary) const override final;
 };
 
@@ -158,7 +158,7 @@ private:
      */
     virtual double getRouteMetric(
             const BaselineStats& stats,
-            Demand& demand,
+            const Demand& demand,
             unsigned idxItinerary) const override final;
 };
 
@@ -191,7 +191,137 @@ private:
      */
     virtual double getRouteMetric(
             const BaselineStats& stats,
-            Demand& demand,
+            const Demand& demand,
+            unsigned idxItinerary) const override final;
+};
+
+
+/**
+ * @brief Sorts pricing itineraries by price estimated with buildItineraryPlan.
+ */
+class ByPrice : public AbstractSpotSorter {
+public:
+    /**
+     * @brief Constructor for ByPrice spot pricing itinerary sorter.
+     *
+     * @param config Baseline spot configuration.
+     */
+    ByPrice(const BaselineSpotConfig& config);
+    /**
+     * @brief Virtual destructor to ensure correct C++ polymorphism.
+     */
+    virtual ~ByPrice() {};
+
+private:
+    /**
+     * @brief Scores the itinerary by price estimated with buildItineraryPlan.
+     *
+     * @param stats Baseline stats representing the current state information.
+     * @param demand The demand for the considered itinerary at considered pricing event.
+     * @param idxItinerary The index of the considered itinerary.
+     * @return The score value for a particular itinerary, estimated proxy for price.
+     */
+    virtual double getRouteMetric(
+            const BaselineStats& stats,
+            const Demand& demand,
+            unsigned idxItinerary) const override final;
+};
+
+
+/**
+ * @brief Sorts pricing itineraries by show rates.
+ */
+class ByShowRate : public AbstractSpotSorter {
+public:
+    /**
+     * @brief Constructor for ByShowRate spot pricing itinerary sorter.
+     *
+     * @param config Baseline spot configuration.
+     */
+    ByShowRate(const BaselineSpotConfig& config);
+    /**
+     * @brief Virtual destructor to ensure correct C++ polymorphism.
+     */
+    virtual ~ByShowRate() {};
+
+private:
+    /**
+     * @brief Scores the itinerary by show probability.
+     *
+     * @param stats Baseline stats representing the current state information.
+     * @param demand The demand for the considered itinerary at considered pricing event.
+     * @param idxItinerary The index of the considered itinerary.
+     * @return The score value for a particular itinerary, show rate.
+     */
+    virtual double getRouteMetric(
+            const BaselineStats& stats,
+            const Demand& demand,
+            unsigned idxItinerary) const override final;
+};
+
+
+/**
+ * @brief Sorts pricing itineraries by optimistic capacity (if all demand shows)
+ * estimated with buildItineraryPlan.
+ */
+class ByOptimisticCapacity : public AbstractSpotSorter {
+public:
+    /**
+     * @brief Constructor for ByOptimisticCapacity spot pricing itinerary sorter.
+     *
+     * @param config Baseline spot configuration.
+     */
+    ByOptimisticCapacity(const BaselineSpotConfig& config);
+    /**
+     * @brief Virtual destructor to ensure correct C++ polymorphism.
+     */
+    virtual ~ByOptimisticCapacity() {};
+
+private:
+    /**
+     * @brief Scores the itinerary by optimistic capacity.
+     *
+     * @param stats Baseline stats representing the current state information.
+     * @param demand The demand for the considered itinerary at considered pricing event.
+     * @param idxItinerary The index of the considered itinerary.
+     * @return The score value for a particular itinerary, optimistic capacity to allocate.
+     */
+    virtual double getRouteMetric(
+            const BaselineStats& stats,
+            const Demand& demand,
+            unsigned idxItinerary) const override final;
+};
+
+
+/**
+ * @brief Sorts pricing itineraries by optimistic profit
+ * (if all demand shows) estimated with buildItineraryPlan.
+ */
+class ByOptimisticProfit: public AbstractSpotSorter {
+public:
+    /**
+     * @brief Constructor for ByOptimisticProfit spot pricing itinerary sorter.
+     *
+     * @param config Baseline spot configuration.
+     */
+    ByOptimisticProfit(const BaselineSpotConfig& config);
+    /**
+     * @brief Virtual destructor to ensure correct C++ polymorphism.
+     */
+    virtual ~ByOptimisticProfit() {};
+
+private:
+    /**
+     * @brief Scores the itinerary by optimistic profit.
+     *
+     * @param stats Baseline stats representing the current state information.
+     * @param demand The demand for the considered itinerary at considered pricing event.
+     * @param idxItinerary The index of the considered itinerary.
+     * @return The score value for a particular itinerary, optimistic profit if all demand shows.
+     */
+    virtual double getRouteMetric(
+            const BaselineStats& stats,
+            const Demand& demand,
             unsigned idxItinerary) const override final;
 };
 

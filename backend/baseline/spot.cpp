@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
 #include <tuple>
 #include <sstream>
 #include <ranges>
@@ -67,7 +68,7 @@ ByExpectedTotalProfit::ByExpectedTotalProfit(const BaselineSpotConfig& config)
     : AbstractSpotSorter(config, "ByExpectedTotalProfit") {}
 
 double ByExpectedTotalProfit::getRouteMetric(
-        const BaselineStats& stats, Demand& demand, unsigned idxItinerary) const {
+        const BaselineStats& stats, const Demand& demand, unsigned idxItinerary) const {
     const auto& input = inputManager->getConstData();
     const auto& route = input.itineraries[idxItinerary];
     ItineraryPlan plan = buildItineraryPlan(
@@ -80,7 +81,7 @@ ByExpectedUnitProfit::ByExpectedUnitProfit(const BaselineSpotConfig& config)
     : AbstractSpotSorter(config, "ByExpectedUnitProfit") {}
 
 double ByExpectedUnitProfit::getRouteMetric(
-        const BaselineStats& stats, Demand& demand, unsigned idxItinerary) const {
+        const BaselineStats& stats, const Demand& demand, unsigned idxItinerary) const {
     const auto& input = inputManager->getConstData();
     const auto& links = linksManager->getConstData();
     const auto& route = input.itineraries[idxItinerary];
@@ -96,13 +97,71 @@ ByExpectedCapacity::ByExpectedCapacity(const BaselineSpotConfig& config)
     : AbstractSpotSorter(config, "ByExpectedCapacity") {}
 
 double ByExpectedCapacity::getRouteMetric(
-        const BaselineStats& stats, Demand& demand, unsigned idxItinerary) const {
+        const BaselineStats& stats, const Demand& demand, unsigned idxItinerary) const {
     const auto& input = inputManager->getConstData();
     const auto& links = linksManager->getConstData();
     const auto& route = input.itineraries[idxItinerary];
     ItineraryPlan plan = buildItineraryPlan(
             input, links, stats, route, demand);
     return plan.demand * route.showRate.estimatedProba;
+}
+
+
+ByPrice::ByPrice(const BaselineSpotConfig& config)
+    : AbstractSpotSorter(config, "ByPrice") {}
+
+double ByPrice::getRouteMetric(
+        const BaselineStats& stats, const Demand& demand, unsigned idxItinerary) const {
+    const auto& input = inputManager->getConstData();
+    const auto& links = linksManager->getConstData();
+    const auto& route = input.itineraries[idxItinerary];
+    ItineraryPlan plan = buildItineraryPlan(
+            input, links, stats, route, demand);
+    return plan.price;
+}
+
+
+ByShowRate::ByShowRate(const BaselineSpotConfig& config)
+    : AbstractSpotSorter(config, "ByShowRate") {}
+
+double ByShowRate::getRouteMetric(
+        [[maybe_unused]] const BaselineStats& stats,
+        [[maybe_unused]] const Demand& demand,
+        unsigned idxItinerary) const {
+    const auto& input = inputManager->getConstData();
+    const auto& route = input.itineraries[idxItinerary];
+    return route.showRate.estimatedProba;
+}
+
+
+ByOptimisticCapacity::ByOptimisticCapacity(const BaselineSpotConfig& config)
+    : AbstractSpotSorter(config, "ByOptimisticCapacity") {}
+
+double ByOptimisticCapacity::getRouteMetric(
+        const BaselineStats& stats, const Demand& demand, unsigned idxItinerary) const {
+    const auto& input = inputManager->getConstData();
+    const auto& links = linksManager->getConstData();
+    const auto& route = input.itineraries[idxItinerary];
+    ItineraryPlan plan = buildItineraryPlan(
+            input, links, stats, route, demand);
+    return plan.demand;
+}
+
+
+ByOptimisticProfit::ByOptimisticProfit(const BaselineSpotConfig& config)
+    : AbstractSpotSorter(config, "ByOptimisticProfit") {}
+
+double ByOptimisticProfit::getRouteMetric(
+        const BaselineStats& stats, const Demand& demand, unsigned idxItinerary) const {
+    const auto& input = inputManager->getConstData();
+    const auto& links = linksManager->getConstData();
+    const auto& route = input.itineraries[idxItinerary];
+    ItineraryPlan plan = buildItineraryPlan(
+            input, links, stats, route, demand);
+    if (plan.price == std::numeric_limits<double>::max()) {
+        return 0.;
+    }
+    return plan.demand * (plan.price - computeUnitShippingCost(input, links, idxItinerary));
 }
 
 
@@ -146,11 +205,15 @@ CompositeSpotSorter::CompositeSpotSorter(
     sorters.push_back(std::make_unique<ByExpectedTotalProfit>(config));
     sorters.push_back(std::make_unique<ByExpectedUnitProfit>(config));
     sorters.push_back(std::make_unique<ByExpectedCapacity>(config));
+    sorters.push_back(std::make_unique<ByPrice>(config));
+    sorters.push_back(std::make_unique<ByShowRate>(config));
+    sorters.push_back(std::make_unique<ByOptimisticCapacity>(config));
+    sorters.push_back(std::make_unique<ByOptimisticProfit>(config));
+    sorters.push_back(std::make_unique<TrivialItineraryOrder>());
     const size_t RANDOM_COUNT = 12;
     for (size_t seed = 1; seed <= RANDOM_COUNT; ++seed) {
         sorters.push_back(std::make_unique<RandomSpotSorter>(seed));
     }
-    sorters.push_back(std::make_unique<TrivialItineraryOrder>());
 }
 
 std::vector<unsigned> CompositeSpotSorter::selectOrder(
