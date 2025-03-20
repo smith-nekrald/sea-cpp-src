@@ -46,7 +46,7 @@ GreedyAlgorithm::GreedyAlgorithm(const GreedyConfig& aConfig)
 }
 
 std::string GreedyAlgorithm::getName() const {
-    return "Algorithm:<fcfs,greedy>";
+    return "Algorithm:<baseline_allotment,baseline_spot>";
 }
 
 void GreedyAlgorithm::submitAction(ConstActionManagerPtr newManager) {
