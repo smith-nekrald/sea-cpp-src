@@ -150,6 +150,57 @@ double ByTotalOptimisticCapacity::getAllotmentMetric(unsigned allotmentId) const
 }
 
 
+ByWeightedShowRate::ByWeightedShowRate(const BaselineAllotmentConfig& config)
+    : AbstractAllotmentSorter(config, "ByWeightedShowRate") {}
+
+double ByWeightedShowRate::getAllotmentMetric(unsigned allotmentId) const {
+    const auto& input = inputManager->getConstData();
+    const auto& allotment = input.allotments[allotmentId];
+    double weightedShowRate = 0.;
+    size_t nEntries = 0;
+    for (unsigned idxEntry = 0; idxEntry < allotment.entries.size(); ++idxEntry) {
+        const auto& entry = input.allotmentEntries[allotment.entries[idxEntry]];
+        weightedShowRate += entry.productAmount * entry.showRate.estimatedProba;
+        nEntries += entry.productAmount;
+    }
+    weightedShowRate /= nEntries;
+    return weightedShowRate;
+}
+
+
+ByWeightedPrice::ByWeightedPrice(const BaselineAllotmentConfig& config)
+    : AbstractAllotmentSorter(config, "ByWeightedPrice") {}
+
+double ByWeightedPrice::getAllotmentMetric(unsigned allotmentId) const {
+    const auto& input = inputManager->getConstData();
+    const auto& allotment = input.allotments[allotmentId];
+    double weightedPrice = 0.;
+    size_t nEntries = 0;
+    for (unsigned idxEntry = 0; idxEntry < allotment.entries.size(); ++idxEntry) {
+        const auto& entry = input.allotmentEntries[allotment.entries[idxEntry]];
+        weightedPrice += entry.price * entry.productAmount;
+        nEntries += entry.productAmount;
+    }
+    weightedPrice /= nEntries;
+    return weightedPrice;
+}
+
+
+ByTotalOptimisticProfit::ByTotalOptimisticProfit(const BaselineAllotmentConfig& config)
+    : AbstractAllotmentSorter(config, "ByTotalOptimisticProfit") {}
+
+double ByTotalOptimisticProfit::getAllotmentMetric(unsigned allotmentId) const {
+    const auto& input = inputManager->getConstData();
+    const auto& allotment = input.allotments[allotmentId];
+    double optimisticProfit = 0.;
+    for (unsigned idxEntry = 0; idxEntry < allotment.entries.size(); ++idxEntry) {
+        const auto& entry = input.allotmentEntries[allotment.entries[idxEntry]];
+        optimisticProfit += entry.productAmount * entry.price;
+    }
+    return optimisticProfit;
+}
+
+
 EstimatedProfitMetric::EstimatedProfitMetric(const BaselineAllotmentConfig& config)
     : inputManager(config.inputManager)
     , linksManager(config.linksManager) {}
@@ -185,13 +236,16 @@ LongCompositeSorter::LongCompositeSorter(const BaselineAllotmentConfig& config)
     sorters.push_back(std::make_unique<ByUnitExpectedProfit>(config));
     sorters.push_back(std::make_unique<ByTotalExpectedCapacity>(config));
     sorters.push_back(std::make_unique<ByTotalOptimisticCapacity>(config));
+    sorters.push_back(std::make_unique<ByWeightedShowRate>(config));
+    sorters.push_back(std::make_unique<ByWeightedPrice>(config));
+    sorters.push_back(std::make_unique<ByTotalOptimisticProfit>(config));
+    sorters.push_back(std::make_unique<TrivialSorter>(config));
     const auto& input = config.inputManager->getConstData();
     const size_t RANDOM_COUNT = 12;
     for (size_t seed = 1; seed <= RANDOM_COUNT; ++seed) {
         sorters.push_back(
             std::make_unique<RandomAllotmentSorter>(seed, input.allotments.size()));
     }
-    sorters.push_back(std::make_unique<TrivialSorter>(config));
 }
 
 std::vector<unsigned> LongCompositeSorter::selectOrder() const {

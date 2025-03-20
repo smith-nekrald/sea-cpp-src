@@ -108,7 +108,7 @@ public:
      *
      * @return Vector with randomly selected order of allotments.
      */
-    virtual std::vector<unsigned> selectOrder() const override;
+    virtual std::vector<unsigned> selectOrder() const override final;
     /**
      * @brief Getter for the name of the random allotment sorter.
      *
@@ -145,7 +145,7 @@ public:
      *
      * @return Vector with order <1, ..., nAllotments>.
      */
-    virtual std::vector<unsigned> selectOrder() const override;
+    virtual std::vector<unsigned> selectOrder() const override final;
     /**
      * @brief Getter for the name of the trivial sorter.
      *
@@ -186,7 +186,7 @@ private:
      * @param allotmentId The index of the allotment.
      * @return The total expected profit for the allotment.
      */
-    virtual double getAllotmentMetric(unsigned allotmentId) const;
+    virtual double getAllotmentMetric(unsigned allotmentId) const override final;
 };
 
 /**
@@ -212,7 +212,7 @@ private:
      * @param allotmentId The index of the allotment.
      * @return The unit expected profit for the allotment.
      */
-    virtual double getAllotmentMetric(unsigned allotmentId) const;
+    virtual double getAllotmentMetric(unsigned allotmentId) const override final;
 };
 
 
@@ -241,7 +241,7 @@ private:
      * @param allotmentId The index of the allotment.
      * @return The described above capacity.
      */
-    virtual double getAllotmentMetric(unsigned allotmentId) const;
+    virtual double getAllotmentMetric(unsigned allotmentId) const override final;
 };
 
 
@@ -270,7 +270,86 @@ private:
      * @param allotmentId The index of the allotment.
      * @return The described above capacity.
      */
-    virtual double getAllotmentMetric(unsigned allotmentId) const;
+    virtual double getAllotmentMetric(unsigned allotmentId) const override final;
+};
+
+/**
+ * @brief Sorter to order allotments by weighted show rate.
+ */
+class ByWeightedShowRate: public AbstractAllotmentSorter {
+public:
+    /**
+     * @brief Constructor for ByWeightedShowRate.
+     *
+     * @param config Configuration with input and links managers.
+     */
+    ByWeightedShowRate(const BaselineAllotmentConfig& config);
+    /**
+     * @brief Virtual destructor to ensure correct C++ polymorphism.
+     */
+    virtual ~ByWeightedShowRate() {};
+
+private:
+    /**
+     * @brief Computes the weighted show rate for a particular allotment.
+     *
+     * @param allotmentId The index of the allotment.
+     * @return The described above value.
+     */
+    virtual double getAllotmentMetric(unsigned allotmentId) const override final;
+};
+
+/**
+ * @brief Sorter to order allotments by weighted price.
+ */
+class ByWeightedPrice: public AbstractAllotmentSorter {
+public:
+    /**
+     * @brief Constructor for ByWeightedPrice.
+     *
+     * @param config Configuration with input and links managers.
+     */
+    ByWeightedPrice(const BaselineAllotmentConfig& config);
+    /**
+     * @brief Virtual destructor to ensure correct C++ polymorphism.
+     */
+    virtual ~ByWeightedPrice() {};
+
+private:
+    /**
+     * @brief Computes the weighted price for a particular allotment.
+     *
+     * @param allotmentId The index of the allotment.
+     * @return The described above value.
+     */
+    virtual double getAllotmentMetric(unsigned allotmentId) const override final;
+};
+
+/**
+ * @brief Sorter to order allotments by total optimistic (in sense all shows) profit.
+ */
+class ByTotalOptimisticProfit: public AbstractAllotmentSorter {
+public:
+    /**
+     * @brief Constructor for ByTotalOptimisticProfit.
+     *
+     * @param config Configuration with input and links managers.
+     */
+    ByTotalOptimisticProfit(const BaselineAllotmentConfig& config);
+    /**
+     * @brief Virtual destructor to ensure correct C++ polymorphism.
+     */
+    virtual ~ByTotalOptimisticProfit() {};
+
+private:
+    /**
+     * @brief Computes the total optimistic profit (when all
+     * demand shows) for a particular allotment.
+     *
+     * @param allotmentId The index of the allotment.
+     * @return The described above value.
+     */
+    virtual double getAllotmentMetric(unsigned allotmentId) const override final;
 };
 
 
