@@ -6,7 +6,7 @@
 
 #include "spot.h"
 #include "plan.h"
-#include "api.h"
+#include "../utils/functions.h"
 #include "../../logging/logging.h"
 
 #include <algorithm>

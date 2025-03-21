@@ -6,6 +6,7 @@
 
 #include "plan.h"
 #include "api.h"
+#include "../utils/functions.h"
 
 #include <limits>
 #include <cmath>

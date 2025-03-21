@@ -5,6 +5,7 @@
 // (c) Smith School of Business, 2025
 
 #include "api.h"
+#include "../utils/functions.h"
 
 #include <cassert>
 #include <limits>
@@ -111,27 +112,6 @@ void updateStatsAtAllotmentSelection(
             }
         }
     }
-}
-
-double computeUnitShippingCost(
-        const InputData& input, const InputLinks& links, size_t idxRoute) {
-    const InputData::Itinerary& route = input.itineraries[idxRoute];
-    double shippingCost = route.cost;
-
-    size_t idxStartArc = route.orderedArcs.front();
-    const InputData::Arc& startArc = input.arcs[idxStartArc];
-    const InputData::Node& startNode = input.nodes[startArc.fromNode];
-    const InputData::Port& startPort = input.ports[startNode.portId];
-    shippingCost += startPort.hiringCost;
-    shippingCost += links.itineraryIdToCutoffDuration[idxRoute] * startPort.storageCost;
-
-    size_t idxFinalArc = route.orderedArcs.back();
-    const InputData::Arc& finalArc = input.arcs[idxFinalArc];
-    const InputData::Node& finalNode = input.nodes[finalArc.toNode];
-    const InputData::Port& finalPort = input.ports[finalNode.portId];
-    shippingCost += finalPort.offHiringCost;
-
-    return shippingCost;
 }
 
 double computeExpectedAllotmentProfit(

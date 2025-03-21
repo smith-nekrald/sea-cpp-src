@@ -19,26 +19,6 @@ using std::size_t;
 // Implemented at: functions.cpp.
 
 /**
- * @brief Computes the capacity bottleneck for itinerary.
- *
- * @param input The input data.
- * @param links The input links.
- * @param state The state of current evaluation.
- * @param relativeTime Relative time at the consideration.
- * @param idxRoute The index of the route for computing bottleneck capacity.
- *
- *
- * @return The computed itinerary capacity bottleneck.
- *
- */
-double computeItineraryBottleneck(
-        const InputData& input,
-        const InputLinks& links,
-        const State& state,
-        unsigned relativeTime,
-        unsigned idxRoute);
-
-/**
  * @brief Absolute value sum of vector pointwise difference. L1 norm.
  *
  * @param lhs The first vector.

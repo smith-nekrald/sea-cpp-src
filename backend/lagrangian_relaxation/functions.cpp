@@ -6,51 +6,10 @@
 // (c) Smith School of Business, 2025
 
 #include "functions.h"
-#include "../../input/input_data.h"
 
-#include <limits>
-#include <set>
 
 namespace sea {
 namespace backend {
-
-double computeItineraryBottleneck(
-        const InputData& input,
-        const InputLinks& links,
-        const State& state,
-        unsigned relativeTime,
-        unsigned idxRoute) {
-    double bottleneckCapacity = std::numeric_limits<double>::max();
-    if (relativeTime == std::numeric_limits<unsigned>::max()) {
-        relativeTime = 0;
-    }
-    const auto& route = input.itineraries[idxRoute];
-    for (unsigned idxArc: route.orderedArcs) {
-        const auto& arc = input.arcs[idxArc];
-        if (arc.type == InputData::Arc::Type::travel) {
-            unsigned idxVessel = arc.vesselId.value();
-            const auto& vessel = input.vessels[idxVessel];
-            double availableCapacity = vessel.capacity;
-            std::set<unsigned> consideredRoutes;
-            for (unsigned idxThrough : links.itinerariesWithArc[idxArc]) {
-                assert(consideredRoutes.find(idxThrough) == consideredRoutes.end());
-                const auto& routeThrough = input.itineraries[idxThrough];
-                unsigned routeCutOff = links.itineraryIdToRelativeCutoffTime[idxThrough];
-                bool itineraryShipped = (routeCutOff < relativeTime);
-                if (itineraryShipped) {
-                    availableCapacity -= state.carriedOnRoute[idxThrough];
-                } else {
-                    availableCapacity -= state.accumulatedBookings[idxThrough] *
-                        routeThrough.showRate.estimatedProba;
-                }
-                consideredRoutes.insert(idxThrough);
-            }
-            availableCapacity = std::max(0., availableCapacity);
-            bottleneckCapacity = std::min(availableCapacity, bottleneckCapacity);
-        }
-    }
-    return bottleneckCapacity;
-}
 
 double vectorAbsDiffSum(const std::vector<double>& lhs, const std::vector<double>& rhs) {
     assert(lhs.size() == rhs.size());

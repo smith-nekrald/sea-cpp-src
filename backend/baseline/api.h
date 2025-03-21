@@ -70,17 +70,6 @@ void updateStatsAtAllotmentSelection(
         BaselineStats* stats, const InputData& input, size_t idxAllotment);
 
 /**
- * @brief Computs shipping cost per TEU for a given itinerary.
- *
- * @param input Input data, contains statistical input information.
- * @param links Input links, contains pre-computed structures based on input data.
- * @param idxRoute The index of the itinerary.
- * @return double The value of unit shipping cost.
- */
-double computeUnitShippingCost(
-        const InputData& input, const InputLinks& links, size_t idxRoute);
-
-/**
  * @brief Computes expected allotment profit on selection assuming future shipping.
  *
  * @param input Input data, contains statistical input information.
