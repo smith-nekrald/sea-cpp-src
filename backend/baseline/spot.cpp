@@ -87,7 +87,7 @@ double ByExpectedUnitProfit::getRouteMetric(
     const auto& route = input.itineraries[idxItinerary];
     ItineraryPlan plan = buildItineraryPlan(
             input, links, stats, route, demand);
-    double shippingCost = computeUnitShippingCost(input, links, idxItinerary);
+    double shippingCost = computeUnitShippingCost(input, links, idxItinerary, true);
     return (plan.price - shippingCost) * (route.showRate.estimatedProba)
         + (plan.price - route.returnPrice) * (1. - route.showRate.estimatedProba);
 }
@@ -161,7 +161,7 @@ double ByOptimisticProfit::getRouteMetric(
     if (plan.price == std::numeric_limits<double>::max()) {
         return 0.;
     }
-    return plan.demand * (plan.price - computeUnitShippingCost(input, links, idxItinerary));
+    return plan.demand * (plan.price - computeUnitShippingCost(input, links, idxItinerary, true));
 }
 
 

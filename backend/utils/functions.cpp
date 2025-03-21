@@ -9,6 +9,7 @@
 #include <limits>
 #include <set>
 #include <cassert>
+#include <cmath>
 
 namespace sea {
 namespace backend {
@@ -64,7 +65,8 @@ double computeAvailableArcCapacity(
 }
 
 double computeUnitShippingCost(
-        const InputData& input, const InputLinks& links, size_t idxRoute) {
+        const InputData& input, const InputLinks& links,
+        size_t idxRoute, bool countHiringOffhiring) {
     const InputData::Itinerary& route = input.itineraries[idxRoute];
     double shippingCost = route.cost;
 
@@ -72,18 +74,38 @@ double computeUnitShippingCost(
     const InputData::Arc& startArc = input.arcs[idxStartArc];
     const InputData::Node& startNode = input.nodes[startArc.fromNode];
     const InputData::Port& startPort = input.ports[startNode.portId];
-    shippingCost += startPort.hiringCost;
+    if (countHiringOffhiring) {
+        shippingCost += startPort.hiringCost;
+    }
     shippingCost += links.itineraryIdToCutoffDuration[idxRoute] * startPort.storageCost;
 
     size_t idxFinalArc = route.orderedArcs.back();
     const InputData::Arc& finalArc = input.arcs[idxFinalArc];
     const InputData::Node& finalNode = input.nodes[finalArc.toNode];
     const InputData::Port& finalPort = input.ports[finalNode.portId];
-    shippingCost += finalPort.offHiringCost;
+    if (countHiringOffhiring) {
+        shippingCost += finalPort.offHiringCost;
+    }
 
     return shippingCost;
 }
 
+double computeSpotRevenueProxy(
+        double price, double amount, double shippingCost, double returnPrice, double showProba) {
+    return amount * (
+            showProba * (price - shippingCost) + (1. - showProba) * (price - returnPrice));
+}
+
+double getDemandByPrice(const Demand& demand, double price) {
+    assert(price >= 0.);
+    if (demand.type == Demand::Type::linear) {
+        return std::max(0., demand.additive + demand.multiplicative * price);
+    } else if (demand.type == Demand::Type::exponential) {
+        return demand.scale * std::exp(-price * demand.sensitivity);
+    } else {
+        throw std::domain_error("Unexpected demand type.");
+    }
+}
 
 } // namespace backend
 } // namespace sea

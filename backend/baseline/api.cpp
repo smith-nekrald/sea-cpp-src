@@ -120,7 +120,7 @@ double computeExpectedAllotmentProfit(
     double allotmentExpectedProfit = 0.;
     for (unsigned idxEntry = 0; idxEntry < allotment.entries.size(); ++idxEntry) {
         const auto& entry = input.allotmentEntries[allotment.entries[idxEntry]];
-        double shippingCost = computeUnitShippingCost(input, links, entry.itinerary);
+        double shippingCost = computeUnitShippingCost(input, links, entry.itinerary, true);
         allotmentExpectedProfit += entry.productAmount * (
             (entry.price - shippingCost) * entry.showRate.estimatedProba +
             entry.cancellationPrice * (1. - entry.showRate.estimatedProba)

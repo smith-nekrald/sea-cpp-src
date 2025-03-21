@@ -55,11 +55,35 @@ double computeItineraryBottleneck(
  * @param input Input data, contains statistical input information.
  * @param links Input links, contains pre-computed structures based on input data.
  * @param idxRoute The index of the itinerary.
+ * @param countHiringOffhiring Flag indicating if to count hiring and offhiring costs.
  * @return double The value of unit shipping cost.
  */
 double computeUnitShippingCost(
-        const InputData& input, const InputLinks& links, size_t idxRoute);
+        const InputData& input, const InputLinks& links,
+        size_t idxRoute, bool countHiringOffhiring);
 
+/**
+ * @brief Computes expected revenue proxy based on the price, amount, shipping cost,
+ * return price and show probability.
+ *
+ * @param price The price per TEU.
+ * @param amount The amount of TEUs.
+ * @param shippingCost Shipping cost per TEU.
+ * @param returnPrice Price to return on cancellation.
+ * @param showProba Show probability.
+ * @return The expected revenue proxy.
+ */
+double computeSpotRevenueProxy(
+        double price, double amount, double shippingCost, double returnPrice, double showProba);
+
+/**
+ * @brief Computes the demand at provided price.
+ *
+ * @param demand The demand structure.
+ * @param price The provided price.
+ * @return The demand at provided price.
+ */
+double getDemandByPrice(const Demand& demand, double price);
 
 } // namespace backend
 } // namespace sea

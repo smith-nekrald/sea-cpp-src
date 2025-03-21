@@ -157,7 +157,8 @@ inline Type computeFunctionValue(const InputData& input,
                         double bottleneckDemand = computeItineraryBottleneck(
                                 input, links, state, timeParameters.timeEvent, idxRoute)
                                 /  route.showRate.estimatedProba;
-                        double shippingCost = computeUnitShippingCost(input, links, idxRoute);
+                        double shippingCost = computeUnitShippingCost(
+                                input, links, idxRoute, false);
                         Type optimalPrice = 0., demandValue = 0.;
                         if (demand.type == Demand::Type::linear) {
                             assert(demand.additive > 0. && demand.multiplicative < 0.);

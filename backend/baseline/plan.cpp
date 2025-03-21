@@ -17,13 +17,6 @@ namespace sea {
 namespace backend {
 namespace spot {
 
-
-double computeRevenueProxy(
-        double price, double amount, double shippingCost, double returnPrice, double showProba) {
-    return amount * (
-            showProba * (price - shippingCost) + (1. - showProba) * (price - returnPrice));
-}
-
 ItineraryPlan buildItineraryPlan(
         const InputData& input,
         const InputLinks& links,
@@ -41,7 +34,7 @@ ItineraryPlan buildItineraryPlan(
         return {idxRoute, INF, 0, 0};
     }
     // Compute complete shipping cost.
-    double shippingCost = backend::computeUnitShippingCost(input, links, idxRoute);
+    double shippingCost = backend::computeUnitShippingCost(input, links, idxRoute, true);
 
     // Find optimal price and demand.
     double optimalDemand = 0., optimalPrice = INF;
@@ -100,11 +93,11 @@ ItineraryPlan buildItineraryPlan(
     } else {
         throw std::logic_error("Unexpected demand type!");
     }
-    double optimalRevenue = computeRevenueProxy(
+    double optimalRevenue = computeSpotRevenueProxy(
             optimalPrice, optimalDemand, shippingCost,
             route.returnPrice, route.showRate.estimatedProba);
     for (auto [price, amount] : std::views::zip(borderPrices, borderDemands)) {
-        double revenue = computeRevenueProxy(
+        double revenue = computeSpotRevenueProxy(
                 price, amount, shippingCost, route.returnPrice, route.showRate.estimatedProba);
         if (revenue > optimalRevenue) {
             std::tie(optimalPrice, optimalDemand, optimalRevenue) = {price, amount, revenue};
