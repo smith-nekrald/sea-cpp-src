@@ -14,6 +14,24 @@ namespace sea {
 namespace backend {
 
 /**
+ * @brief Computes the capacity that remains available for a particular arc.
+ *
+ * @param input The input data.
+ * @param links The input links.
+ * @param state The state of current evaluation.
+ * @param relativeTime Relative time at the consideration.
+ * @param idxARc The index of the arc for computing available capacity.
+ * @return The computed available arc capacity.
+ *
+ */
+double computeAvailableArcCapacity(
+        const InputData& input,
+        const InputLinks& links,
+        const State& state,
+        unsigned relativeTime,
+        unsigned idxArc);
+
+/**
  * @brief Computes the capacity bottleneck for itinerary.
  *
  * @param input The input data.
@@ -21,8 +39,6 @@ namespace backend {
  * @param state The state of current evaluation.
  * @param relativeTime Relative time at the consideration.
  * @param idxRoute The index of the route for computing bottleneck capacity.
- *
- *
  * @return The computed itinerary capacity bottleneck.
  *
  */

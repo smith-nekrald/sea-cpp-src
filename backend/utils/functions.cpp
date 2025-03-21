@@ -25,30 +25,42 @@ double computeItineraryBottleneck(
     }
     const auto& route = input.itineraries[idxRoute];
     for (unsigned idxArc: route.orderedArcs) {
-        const auto& arc = input.arcs[idxArc];
-        if (arc.type == InputData::Arc::Type::travel) {
-            unsigned idxVessel = arc.vesselId.value();
-            const auto& vessel = input.vessels[idxVessel];
-            double availableCapacity = vessel.capacity;
-            std::set<unsigned> consideredRoutes;
-            for (unsigned idxThrough : links.itinerariesWithArc[idxArc]) {
-                assert(consideredRoutes.find(idxThrough) == consideredRoutes.end());
-                const auto& routeThrough = input.itineraries[idxThrough];
-                unsigned routeCutOff = links.itineraryIdToRelativeCutoffTime[idxThrough];
-                bool itineraryShipped = (routeCutOff < relativeTime);
-                if (itineraryShipped) {
-                    availableCapacity -= state.carriedOnRoute[idxThrough];
-                } else {
-                    availableCapacity -= state.accumulatedBookings[idxThrough] *
-                        routeThrough.showRate.estimatedProba;
-                }
-                consideredRoutes.insert(idxThrough);
-            }
-            availableCapacity = std::max(0., availableCapacity);
-            bottleneckCapacity = std::min(availableCapacity, bottleneckCapacity);
-        }
+        double availableCapacity = computeAvailableArcCapacity(
+            input, links, state, relativeTime, idxArc);
+        bottleneckCapacity = std::min(availableCapacity, bottleneckCapacity);
     }
     return bottleneckCapacity;
+}
+
+double computeAvailableArcCapacity(
+        const InputData& input,
+        const InputLinks& links,
+        const State& state,
+        unsigned relativeTime,
+        unsigned idxArc) {
+    double availableCapacity = std::numeric_limits<double>::max();
+    const auto& arc = input.arcs[idxArc];
+    if (arc.type == InputData::Arc::Type::travel) {
+        unsigned idxVessel = arc.vesselId.value();
+        const auto& vessel = input.vessels[idxVessel];
+        availableCapacity = vessel.capacity;
+        std::set<unsigned> consideredRoutes;
+        for (unsigned idxThrough : links.itinerariesWithArc[idxArc]) {
+            assert(consideredRoutes.find(idxThrough) == consideredRoutes.end());
+            const auto& routeThrough = input.itineraries[idxThrough];
+            unsigned routeCutOff = links.itineraryIdToRelativeCutoffTime[idxThrough];
+            bool itineraryShipped = (routeCutOff < relativeTime);
+            if (itineraryShipped) {
+                availableCapacity -= state.carriedOnRoute[idxThrough];
+            } else {
+                availableCapacity -= state.accumulatedBookings[idxThrough] *
+                    routeThrough.showRate.estimatedProba;
+            }
+            consideredRoutes.insert(idxThrough);
+        }
+        availableCapacity = std::max(0., availableCapacity);
+    }
+    return availableCapacity;
 }
 
 double computeUnitShippingCost(

@@ -12,7 +12,6 @@
 #include "lr_cppad.h"
 #include "functions.h"
 #include "../utils/functions.h"
-#include "../baseline/api.h"
 
 #include <stdexcept>
 #include <cppad/cppad.hpp>

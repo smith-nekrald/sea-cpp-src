@@ -1,23 +1,18 @@
-// Implements methods defined in protocol.h. This includes 
+// Implements methods defined in protocol.h. This includes
 // initialization and IO for Decision and Action.
 
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "protocol.hpp"
 
 #include <iostream>
 #include <fstream>
-#include <iomanip>
-#include <exception>
-#include <sstream>
 #include <utility>
-#include <algorithm>
 
 
-using std::endl;
-using std::vector;
 using std::size_t;
 
 namespace sea {

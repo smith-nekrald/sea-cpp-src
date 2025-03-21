@@ -8,13 +8,10 @@
  */
 #pragma once
 
-#include <sstream>
 #include <string>
-#include <algorithm>
 #include <vector>
 #include <memory>
 
-#include "../common.h"
 #include "../input/input_data.h"
 
 namespace sea {
