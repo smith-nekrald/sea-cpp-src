@@ -7,7 +7,6 @@
 
 #include "../manager.h"
 #include "../algorithm/state.h"
-#include "../backend/utils/functions.h"
 #include "abstract_spot_market_strategy.h"
 
 #include <cassert>
@@ -15,8 +14,7 @@
 #include <stdexcept>
 #include <map>
 #include <cmath>
-#include <numeric>
-#include <algorithm>
+
 
 namespace sea {
 namespace strategy {
@@ -29,6 +27,7 @@ AbstractSpotMarketStrategy::AbstractSpotMarketStrategy(
         const std::string aName)
             : backendConfigs(aBackendConfigs)
             , config(aConfig)
+            , censor(aConfig.inputManager, aConfig.linksManager)
             , name(aName)
             , keepStory(false) {
     initialize();
@@ -74,8 +73,7 @@ ConstDecisionManagerPtr AbstractSpotMarketStrategy::makeDecision() {
                             links.allotmentItineraryToPlace[contractId].end()) {
                         unsigned placeIndex = links.allotmentItineraryToPlace[
                             contractId].at(routeId);
-                        [[maybe_unused]] const unsigned MAX_INDEX
-                            = std::numeric_limits<unsigned>::max();
+                        const unsigned MAX_INDEX = std::numeric_limits<unsigned>::max();
                         assert(placeIndex != MAX_INDEX);
                         assert(routeId == decision->allotmentContainersQ[
                                 contractId][placeIndex].first);
@@ -146,7 +144,7 @@ void AbstractSpotMarketStrategy::submitAction(ConstActionManagerPtr newActionMan
 
 void AbstractSpotMarketStrategy::processPricing(const InputData::Event& event) {
     updateParams(event);
-    censor->correctPricing(event, state, decisionManager);
+    censor.correctPricing(event, state, decisionManager);
 }
 
 void AbstractSpotMarketStrategy::processArrival(const InputData::Event& event) {

@@ -1,52 +1,33 @@
+#include "censor.h"
+#include "functions.h"
 
+#include <cmath>
+#include <vector>
+#include <algorithm>
+#include <cassert>
+#include <limits>
+#include <stdexcept>
+#include <map>
 
 namespace sea {
 namespace backend {
 
-double AbstractSpotMarketStrategy::computeExpectedUnitProfit(
-        const InputData::Event& event, unsigned placeIdx) const {
-    const auto& input = config.inputManager->getConstData();
-    const auto& links = config.linksManager->getConstData();
-    const auto& decision = decisionManager->getConstData();
-    unsigned idxRoute = event.relatedItineraryIds[placeIdx];
-    const auto& route = input.itineraries[idxRoute];
-    double price = decision.prices[event.relativeTime][placeIdx].second;
-    double demand = backend::getDemandByPrice(event.demands[placeIdx], price);
-    double shippingCost = backend::computeUnitShippingCost(input, links, idxRoute, false);
-    double returnPrice = route.returnPrice;
-    return backend::computeSpotRevenueProxy(
-            price, demand, shippingCost, returnPrice, route.showRate.estimatedProba);
+SpotPricingCensor::SpotPricingCensor(ConstInputManagerPtr initInputManager,
+                                     ConstLinksManagerPtr initLinksManager)
+        : inputManager(initInputManager)
+        , linksManager(initLinksManager) {
 }
 
-
-std::vector<unsigned> AbstractSpotMarketStrategy::preparePricingPlaceIds(
-        const InputData::Event& event) const {
-    const auto& decision = decisionManager->getConstData();
-
-    unsigned priceRouteCount = event.relatedItineraryIds.size();
-    assert(priceRouteCount == decision.prices[event.relativeTime].size());
-    assert(priceRouteCount == event.demands.size());
-
-    std::vector<unsigned> placeIdsOrder(priceRouteCount);
-    std::vector<double> expectedProfits(priceRouteCount);
-    for (unsigned idxPlace = 0; idxPlace < priceRouteCount; ++idxPlace) {
-        placeIdsOrder[idxPlace] = idxPlace;
-        expectedProfits[idxPlace] = computeExpectedUnitProfit(event, idxPlace);
-    }
-    std::sort(placeIdsOrder.begin(), placeIdsOrder.end(),
-            [&] (unsigned lhsPlace, unsigned rhsPlace) {
-                return expectedProfits[lhsPlace] > expectedProfits[rhsPlace];
-            });
-    return placeIdsOrder;
-}
-
-void AbstractSpotMarketStrategy::correctPricing(const InputData::Event& event) {
-    const auto& input = config.inputManager->getConstData();
-    const auto& links = config.linksManager->getConstData();
+void SpotPricingCensor::correctPricing(
+        const InputData::Event& event,
+        const State& state,
+        DecisionManagerPtr decisionManager) {
+    const auto& input = inputManager->getConstData();
+    const auto& links = linksManager->getConstData();
     auto& decision = decisionManager->getData();
     std::map<unsigned, double> idxArcToAddedCapacity;
 
-    std::vector<unsigned> placeIdsOrder = preparePricingPlaceIds(event);
+    std::vector<unsigned> placeIdsOrder = preparePricingPlaceIds(event, decision);
     for (unsigned idxPlace: placeIdsOrder) {
         unsigned idxRoute = event.relatedItineraryIds[idxPlace];
         const auto& route = input.itineraries[idxRoute];
@@ -95,7 +76,43 @@ void AbstractSpotMarketStrategy::correctPricing(const InputData::Event& event) {
     }
 }
 
+double SpotPricingCensor::computeExpectedUnitProfit(
+        const InputData::Event& event,
+        const Decision& decision,
+        unsigned placeIdx) const {
+    const auto& input = inputManager->getConstData();
+    const auto& links = linksManager->getConstData();
+    unsigned idxRoute = event.relatedItineraryIds[placeIdx];
+    const auto& route = input.itineraries[idxRoute];
+    double price = decision.prices[event.relativeTime][placeIdx].second;
+    double demand = backend::getDemandByPrice(event.demands[placeIdx], price);
+    double shippingCost = backend::computeUnitShippingCost(input, links, idxRoute, false);
+    double returnPrice = route.returnPrice;
+    return backend::computeSpotRevenueProxy(
+            price, demand, shippingCost, returnPrice, route.showRate.estimatedProba);
+}
 
+std::vector<unsigned> SpotPricingCensor::preparePricingPlaceIds(
+        const InputData::Event& event,
+        const Decision& decision) const {
+
+    unsigned priceRouteCount = event.relatedItineraryIds.size();
+    assert(priceRouteCount == decision.prices[event.relativeTime].size());
+    assert(priceRouteCount == event.demands.size());
+
+    std::vector<unsigned> placeIdsOrder(priceRouteCount);
+    std::vector<double> expectedProfits(priceRouteCount);
+    for (unsigned idxPlace = 0; idxPlace < priceRouteCount; ++idxPlace) {
+        placeIdsOrder[idxPlace] = idxPlace;
+        expectedProfits[idxPlace] = computeExpectedUnitProfit(event, decision, idxPlace);
+    }
+    std::sort(placeIdsOrder.begin(), placeIdsOrder.end(),
+            [&] (unsigned lhsPlace, unsigned rhsPlace) {
+                return expectedProfits[lhsPlace] > expectedProfits[rhsPlace];
+            });
+    return placeIdsOrder;
+}
 
 } // namespace backend
 } // namespace sea
+

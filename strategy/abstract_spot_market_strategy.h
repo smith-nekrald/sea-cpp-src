@@ -10,6 +10,7 @@
 #include "ispot_market_strategy.h"
 #include "../backend/backend_general.h"
 #include "../algorithm/state.h"
+#include "../backend/utils/censor.h"
 
 #include <string>
 #include <memory.h>
@@ -228,6 +229,9 @@ protected:
     DecisionManagerPtr decisionManager;
     /// @brief State of the trajectory.
     State state;
+    /// @brief Spot pricing censor to fix prices to avoid significant
+    /// decline pentalties due to aggressive overbooking.
+    backend::SpotPricingCensor censor;
     /// @brief Name or partial name for spot market strategy.
     std::string name;
     /// @brief the real time of the last parameter recomputation.
