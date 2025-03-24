@@ -7,7 +7,6 @@
 #include <cassert>
 
 #include "state.h"
-#include "../manager.h"
 
 
 namespace sea {
@@ -27,6 +26,10 @@ void initState(const InputData& input, State* state) {
     state->usedCapacity.assign(input.arcs.size(), 0);
     state->usedCapacity.shrink_to_fit();
     state->estimatedObjective = -INF;
+    state->expectedAllotmentCapacity.assign(input.itineraries.size(), 0.);
+    state->expectedAllotmentCapacity.shrink_to_fit();
+    state->acceptedAllotmentBookings.assign(input.itineraries.size(), 0);
+    state->acceptedAllotmentBookings.shrink_to_fit();
 }
 
 void toNextEvent(TimeParameters* parameters) {

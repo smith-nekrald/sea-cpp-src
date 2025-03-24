@@ -137,6 +137,13 @@ DecisionManagerPtr GreedyAlgorithm::provideAllotments() {
         if (allotmentAvailable && expectedProfit > 0.) {
             decision.allotmentAccepted[allotment.id] = true;
             backend::updateStatsAtAllotmentSelection(&greedyStats, input, allotment.id);
+            for (unsigned entryIdx : allotment.entries) {
+                const auto& entry = input.allotmentEntries[entryIdx];
+                unsigned routeIdx = entry.itinerary;
+                state.acceptedAllotmentBookings[routeIdx] += entry.productAmount;
+                state.expectedAllotmentCapacity[routeIdx]
+                    += entry.productAmount * entry.showRate.estimatedProba;
+            }
         } else {
             decision.allotmentAccepted[allotment.id] = false;
         }

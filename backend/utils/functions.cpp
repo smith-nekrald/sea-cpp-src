@@ -56,6 +56,7 @@ double computeAvailableArcCapacity(
             } else {
                 availableCapacity -= state.accumulatedBookings[idxThrough] *
                     routeThrough.showRate.estimatedProba;
+                availableCapacity -= state.expectedAllotmentCapacity[idxThrough];
             }
             consideredRoutes.insert(idxThrough);
         }

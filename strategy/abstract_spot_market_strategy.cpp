@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <map>
 #include <cmath>
+#include <ranges>
 
 
 namespace sea {
@@ -110,6 +111,20 @@ void AbstractSpotMarketStrategy::supplyAllotmentDecision(
     decisionManager = decisionManagerNew;
     initState(config.inputManager->getConstData(), &state);
     state.timeParameters.allotmentsSupplied = true;
+    const auto& decision = decisionManager->getConstData();
+    for (auto [idxAllotment, accepted] : std::views::enumerate(decision.allotmentAccepted)) {
+        if (accepted) {
+            const auto& input = config.inputManager->getConstData();
+            const auto& allotment = input.allotments[idxAllotment];
+            for (unsigned idxEntry: allotment.entries) {
+                const auto& entry = input.allotmentEntries[idxEntry];
+                unsigned idxRoute = entry.itinerary;
+                state.acceptedAllotmentBookings[idxRoute] += entry.productAmount;
+                state.expectedAllotmentCapacity[idxRoute] +=
+                    entry.productAmount * entry.showRate.estimatedProba;
+            }
+        }
+    }
 }
 
 void AbstractSpotMarketStrategy::submitAction(ConstActionManagerPtr newActionManager) {

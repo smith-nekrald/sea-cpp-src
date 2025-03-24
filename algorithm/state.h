@@ -61,6 +61,10 @@ struct State {
     double estimatedObjective;
     /// @brief Estimated decomposed objective, indexed by itinerary. Denoted v_t^r in the model.
     std::vector<double> itineraryFutureEstimation;
+    /// @brief Summary of bookings from accepted allotments, per itinerary.
+    std::vector<unsigned> acceptedAllotmentBookings;
+    /// @brief Summary of expected capacity required from accepted allotments, per itinerary.
+    std::vector<double> expectedAllotmentCapacity;
 };
 
 /**
