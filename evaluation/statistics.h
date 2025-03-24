@@ -4,12 +4,12 @@
  * @brief Defines Statistics - an entity with evaluation summary on a particular trajectory.
  * Also defines a method to print Statistics into stream.
  * @copyright (c) Smith School of Business, 2023
+ * @copyright (c) Smith School of Business, 2025
  */
 #pragma once
 
 #include "estimator.h"
 
-#include <fstream>
 #include <iostream>
 
 
@@ -39,6 +39,13 @@ struct Statistics {
     unsigned spotContainerCount = 0;
     /// @brief The number of times an allotment TEU was transported over some itinerary.
     unsigned allotmentContainerCount = 0;
+
+    /// @brief The number of TEU shippings declined at spot market.
+    unsigned declinedAtSpot = 0;
+    /// @brief The number of TEU shippings declined at allotment market.
+    unsigned declinedAtAllotment = 0;
+    /// @brief The number of TEU shippings declined in total.
+    unsigned declinedInTotal = 0;
 
     /// @brief Profit over the trajectory.
     /// fullProfit = spotProfit + allotmentProfit + containerProfit + emptyContainerProfit

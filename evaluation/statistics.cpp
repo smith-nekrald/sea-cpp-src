@@ -7,15 +7,12 @@
 #include "statistics.h"
 
 #include <iostream>
-#include <fstream>
-#include <iomanip>
 #include <cassert>
 #include <cmath>
 
 namespace sea {
 
 using std::ostream;
-using std::endl;
 
 void printEvaluatorStatistics(const Statistics& stats, ostream& os) {
 
@@ -33,6 +30,9 @@ void printEvaluatorStatistics(const Statistics& stats, ostream& os) {
         << " allotment_market_containers = " << stats.allotmentContainerCount
         << " bookings_spot = " << stats.sumSpotBookingAmount
         << " bookings_allotment = " << stats.sumAllotmentBookingAmount
+        << " declined_spot = " << stats.declinedAtSpot
+        << " declined_allotment = " << stats.declinedAtAllotment
+        << " declined_total = " << stats.declinedInTotal
         << std::endl;
 
     const double EPS = 1e-2;

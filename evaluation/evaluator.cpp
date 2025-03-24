@@ -88,9 +88,9 @@ Statistics Evaluator::calc(algo::IAlgorithmPtr algo, ConstMarketManagerPtr marke
         assert(decisionManager->getConstData().allotmentAccepted == selectedAllotments);
         inputPtr = config.inputManager->get();
         if (idEvent + 1 != inputPtr->events.size()) {
-            auto dur = inputPtr->events[idEvent].realTime - event.realTime;
-            assert(dur >= 0);
-            updateContainersInPorts(dur);
+            auto duration = inputPtr->events[idEvent + 1].realTime - event.realTime;
+            assert(duration >= 0);
+            updateContainersInPorts(duration);
         } else {
             updateContainersInPorts(0);
             checkFinalContainersInPorts();
@@ -100,19 +100,36 @@ Statistics Evaluator::calc(algo::IAlgorithmPtr algo, ConstMarketManagerPtr marke
             + statistics.containerProfit + statistics.emptyContainerProfit;
 
         if (config.keepStory) {
-            evaluationStory["event_relative_time"].push_back(event.relativeTime);
-            evaluationStory["event_real_time"].push_back(event.realTime);
-            evaluationStory["profit_now"].push_back(statistics.fullProfit);
-            evaluationStory["spot_profit_now"].push_back(statistics.spotProfit);
-            evaluationStory["allotment_profit_now"].push_back(statistics.allotmentProfit);
-            evaluationStory["container_profit_now"].push_back(statistics.containerProfit);
-            evaluationStory["empty_container_profit_now"].push_back(statistics.emptyContainerProfit);
-            evaluationStory["empty_containers_count_now"].push_back(statistics.emptyContainerCount);
-            evaluationStory["spot_bookings_count_now"].push_back(statistics.sumSpotBookingAmount);
+            evaluationStory["event_relative_time"].push_back(
+                    event.relativeTime);
+            evaluationStory["event_real_time"].push_back(
+                    event.realTime);
+            evaluationStory["profit_now"].push_back(
+                    statistics.fullProfit);
+            evaluationStory["spot_profit_now"].push_back(
+                    statistics.spotProfit);
+            evaluationStory["allotment_profit_now"].push_back(
+                    statistics.allotmentProfit);
+            evaluationStory["container_profit_now"].push_back(
+                    statistics.containerProfit);
+            evaluationStory["empty_container_profit_now"].push_back(
+                    statistics.emptyContainerProfit);
+            evaluationStory["empty_containers_count_now"].push_back(
+                    statistics.emptyContainerCount);
+            evaluationStory["spot_bookings_count_now"].push_back(
+                    statistics.sumSpotBookingAmount);
             evaluationStory["allotment_booking_count_now"].push_back(
                     statistics.sumAllotmentBookingAmount);
-            evaluationStory["spot_container_count_now"].push_back(statistics.spotContainerCount);
-            evaluationStory["long_container_count_now"].push_back(statistics.allotmentContainerCount);
+            evaluationStory["spot_container_count_now"].push_back(
+                    statistics.spotContainerCount);
+            evaluationStory["long_container_count_now"].push_back(
+                    statistics.allotmentContainerCount);
+            evaluationStory["declined_spot"].push_back(
+                    statistics.declinedAtSpot);
+            evaluationStory["declined_allotment"].push_back(
+                    statistics.declinedAtAllotment);
+            evaluationStory["declined_total"].push_back(
+                    statistics.declinedInTotal);
         }
     }
 
@@ -278,6 +295,8 @@ void Evaluator::processCutoffDecision(const Event& event) {
 
         double diff = static_cast<double>(
                 action->spotMarketDemandN[itineraryId]) - shippedContainers;
+        statistics.declinedAtSpot += (action->spotMarketDemandN[itineraryId] - shippedContainers);
+        statistics.declinedInTotal += (action->spotMarketDemandN[itineraryId] - shippedContainers);
 
         const double EPS_ABOVE_ZERO = 1e-8;
         assert(diff + EPS_ABOVE_ZERO >= 0);
@@ -334,6 +353,8 @@ void Evaluator::processCutoffDecision(const Event& event) {
             assert(entry.price >= 0);
             assert(showAmountN >= shippedContainersQ);
             statistics.allotmentProfit -= (showAmountN - shippedContainersQ) * itinerary.declineCost;
+            statistics.declinedAtAllotment += (showAmountN - shippedContainersQ);
+            statistics.declinedInTotal += (showAmountN - shippedContainersQ);
 
             // Pay transfer cost for non-empty containers.
             assert(itinerary.cost >= 0);
