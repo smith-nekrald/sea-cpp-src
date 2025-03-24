@@ -47,6 +47,13 @@ struct Statistics {
     /// @brief The number of TEU shippings declined in total.
     unsigned declinedInTotal = 0;
 
+    /// @brief The cost of declines at the spot market.
+    double declinePaidSpot = 0.;
+    /// @brief The cost of declines at the allotment market.
+    double declinePaidAllotment = 0.;
+    /// @brief The cost of declines in total.
+    double declinePaidTotal = 0.;
+
     /// @brief Profit over the trajectory.
     /// fullProfit = spotProfit + allotmentProfit + containerProfit + emptyContainerProfit
     double fullProfit = 0.0;

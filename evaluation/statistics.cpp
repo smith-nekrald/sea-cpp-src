@@ -33,6 +33,9 @@ void printEvaluatorStatistics(const Statistics& stats, ostream& os) {
         << " declined_spot = " << stats.declinedAtSpot
         << " declined_allotment = " << stats.declinedAtAllotment
         << " declined_total = " << stats.declinedInTotal
+        << " decline_paid_spot = " << stats.declinePaidSpot
+        << " decline_paid_allotment = " << stats.declinePaidAllotment
+        << " decline_paid_total = " << stats.declinePaidTotal
         << std::endl;
 
     const double EPS = 1e-2;

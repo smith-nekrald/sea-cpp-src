@@ -3,6 +3,7 @@
 // Author: Aliaksandr Nekrashevich
 // Email: aliaksandr.nekrashevich@queensu.ca
 // (c) Smith School of Business, 2023
+// (c) Smith School of Business, 2025
 
 #include "evaluator.h"
 
@@ -130,6 +131,12 @@ Statistics Evaluator::calc(algo::IAlgorithmPtr algo, ConstMarketManagerPtr marke
                     statistics.declinedAtAllotment);
             evaluationStory["declined_total"].push_back(
                     statistics.declinedInTotal);
+            evaluationStory["paid_decline_spot"].push_back(
+                    statistics.declinePaidSpot);
+            evaluationStory["paid_decline_allotment"].push_back(
+                    statistics.declinePaidAllotment);
+            evaluationStory["paid_decline_total"].push_back(
+                    statistics.declinePaidTotal);
         }
     }
 
@@ -304,6 +311,8 @@ void Evaluator::processCutoffDecision(const Event& event) {
         // Pay for declined products.
         double paidDeclineCost = itinerary.declineCost * diff;
         statistics.spotProfit -= paidDeclineCost;
+        statistics.declinePaidSpot += paidDeclineCost;
+        statistics.declinePaidTotal += paidDeclineCost;
         assert(itinerary.declineCost >= 0);
 
         // Pay transfer cost for non-empty containers.
@@ -352,9 +361,14 @@ void Evaluator::processCutoffDecision(const Event& event) {
             assert(shippedContainersQ >= 0);
             assert(entry.price >= 0);
             assert(showAmountN >= shippedContainersQ);
-            statistics.allotmentProfit -= (showAmountN - shippedContainersQ) * itinerary.declineCost;
+            statistics.allotmentProfit -= (showAmountN - shippedContainersQ)
+                * itinerary.declineCost;
             statistics.declinedAtAllotment += (showAmountN - shippedContainersQ);
             statistics.declinedInTotal += (showAmountN - shippedContainersQ);
+            statistics.declinePaidAllotment += (showAmountN - shippedContainersQ)
+                * itinerary.declineCost;
+            statistics.declinePaidTotal += (showAmountN - shippedContainersQ)
+                * itinerary.declineCost;
 
             // Pay transfer cost for non-empty containers.
             assert(itinerary.cost >= 0);
