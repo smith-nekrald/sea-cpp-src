@@ -1,15 +1,20 @@
-# Sea Core
+# C++ sea decision core
 
 The core of the sea cargo decision system is written in C++. The entry point function is located in `main.cpp`. 
-The library is organized into the following parts.
+In what follows, we describe the organization in further detail.
 
-# Acknowledgements
 
-The major contribution to the model and implementation is attributed to the paper co-authors: Aliaksandr Nekrashevich, 
-Mikhail Y. Kovalyov, Mikhail Nediak, Genrikh Levin, Yuri Levin, Guang Li. Several individuals have been working on the 
-implementation besides the co-authors. Among them are Henadzi Klimuk, Maxym Sporyshev, and Alexandra Zhihareva. Their 
-participation has been voluntarily terminated based on other priorities and the huge time investment that became obvious in
-the middle of the path between the initial version and the first submitted version.
+# Code style notes
+
+The implementation of this core module is provided in C++. The code style can be described as "Yandex Java-based 
+C++ Code style" for those familiar with this search engine company. Otherwise, one may assume java-like naming 
+transferred into C++ design. Minor inconsistencies and uncertainties does not matter much for a repository with
+research code.
+
+The code definitions in headers `*.h` are documented in a format compatible to Doxygen automatic documentation. The 
+implementation files `*.cpp` are self-documented. Doxygen-based documentation generation is available in a top-level
+module, called `system`, and is described in the correspoding repository.
+
 
 # General overview
 
@@ -35,6 +40,7 @@ Cereal. Right now, that functionality does not remain relevant, but we need to m
 I.e., maybe the memory management works, maybe not, quite a long time has passed, and the functionality has not 
 been tested in the updated library version.
 
+
 # Parts of the file structure
 
 We will next discuss implementation based on the logical components and their relative paths from the repository root.
@@ -44,13 +50,52 @@ We will next discuss implementation based on the logical components and their re
 4. Algorithmic interface, state of the algorithm, strategic algorithm, and baseline (greedy) algorithm. 
 Available in the folder `algorithm`.
 5. Strategies: interface and implementations. The corresponding source code is located in the `strategy` subfolder.
-Allotment strategy interface, spot strategy interface. Abstract allotment strategy, abstract spot strategy. Implementations: 
-Benders' allotment strategy, IPOPT allotment strategy, IPOPT spot strategy, hybrid spot strategy, Lagrangian relaxation spot
-strategy. There are also special cases without allotments or with zero spot market activity. 
+Allotment strategy interface, spot strategy interface. Abstract allotment strategy, abstract spot strategy. 
+Implementations: Benders' allotment strategy, IPOPT allotment strategy, IPOPT spot strategy, hybrid spot strategy, 
+Lagrangian relaxation spot strategy. There are also special cases without allotments or with zero spot market activity. 
 6. Evaluation: launching algorithms, collecting statistics, and forming outputs. The components involved are launcher, 
 estimator, evaluator, validator, and analyzer. The corresponding folders are `evaluation` and `sense`.
 7. Backends: real logic behind the interfaces. Free format is allowed; the description is the most advanced. The corresponding
 source code folder is `backend`.
 8. Logging. Interface and configuration, correspond to folders `logging` and `conf`.
 9. More detailed entry point description.
-   
+
+
+# Basic data structures and input-output
+
+Input is represented in two types of data: input data, representing the parameters, and market data, 
+representing the sample of market behavior. The input data information is represented by `InputData`, 
+described in `input/input_data.h`. There are also the definitions of substructures that represent the 
+building blocks of `InputData`. More precisely, `ShowRate`, `Demand`, `Port`, `Node`, `Vessel`, `Arc`,
+`Itinerary`, `AllotmentEntry`, `Allotment`, `Event`. The concept correspond to the description in the 
+paper and physical intuition. Such information is provided to algorithms and backends for estimating 
+inner parameters and providing responses on requests.
+
+The market data information is represented by `MarketData`, described in `input/market_data.h`. Essentially,
+market data represents the samples of market realizations, and includes exact demands, willingness to pay, 
+shows and cancellations.
+
+Precomputed values and information built on top of `InputData` are provided in `InputLinks`, with 
+implementation available at `input/input_links.h`. The function for filling a freshly built 
+`InputLinks` from `InputData` is called `createInputLinks(const InputData& input, InputLinks* links)`. 
+
+Input-output functions for `InputData`, `InputLinks` and `MarketData` are described in `input/io_functions.h`.
+Serialization for `InputLinks` happends through C++ serialization library `cereal`. For `InputData` and `MarketData`, 
+only reading is implemented, because output files already exist and provided at input. The corresponding methods
+rely on readers defined at `reader` folder.
+
+Template reading functions are described in `reader/common_reader.hpp`. General reader interface is provided in 
+`reader/ireader.h`. Reader for input data is defined in `reader/input_reader.h`, and reader for market data 
+is defined in `reader/market_reader.h`.
+
+
+
+# Acknowledgements
+
+The major contribution to the model and implementation is attributed to the paper co-authors: Aliaksandr Nekrashevich, 
+Mikhail Y. Kovalyov, Mikhail Nediak, Genrikh Levin, Yuri Levin, Guang Li. Several individuals have been working on the 
+implementation besides the co-authors. Among them are Henadzi Klimuk, Maxym Sporyshev, and Alexandra Zhihareva. Their 
+participation has been voluntarily terminated based on other priorities and the huge time investment that became obvious in
+the middle of the path between the initial version and the first submitted version.
+
+
