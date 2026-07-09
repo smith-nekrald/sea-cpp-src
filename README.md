@@ -183,8 +183,27 @@ decisions expecting no activity in spot market policy later.
 5. Null allotment strategy. No allotments, and at expected initialization no spot market in the future. Described
 in `strategy/null/null_allotment_strategy.h`
 
-
 Inner organization is better described with Doxygen-based documentation.
+
+## Evaluation Entities
+
+The evaluation process is implemented inside `evaluation`. The entity `Estimator` 
+defined in `estimator.h` accounts for the estimated upper bound. The header 
+`statistics.h` accounts for the information about peformance accumulated during 
+evaluation on a single trajectory, and introduces the structure `Statistics`.
+
+The rest of the launcing entities have the following backgrounds. The `Evaluator` defined in 
+`evaluator.h` is responsible for evaluating single algorithm on single market data 
+instance. The `Launcher` entity defined in `launcher.h` evaluates multiple algorithms
+on different market data instances, by calling `Evaluator` multiple times. Finally,
+`Analyzer` entity from `analyzer.h` performs the analysis of the result: builds confidence
+intervals, outputs summary of the results.
+
+There is another component in the group of evaluation entity, `Validator` defined in
+`sense/validator.h`. This entity is reponsible for verifying common sense of the 
+requests.
+
+
 
 ## Acknowledgements
 
