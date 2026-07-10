@@ -57,7 +57,7 @@ Lagrangian relaxation spot strategy. There are also special cases without allotm
 estimator, evaluator, validator, and analyzer. The corresponding folders are `evaluation` and `sense`.
 7. Backends: real logic behind the interfaces. Free format is allowed; the description is the most advanced. 
 The corresponding source code folder is `backend`.
-8. Logging. Interface and configuration, correspond to folders `logging` and `conf`.
+8. Logging. Interface and configuration, correspond to folders `logging`.
 9. More detailed entry point description.
 
 
@@ -203,6 +203,74 @@ There is another component in the group of evaluation entity, `Validator` define
 `sense/validator.h`. This entity is reponsible for verifying common sense of the 
 requests.
 
+
+## Backend description
+
+Backend represents a freeform piece of library to conveniently achieve the goals described in
+the previously defined interface. After implementing a certain backend, a typical design
+framework is to include the backend into config of abstract strategy (spot or allotment),
+and later implement a specific spot or allotment strategy targeting the corresponding goal.
+The folder with various backends is `backend`.
+
+At the time of writing this documentation, the following backends are available:
+1. Ipopt backend, at the folder `backend/ipopt`. Interface is described in `ipopt_backend.h`,
+optimization problem is placed to `optimization_problem.h`. To effectively index variables
+and constraints, a special index map structure is introduced in `index_map.h`.
+2. Lagrangian relaxation backend, at the folder `backend/lagrangian_relaxation`. API that 
+allows to make decisions according to the model based on Lagrangian Relaxation. Essentially,
+allows to receive dual variables representing the shadow price of capacity. 
+3. Benders backend is based on Lagrangian Relaxation backend and is available at 
+`backend/benders/benders_allotment_backend.h`. 
+4. Backend for greedy baseline is located at `backend/baseline`. Unlike other backends,
+this backend is directly provided to the GreedyAlgorithm, i.e. without calls through
+SpotStrategy and AllotmentStrategy.
+
+Commonly requested constants and functions are available in the folder `backend/utils`.
+
+
+### Lagrangian relaxation backend
+
+As the most complex part, this backend seeks more detailed explanation.
+Interface entry point is defined in the header `lagrangian_relaxation_backend.h`.
+Special structures are defined in `structures.h`. Functionality for subgradiens
+and corresponding functions are available in `lr_cppad.hpp` and `lr_cppad.h`. 
+API implementation related to restoring the response is placed into `restore.cpp`,
+and API implementation related to subgradient calls is placed to `subgradient.cpp`.
+Special LR-index is located into `index.h`.
+
+
+The subfolder `backend/lagrangian_relaxation/gm_sea` is dedicated 
+to Nesterov subgradient optimization methods. The methods themselves 
+are defined in `backend/lagrangian_relaxation/gm_sea/gm_src`. This 
+component is essentially a template implementation form of the 
+Universal Nesterov Subgradient optimization methods (UPGM and UFGM). 
+The files `sea_gm_apply.h` and `sea_constraints.h` essentially 
+introduce the problem, constraints and call the corresponding 
+template methods.
+
+
+### Ipopt backend
+
+Component responsible for fluid approximation. Interface is defined in header files
+`backend/ipopt/index_map.h`, `backend/ipopt/optimization_problem.h` and 
+`backend/ipopt/ipopt_backend.h`. The functional of optimization problem needs
+to have an interface of a functional class for compatibility with CppAD+Ipopt 
+invocation. This part is defined in `backend/ipopt/optimization_problem.h`. 
+
+## Logging
+
+Logging is organized with library log4cpp, interface in `logging/logging.h` and configs
+`logging/log4cpp.properties.opt` and `logging/log4cpp.properties.debug` for fast and debugging
+modes correspondingly.
+
+## More detailed process and entry point description
+
+The entry point defined in `main.cpp` essentially relies on functions from `start.h` and `common.h`.
+The ides is to parse the config (example can be found in `conf/example-config.json`) with 
+library `Jsoncpp`, prepare backends with initialization through the parsed configs, build 
+strategies (allotment and spot), and algorithms on top of strategies. The next step is to
+read the data, feed the algorithms into `Launcher`, which evaluates through `Evaluator`.
+The results are fed into `Analyzer` and exported to disk.
 
 
 ## Acknowledgements
